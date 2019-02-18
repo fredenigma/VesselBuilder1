@@ -4,6 +4,7 @@
 #include "MeshManager.h"
 #include "AnimCompDef.h"
 #include "AnimDef.h"
+#include "AttachmentManager.h"
 #include "AnimationManager.h"
 #pragma comment(lib, "comctl32.lib")
 
@@ -46,11 +47,18 @@ BOOL CALLBACK AnimCompDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
 	return DlgCtrl->AnimCompDlgProc(hWnd, uMsg, wParam, lParam);
 }
-
+BOOL CALLBACK AttDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	if (uMsg == WM_INITDIALOG) {
+		SetWindowLong(hWnd, GWL_USERDATA, (LONG)lParam);
+	}
+	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
+	return DlgCtrl->AttDlgProc(hWnd, uMsg, wParam, lParam);
+}
 
 DialogControl::DialogControl(StationBuilder1 *_SB1) {
 	SB1 = _SB1;
 	AnimMng = SB1->AnimMng;
+	AttMng = SB1->AttMng;
 	open = false;
 	hDlg = NULL;
 	TreeItem.clear();
@@ -75,9 +83,9 @@ void DialogControl::Open(HINSTANCE hDLL) {
 void DialogControl::Close() {
 	open = false;
 	SB1->MshMng->ResetHighlights();
-	if (SB1->DockBeaconsActive) {
-		SB1->DeleteDockBeacons();
-	}
+//	if (SB1->DockBeaconsActive) {
+//		SB1->DeleteDockBeacons();
+//	}
 	oapiCloseDialog(hDlg);
 	hDlg = NULL;
 }
@@ -93,6 +101,7 @@ void DialogControl::InitDialog(HWND hWnd) {
 	hWnd_Dock = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_DOCK), hWnd, DockDlgProcHook, (LPARAM)this);
 	hWnd_Anim = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_ANIM), hWnd, AnimDlgProcHook, (LPARAM)this);
 	hWnd_AnimComp = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_ANIMCOMP), hWnd, AnimCompDlgProcHook, (LPARAM)this);
+	hWnd_Atts = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_ATT), hWnd, AttDlgProcHook, (LPARAM)this);
 	SetWindowPos(hwnd_Mesh, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hwnd_Mesh, SW_HIDE);
 	SetWindowPos(hWnd_Dock, NULL, 255, 10, 0, 0, SWP_NOSIZE);
@@ -101,6 +110,8 @@ void DialogControl::InitDialog(HWND hWnd) {
 	ShowWindow(hWnd_Anim, SW_HIDE);
 	SetWindowPos(hWnd_AnimComp, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hWnd_AnimComp, SW_HIDE);
+	SetWindowPos(hWnd_Atts, NULL, 255, 10, 0, 0, SWP_NOSIZE);
+	ShowWindow(hWnd_Atts, SW_HIDE);
 	return;
 }
 
@@ -179,8 +190,9 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			Tir.idx = i;
 			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 			TreeItem[Tir.hitem] = Tir;
-			TreeView_Expand(GetDlgItem(hWnd,IDC_TREE1), hrootMeshes, TVE_EXPAND);
 		}
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootMeshes, TVE_EXPAND);
+		//TreeView_Select(GetDlgItem(hWnd, IDC_TREE1), hrootMeshes, 0);
 		break;
 	}
 	case DOCK:
@@ -213,6 +225,42 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 
 		break;
 	}
+	case ATTACHMENT:
+	{
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootAttachments);
+		while (ht != NULL) {
+			TreeItem.erase(ht);
+			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootAttachments);
+		}
+		TVINSERTSTRUCT insertstruct = { 0 };
+
+		insertstruct.hInsertAfter = TVI_ROOT;
+		insertstruct.item.mask = TVIF_TEXT;
+		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
+		insertstruct.hParent = hrootAttachments;
+		for (UINT i = 0; i < AttMng->GetAttCount(); i++) {
+			char cbuf[256] = { '\0' };
+			if (AttMng->AttIsCreated(i)) {
+				sprintf(cbuf, "Attachment_%i", i);
+			}
+			else {
+				sprintf(cbuf, "Attachment_%i*", i);
+			}
+			
+			insertstruct.item.pszText = (LPSTR)cbuf;
+			insertstruct.item.cchTextMax = 14;
+			TREE_ITEM_REF Tir = TREE_ITEM_REF();
+			Tir.Type = ATTACHMENT;
+			Tir.idx = i;
+			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			TreeItem[Tir.hitem] = Tir;
+			TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootAttachments, TVE_EXPAND);
+		}
+
+
+		break;
+	}
 	case ANIMATIONS:
 	{
 		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootAnimations);
@@ -226,6 +274,7 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		insertstruct.item.mask = TVIF_TEXT;
 		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
 		insertstruct.hParent = hrootAnimations;
+		if (AnimMng->GetAnimDefCount() <= 0) { break; }
 		for (UINT i = 0; i < AnimMng->GetAnimDefCount(); i++) {
 			char cbuf[256] = { '\0' };
 			sprintf(cbuf, AnimMng->GetAnimName(i).c_str());
@@ -261,6 +310,7 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 				insertstruct.hParent = hrootAnimations;
 			}
 		}
+	//	TreeView_Select(GetDlgItem(hWnd, IDC_TREE1), hrootAnimations, 0);
 	/*	for (UINT j = 0; j < AnimMng->GetAnimCompDefCount(); j++) {
 			insertstruct.item.pszText = (LPSTR)AnimMng->GetAnimCompDefFullName(j).c_str();
 			insertstruct.item.cchTextMax = AnimMng->GetAnimCompDefFullName(j).size();
@@ -352,7 +402,9 @@ void DialogControl::InitTree(HWND hWnd) {
 	hrootSettings = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 	UpdateTree(hWnd, MESH,0);
 	UpdateTree(hWnd, DOCK,0);
+	UpdateTree(hWnd, ATTACHMENT, 0);
 	UpdateTree(hWnd, ANIMATIONS,0);
+	
 	return;
 }
 
@@ -364,8 +416,8 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 	}
 	if (type != DOCK) {
 		ShowWindow(hWnd_Dock, SW_HIDE);
-		if (SB1->DockBeaconsActive) {
-			SB1->DeleteDockBeacons();
+		if (SB1->DockExhaustsActive) {
+			SB1->DeleteDockExhausts();
 			SendDlgItemMessage(hWnd_Dock, IDC_CHECK_HIGHLIGHT_DOCK, BM_SETCHECK, BST_UNCHECKED, 0);
 		}
 	}
@@ -375,7 +427,9 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 	if (type != ANIM_COMP) {
 		ShowWindow(hWnd_AnimComp, SW_HIDE);
 	}
-
+	if (type != ATTACHMENT) {
+		ShowWindow(hWnd_Atts, SW_HIDE);
+	}
 	switch (type) {
 	case MESH:
 	{
@@ -398,6 +452,10 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 		ShowWindow(hWnd_AnimComp, SW_SHOW);
 //		SB1->AnimEditingMode = true;
 		break;
+	}
+	case ATTACHMENT:
+	{
+		ShowWindow(hWnd_Atts, SW_SHOW);
 	}
 
 	}
@@ -431,6 +489,10 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 			else if (CurrentSelection.hitem == hrootAnimations) {
 				AnimMng->AddAnimDef();
 				UpdateTree(hWnd, ANIMATIONS,hrootAnimations);
+			}
+			else if (CurrentSelection.hitem == hrootAttachments) {
+				AttMng->AddAttDefNoCreate();
+				UpdateTree(hWnd, ATTACHMENT, 0);
 			}
 			break;
 		}
@@ -514,6 +576,11 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 						case ANIM_COMP:
 						{
 							UpdateAnimCompDialog(hWnd_AnimComp);
+							break;
+						}
+						case ATTACHMENT:
+						{
+							UpdateAttDialog(hWnd_Atts);
 							break;
 						}
 					}

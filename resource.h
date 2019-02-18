@@ -8,6 +8,7 @@
 #define IDD_DIALOG_DOCK                 106
 #define IDD_DIALOG_ANIM                 107
 #define IDD_DIALOG_ANIMCOMP             108
+#define IDD_DIALOG_ATT                  109
 #define IDC_TREE1                       1001
 #define IDC_SPIN_POSZ_S                 1005
 #define IDC_SPIN_POSZ_L                 1006
@@ -132,8 +133,30 @@
 #define IDC_STATIC_ACANGLE              1144
 #define IDC_EDIT_ANIMCOMPNAME           1145
 #define IDC_BUTTON_ANIMCOMPNAMESET      1146
-#define IDC_BUTTON3                     1147
 #define IDC_BUTTON_ANIMCOMPDEL          1147
+#define IDC_CHECK_ATTPARENT             1148
+#define IDC_CHECK_ATTHIGHLIGHT          1149
+#define IDC_EDIT_ATTPOSX                1150
+#define IDC_EDIT_ATTPOSY                1151
+#define IDC_EDIT_ATTPOSZ                1152
+#define IDC_BUTTON_ATTPOS_SET           1153
+#define IDC_EDIT_ATTDIRX                1154
+#define IDC_EDIT_ATTDIRY                1155
+#define IDC_EDIT_ATTDIRZ                1156
+#define IDC_BUTTON_ATTDIR_SET           1157
+#define IDC_EDIT_ATTROTX                1158
+#define IDC_EDIT_ATTROTY                1159
+#define IDC_EDIT_ATTROTZ                1160
+#define IDC_BUTTON_ATTROT_SET           1161
+#define IDC_BTN_ATTPASTEV               1162
+#define IDC_SPIN_ATTPITCH               1163
+#define IDC_SPIN_ATTYAW                 1164
+#define IDC_SPIN_ATTROLL                1165
+#define IDC_BUTTON_CRDELATTDEF          1166
+#define IDC_EDIT_ATTID                  1167
+#define IDC_SPIN_ATTPOSX                1168
+#define IDC_SPIN_ATTPOSY                1169
+#define IDC_SPIN_ATTPOSZ                1170
 
 // Next default values for new objects
 // 
@@ -141,7 +164,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1148
+#define _APS_NEXT_CONTROL_VALUE         1171
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

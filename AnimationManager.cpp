@@ -558,6 +558,10 @@ AnimCompDef* AnimationManager::GetAnimComp(def_idx animd_idx,UINT comp_idx) {
 	return;
 }*/
 void AnimationManager::WriteCfg(FILEHANDLE fh) {
+	oapiWriteLine(fh, " ");
+	oapiWriteLine(fh, ";<-------------------------ANIMATIONS DEFINITIONS------------------------->");
+	oapiWriteLine(fh, " ");
+
 	char cbuf[256] = { '\0' };
 	char cbuf2[256] = { '\0' };
 	oapiWriteItem_int(fh, "NUMBER_OF_ANIMATIONS", anim_defs.size());
@@ -755,6 +759,7 @@ void AnimationManager::ParseCfgFile(FILEHANDLE fh) {
 			oapiReadItem_vec(fh, cbuf, axis);
 			sprintf(cbuf, "ANIMCOMP_%i_ANGLE", animcomp_counter);
 			oapiReadItem_float(fh, cbuf, angle);
+			angle *= RAD;
 		}
 		else if (type == 2) {
 			sprintf(cbuf, "ANIMCOMP_%i_SHIFT", animcomp_counter);
@@ -785,6 +790,12 @@ void AnimationManager::AddAnimCompDef(def_idx animdef_idx, string name, double s
 	acd->name = name;
 	acd->ngrps = ngrps;
 	acd->grps = grps;
+	acd->ref = ref;
+	acd->scale = scale;
+	acd->angle = angle;
+	acd->shift = shift;
+	acd->axis = axis;
+	acd->mesh = mesh;
 	switch (type) {
 	case 1:
 	{

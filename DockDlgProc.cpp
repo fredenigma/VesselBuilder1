@@ -4,15 +4,16 @@
 #pragma comment(lib, "comctl32.lib")
 
 void DialogControl::UpdateDockDialog(HWND hWnd) {
+	if (CurrentSelection.idx >= SB1->DockCount()) { return; }
 	char cbuf[256] = { '\0' };
 	sprintf(cbuf, "DOCK %i", CurrentSelection.idx);
 	SetDlgItemText(hWnd, IDC_EDIT_DOCKNAME, (LPCSTR)cbuf);
 	SetDlgItemsTextVector3(hWnd, IDC_EDIT_DOCKPOSX, IDC_EDIT_DOCKPOSY, IDC_EDIT_DOCKPOSZ, SB1->dock_definitions[CurrentSelection.idx].pos);
 	SetDlgItemsTextVector3(hWnd, IDC_EDIT_DOCKDIRX, IDC_EDIT_DOCKDIRY, IDC_EDIT_DOCKDIRZ, SB1->dock_definitions[CurrentSelection.idx].dir);
 	SetDlgItemsTextVector3(hWnd, IDC_EDIT_DOCKROTX, IDC_EDIT_DOCKROTY, IDC_EDIT_DOCKROTZ, SB1->dock_definitions[CurrentSelection.idx].rot);
-	if (SB1->DockBeaconsActive) {
-		SB1->UpdateDockBeaconsPos();
-	}
+	//if (SB1->DockBeaconsActive) {
+	//	SB1->UpdateDockBeaconsPos();
+	//}
 	return;
 }
 
@@ -36,7 +37,9 @@ void DialogControl::DockNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) {
 			SB1->FindDirRot(newrm, dir, rot);
 			SB1->SetDockParams(SB1->dock_definitions[CurrentSelection.idx].dh,pos, dir, rot);
 			SB1->dock_definitions[CurrentSelection.idx].dir = dir;
+			SB1->dock_definitions[CurrentSelection.idx].antidir = dir*(-1);
 			SB1->dock_definitions[CurrentSelection.idx].rot = rot;
+			SB1->dock_definitions[CurrentSelection.idx].antirot = rot*(-1);
 			UpdateDockDialog(hWnd);
 			SendDlgItemMessage(hWnd, IDC_SPIN_DOCKROLL, UDM_SETPOS, 0, 0);
 		}
@@ -58,7 +61,9 @@ void DialogControl::DockNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) {
 			SB1->FindDirRot(newrm, dir, rot);
 			SB1->SetDockParams(SB1->dock_definitions[CurrentSelection.idx].dh, pos, dir, rot);
 			SB1->dock_definitions[CurrentSelection.idx].dir = dir;
+			SB1->dock_definitions[CurrentSelection.idx].antidir = dir*(-1);
 			SB1->dock_definitions[CurrentSelection.idx].rot = rot;
+			SB1->dock_definitions[CurrentSelection.idx].antirot = rot*(-1);
 			UpdateDockDialog(hWnd);
 			SendDlgItemMessage(hWnd, IDC_SPIN_DOCKYAW, UDM_SETPOS, 0, 0);
 		}
@@ -80,7 +85,9 @@ void DialogControl::DockNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) {
 			SB1->FindDirRot(newrm, dir, rot);
 			SB1->SetDockParams(SB1->dock_definitions[CurrentSelection.idx].dh, pos, dir, rot);
 			SB1->dock_definitions[CurrentSelection.idx].dir = dir;
+			SB1->dock_definitions[CurrentSelection.idx].antidir = dir*(-1);
 			SB1->dock_definitions[CurrentSelection.idx].rot = rot;
+			SB1->dock_definitions[CurrentSelection.idx].antirot = rot*(-1);
 			UpdateDockDialog(hWnd);
 			SendDlgItemMessage(hWnd, IDC_SPIN_DOCKPITCH, UDM_SETPOS, 0, 0);
 		}
@@ -99,7 +106,7 @@ void DialogControl::DockNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) {
 			SB1->dock_definitions[CurrentSelection.idx].pos = pos;
 			
 			UpdateDockDialog(hWnd);
-			SendDlgItemMessage(hWnd, IDC_SPIN_DOCKPITCH, UDM_SETPOS, 0, 0);
+			SendDlgItemMessage(hWnd, IDC_SPIN_DOCKPOSX, UDM_SETPOS, 0, 0);
 		}
 		break;
 	}
@@ -152,7 +159,7 @@ BOOL DialogControl::DockDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 	case WM_INITDIALOG:
 	{
 		EnableWindow(GetDlgItem(hWnd, IDC_EDIT_DOCKNAME), false);
-		if (SB1->DockBeaconsActive) {
+		if (SB1->DockExhaustsActive) {
 			SendDlgItemMessage(hWnd, IDC_CHECK_HIGHLIGHT_DOCK, BM_SETCHECK, BST_CHECKED, 0);
 		}
 		SendDlgItemMessage(hWnd, IDC_SPIN_DOCKPITCH, UDM_SETRANGE32, -10000, 10000);
@@ -168,10 +175,11 @@ BOOL DialogControl::DockDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 		switch (LOWORD(wParam)) {
 		case IDC_BUTTON_DELETEDOCKDEF:
 		{
-			SB1->DeleteDockDef(CurrentSelection.idx);
-			if (SB1->DockBeaconsActive) { SB1->DeleteDockBeacons();
+			
+			if (SB1->DockExhaustsActive) { SB1->DeleteDockExhausts();
 			SendDlgItemMessage(hWnd, IDC_CHECK_HIGHLIGHT_DOCK, BM_SETCHECK, BST_UNCHECKED, 0);
 			}
+			SB1->DeleteDockDef(CurrentSelection.idx);
 			UpdateTree(hDlg, DOCK,hrootDocks);
 			break;
 		}
@@ -181,7 +189,6 @@ BOOL DialogControl::DockDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 				SetDlgItemsTextVector3(hWnd, IDC_EDIT_DOCKPOSX, IDC_EDIT_DOCKPOSY, IDC_EDIT_DOCKPOSZ, SB1->vclip.pos);
 				SetDlgItemsTextVector3(hWnd, IDC_EDIT_DOCKDIRX, IDC_EDIT_DOCKDIRY, IDC_EDIT_DOCKDIRZ, SB1->vclip.dir);
 				SetDlgItemsTextVector3(hWnd, IDC_EDIT_DOCKROTX, IDC_EDIT_DOCKROTY, IDC_EDIT_DOCKROTZ, SB1->vclip.rot);
-
 			}
 			break;
 		}
@@ -211,6 +218,7 @@ BOOL DialogControl::DockDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 			dir = GetDlgItemsVector3(hWnd, IDC_EDIT_DOCKDIRX, IDC_EDIT_DOCKDIRY, IDC_EDIT_DOCKDIRZ);
 			normalise(dir);
 			SB1->dock_definitions[CurrentSelection.idx].dir = dir;
+			SB1->dock_definitions[CurrentSelection.idx].antidir = dir*(-1);
 			SB1->SetDockParams(SB1->dock_definitions[CurrentSelection.idx].dh, pos, dir, rot);
 			UpdateDockDialog(hWnd);
 			break;
@@ -226,6 +234,7 @@ BOOL DialogControl::DockDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 			rot = GetDlgItemsVector3(hWnd, IDC_EDIT_DOCKROTX, IDC_EDIT_DOCKROTY, IDC_EDIT_DOCKROTZ);
 			normalise(rot);
 			SB1->dock_definitions[CurrentSelection.idx].rot = rot;
+			SB1->dock_definitions[CurrentSelection.idx].antirot = rot*(-1);
 			SB1->SetDockParams(SB1->dock_definitions[CurrentSelection.idx].dh, pos, dir, rot);
 			UpdateDockDialog(hWnd);
 			break;
@@ -235,10 +244,10 @@ BOOL DialogControl::DockDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 			if (HIWORD(wParam) == BN_CLICKED) {
 				LRESULT getcheck = SendDlgItemMessage(hWnd, IDC_CHECK_HIGHLIGHT_DOCK, BM_GETCHECK, 0, 0);
 				if (getcheck == BST_CHECKED) {
-					SB1->CreateDockBeacons();
+					SB1->CreateDockExhausts();
 				}
 				else {
-					SB1->DeleteDockBeacons();
+					SB1->DeleteDockExhausts();
 				}
 			}
 			break;

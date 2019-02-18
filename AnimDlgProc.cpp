@@ -11,6 +11,7 @@
 
 void DialogControl::UpdateAnimDialog(HWND hWnd) {
 	UINT idx = CurrentSelection.idx;
+	if (idx >= AnimMng->GetAnimDefCount()) { return; }
 	char cbuf[256] = { '\0' };
 	sprintf(cbuf, "%.2f", AnimMng->GetAnimDefState(idx));
 	SetDlgItemText(hWnd, IDC_EDIT_ANIMDEFSTATE, (LPCSTR)cbuf);
@@ -199,7 +200,9 @@ BOOL DialogControl::AnimDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 		}
 		case IDC_BUTTON_ANIMDELETE:
 		{
+			TreeView_Select(GetDlgItem(hDlg, IDC_TREE1), hrootAnimations, 0);
 			AnimMng->DeleteAnimDef(idx);
+			
 			UpdateTree(hDlg, ANIMATIONS, 0);
 		//	UpdateAnimDialog(hWnd);
 			break;

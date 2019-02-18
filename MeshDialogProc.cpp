@@ -23,6 +23,7 @@ void DialogControl::DlgRotateMesh(UINT msh_idx, VECTOR3 axis, double angle) {
 void DialogControl::UpdateMeshDialog(HWND hWnd) {
 	if (CurrentSelection.Type != MESH) { return; }
 	UINT idx = CurrentSelection.idx;
+	if (idx >= SB1->MshMng->GetMeshCount()) { return; }
 	SetDlgItemText(hwnd_Mesh, IDC_EDIT_MESHNAME, (LPCSTR)SB1->MshMng->GetMeshDefName(idx).c_str());
 	SetDlgItemsTextVector3(hwnd_Mesh, IDC_EDIT_POSX, IDC_EDIT_POSY, IDC_EDIT_POSZ, SB1->MshMng->GetMeshDefPos(idx));
 	SetDlgItemsTextVector3(hwnd_Mesh, IDC_EDIT_DIRX, IDC_EDIT_DIRY, IDC_EDIT_DIRZ, SB1->MshMng->GetMeshDefDir(idx));
@@ -259,7 +260,6 @@ BOOL DialogControl::MeshDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 		{
 			bool test = SB1->MshMng->DeleteMeshDef(CurrentSelection.idx);
 			UpdateTree(hDlg, MESH,hrootMeshes);
-			//sprintf(oapiDebugString(), "%i", test);
 			break;
 		}
 		case IDC_BUTTON_LOADMESH:

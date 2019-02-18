@@ -31,6 +31,9 @@
     <ClInclude Include="Log.h">
       <Filter>Vessel</Filter>
     </ClInclude>
+    <ClInclude Include="AttachmentManager.h">
+      <Filter>Vessel</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\Orbitersdk\lib\orbiter.lib">
@@ -93,6 +96,12 @@
     </ClCompile>
     <ClCompile Include="Log.cpp">
       <Filter>Vessel</Filter>
+    </ClCompile>
+    <ClCompile Include="AttachmentManager.cpp">
+      <Filter>Vessel</Filter>
+    </ClCompile>
+    <ClCompile Include="AttDlgProc.cpp">
+      <Filter>Dialog</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

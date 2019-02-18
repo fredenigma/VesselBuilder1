@@ -257,7 +257,6 @@ void AnimCompDef::AssignToAnimation(UINT _anim_idx,VESSEL *v) {
 }
 //void AnimCompDef::SetParent(ANIMATIONCOMPONENT_HANDLE newParent_ach) {
 void AnimCompDef::SetParent(AnimCompDef* newparent_acd) {
-	oapiWriteLogV("SP1");
 	ANIMATIONCOMP* oldparent_ach = ((ANIMATIONCOMP*)ach)->parent;
 	if (oldparent_ach != NULL) {
 		int oldparent_nchildren = oldparent_ach->nchildren;
@@ -283,7 +282,6 @@ void AnimCompDef::SetParent(AnimCompDef* newparent_acd) {
 		oldparent_ach->children = oldparent_childrennew;
 
 	}
-	oapiWriteLogV("SP2");
 	//((ANIMATIONCOMP*)ach)->parent = (ANIMATIONCOMP*)newParent_ach;
 	ANIMATIONCOMP* newParent_ach;
 	if (newparent_acd == NULL) {
@@ -308,9 +306,7 @@ void AnimCompDef::SetParent(AnimCompDef* newparent_acd) {
 		}
 	}
 	
-	oapiWriteLogV("SP3");
 	parent_ach = newParent_ach;
-	oapiWriteLogV("SP4");
 	
 	return;
 }

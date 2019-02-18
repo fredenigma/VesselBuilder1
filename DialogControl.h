@@ -23,6 +23,7 @@ public:
 	BOOL DockDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL AnimDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL AnimCompDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	BOOL AttDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	map<HTREEITEM, TREE_ITEM_REF> TreeItem;
 	TREE_ITEM_REF CurrentSelection;
 
@@ -53,21 +54,24 @@ public:
 	void UpdateDockDialog(HWND hWnd);
 	void UpdateAnimDialog(HWND hWnd);
 	void UpdateAnimCompDialog(HWND hWnd);
+	void UpdateAttDialog(HWND hWnd);
 	HTREEITEM FindHtreeItem(ItemType type, UINT idx);
 	void InitAnimKeyCombo(HWND hWnd);
 	void UpdateTree(HWND hWnd,ItemType type,HTREEITEM select);
 	void InitOapiKeys();
 	int ComboFindItemData(HWND hWnd, DWORD Data);
 	int ComboFindItemData(HWND hWnd, void* data);
-	void UpdateAnimCompGroupLists(HWND hWnd, UINT meshdef_idx);
+	void UpdateAnimCompGroupLists(HWND hWnd, def_idx meshdef_idx);
 	bool IsUintInVector(UINT u, vector<UINT>v);
 	HWND hwnd_Mesh;
 	HWND hWnd_Dock;
 	HWND hWnd_Anim;
 	HWND hWnd_AnimComp;
+	HWND hWnd_Atts;
 	HWND GetDlg() { return hDlg; }
 	map<DWORD, string> oapi_keys;
 	AnimationManager *AnimMng;
+	AttachmentManager *AttMng;
 	bool AnimTesting;
 	double GetDlgItemDouble(HWND hWnd, int control_id);
 //	HTREEITEM ItemToSelect;

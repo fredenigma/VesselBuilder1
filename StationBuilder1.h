@@ -55,32 +55,19 @@ struct DCK_DEF {
 	VECTOR3 pos;
 	VECTOR3 dir;
 	VECTOR3 rot;
+	VECTOR3 antidir;
+	VECTOR3 antirot;
 	DOCKHANDLE dh;
 	DCK_DEF() {
 		pos = _V(0, 0, 0);
 		dir = _V(0, 0, 1);
+		antidir = _V(0, 0, -1);
 		rot = _V(0, 1, 0);
+		antirot = _V(0, -1, 0);
 		dh = NULL;
 	}
 };
-struct ATT_DEF {
-	bool toparent;
-	VECTOR3 pos;
-	VECTOR3 dir;
-	VECTOR3 rot;
-	ATTACHMENTHANDLE ah;
-	string id;
-	bool loose;
-	ATT_DEF() {
-		pos = _V(0, 0, 0);
-		dir = _V(0, 0, 1);
-		rot = _V(0, 1, 0);
-		ah = NULL;
-		loose = false;
-		toparent = false;
-		id.clear();
-	}
-};
+
 
 struct BEACONSPOTS {
 	VECTOR3 pos;
@@ -94,6 +81,7 @@ class DialogControl;
 class FollowMeDlg;
 class AnimCompDef;
 class MeshManager;
+class AttachmentManager;
 class AnimationManager;
 class StationBuilder1 :public VESSEL4{
 public:
@@ -114,11 +102,12 @@ StationBuilder1(OBJHANDLE hObj,int fmodel);
  void CreateDocks();
 
  MeshManager* MshMng;
+ AttachmentManager* AttMng;
  AnimationManager* AnimMng;
  VISHANDLE visual;
  
  vector <DCK_DEF> dock_definitions;
- vector <ATT_DEF> att_definitions;
+// vector <ATT_DEF> att_definitions;
  //void WriteUniqueMeshFile(string filename);
  void WriteCfgFile(string filename);
  void WriteBackupFile();
@@ -169,22 +158,30 @@ StationBuilder1(OBJHANDLE hObj,int fmodel);
  void AddDockDef();
  void AddDockDef(DCK_DEF dd);
  bool DeleteDockDef(int idx);
- void AddAttDef();
- void AddAttDef(ATT_DEF ad);
- bool DeleteAttDef(int idx);
+ //void AddAttDef();
+ //void AddAttDef(ATT_DEF ad);
+ //bool DeleteAttDef(int idx);
 
  
- BEACONSPOTS *dockbcn;
- void CreateDockBeacons();
- void DeleteDockBeacons();
- void UpdateDockBeaconsPos();
- bool DockBeaconsActive;
- VECTOR3 colwhite;
- VECTOR3 colblue;
- VECTOR3 colgreen;
- VECTOR3 colred;
+// BEACONSPOTS *dockbcn;
+// void CreateDockBeacons();
+// void DeleteDockBeacons();
+// void UpdateDockBeaconsPos();
+// bool DockBeaconsActive;
+// VECTOR3 colwhite;
+// VECTOR3 colblue;
+// VECTOR3 colgreen;
+// VECTOR3 colred;
+ bool DockExhaustsActive;
+ vector<UINT> DockExhaustsID;
+ SURFHANDLE greenL, redL, blueL, whiteL;
+ void CreateDockExhausts();
+ void DeleteDockExhausts();
+ bool AttExhaustsActive;
+ vector<UINT> AttExhaustsID;
+ void CreateAttExhausts();
+ void DeleteAttExhausts();
  
-
  
  bool UsingD3D9();
  bool wD3D9;

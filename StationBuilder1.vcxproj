@@ -135,6 +135,7 @@
     <ClInclude Include="AnimationManager.h" />
     <ClInclude Include="AnimCompDef.h" />
     <ClInclude Include="AnimDef.h" />
+    <ClInclude Include="AttachmentManager.h" />
     <ClInclude Include="DialogControl.h" />
     <ClInclude Include="FollowMeDlg.h" />
     <ClInclude Include="Log.h" />
@@ -148,6 +149,8 @@
     <ClCompile Include="AnimCompDlgProc.cpp" />
     <ClCompile Include="AnimDef.cpp" />
     <ClCompile Include="AnimDlgProc.cpp" />
+    <ClCompile Include="AttachmentManager.cpp" />
+    <ClCompile Include="AttDlgProc.cpp" />
     <ClCompile Include="DialogControl.cpp" />
     <ClCompile Include="DockDlgProc.cpp" />
     <ClCompile Include="FollowMeDlg.cpp" />

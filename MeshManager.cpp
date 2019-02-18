@@ -497,6 +497,8 @@ UINT MeshManager::GetMeshCount() {
 	return nMeshes;
 }
 void MeshManager::WriteCfg(FILEHANDLE fh) {
+	oapiWriteLine(fh, ";<-------------------------MESHES DEFINITIONS------------------------->");
+	oapiWriteLine(fh, " ");
 	char cbuf[256] = { '\0' };
 	char cbuf2[256] = { '\0' };
 	for (UINT i = 0; i < msh_defs.size(); i++) {

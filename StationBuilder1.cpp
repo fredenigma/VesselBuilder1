@@ -16,6 +16,7 @@
 #include "MeshManager.h"
 #include "AnimDef.h"
 #include "AnimCompDef.h"
+#include "AttachmentManager.h"
 #include "AnimationManager.h"
 
 //#define _CRT_SECURE_NO_WARNINGS
@@ -39,10 +40,10 @@ StationBuilder1::StationBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel)
 
 	//mesh_definitions.clear();
 	MshMng = new MeshManager(this);
-
+	AttMng = new AttachmentManager(this);
 	AnimMng = new AnimationManager(this);
 	dock_definitions.clear();
-	att_definitions.clear();
+	//att_definitions.clear();
 	
 	cfgfilename.clear();
 //	SB1 = this;
@@ -63,14 +64,16 @@ StationBuilder1::StationBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel)
 	//HighLightColor = HIGHLIGHTCOLORRED;
 	
 	vclip = V_CLIPBOARD();
-	colwhite = _V(1, 1, 1);
-	colblue = _V(0, 0, 1);
-	colgreen = _V(0, 1, 0);
-	colred = _V(1, 0, 0);
-	dockbcn = NULL;
-	DockBeaconsActive = false;
-	
-	
+	//colwhite = _V(1, 1, 1);
+	//colblue = _V(0, 0, 1);
+	//colgreen = _V(0, 1, 0);
+	//colred = _V(1, 0, 0);
+	//dockbcn = NULL;
+	//DockBeaconsActive = false;
+	DockExhaustsActive = false;
+	DockExhaustsID.clear();
+	AttExhaustsActive = false;
+	AttExhaustsID.clear();
 	//animcomps_definanitions.clear();
 	//animations_definitions.clear();
 	SBLog("Class Initialize");
@@ -84,6 +87,8 @@ StationBuilder1::~StationBuilder1(){
 	FMDlg = NULL;
 	delete MshMng;
 	MshMng = NULL;
+	delete AttMng;
+	AttMng = NULL;
 	delete AnimMng;
 	AnimMng = NULL;
 	CloseSBLog();
@@ -166,6 +171,10 @@ void StationBuilder1::CreateDocks() {
 void StationBuilder1::clbkSetClassCaps(FILEHANDLE cfg){
 	SetEmptyMass(1000);
 	SetSize(10);
+	redL = oapiRegisterExhaustTexture("red_L");
+	greenL = oapiRegisterExhaustTexture("green_L");
+	blueL = oapiRegisterExhaustTexture("blue_L");
+
 	SBLog("ClassName:%s", GetClassName());
 	
 	
@@ -606,12 +615,14 @@ void StationBuilder1::ParseCfgFile(FILEHANDLE fh) {
 		dd.pos = dpos;
 		dd.dir = ddir;
 		dd.rot = drot;
+		dd.antidir = ddir*(-1);
+		dd.antirot = drot*(-1);
 		dock_definitions.push_back(dd);
 		dock_counter++;
 		sprintf_s(cbuf, "DOCK_%i_POS", dock_counter);
 	}
 	SBLog("Found %i Dock Definitions", dock_definitions.size());
-
+	AttMng->ParseCfgFile(fh);
 	AnimMng->ParseCfgFile(fh);
 	
 
@@ -626,8 +637,7 @@ void StationBuilder1::WriteCfgFile(string filename) {
 	oapiWriteLine(fh, " ");
 	sprintf_s(cbuf, ";CONFIGURATION FILE FOR %s",GetName());
 	oapiWriteLine(fh, cbuf);
-	oapiWriteLine(fh, ";<-------------------------MESHES DEFINITIONS------------------------->");
-	oapiWriteLine(fh, " ");
+	
 
 	
 	MshMng->WriteCfg(fh);
@@ -644,9 +654,7 @@ void StationBuilder1::WriteCfgFile(string filename) {
 		oapiWriteItem_vec(fh, cbuf, dock_definitions[i].rot);
 		oapiWriteLine(fh, " ");
 	}
-	oapiWriteLine(fh, " ");
-	oapiWriteLine(fh, ";<-------------------------ANIMATIONS DEFINITIONS------------------------->");
-	oapiWriteLine(fh, " ");
+	AttMng->WriteCfg(fh);
 	AnimMng->WriteCfg(fh);
 
 	oapiCloseFile(fh, FILE_OUT);
@@ -771,7 +779,7 @@ bool StationBuilder1::DeleteDockDef(int idx) {
 	dock_definitions.erase(dock_definitions.begin() + idx);
 	return true;
 }
-void StationBuilder1::AddAttDef() {
+/*void StationBuilder1::AddAttDef() {
 	ATT_DEF ad = ATT_DEF();
 	ad.ah = CreateAttachment(ad.toparent, ad.pos, ad.dir, ad.rot, ad.id.c_str(), ad.loose);
 	att_definitions.push_back(ad);
@@ -790,8 +798,68 @@ bool StationBuilder1::DeleteAttDef(int idx) {
 	DelAttachment(att_definitions[idx].ah);
 	att_definitions.erase(att_definitions.begin() + idx);
 	return true;
+}*/
+
+void StationBuilder1::CreateDockExhausts() {
+	EXHAUSTSPEC es;
+	double level = 1;
+	for (UINT i = 0; i < dock_definitions.size(); i++) {
+		es.flags = EXHAUST_CONSTANTLEVEL;
+		es.th = NULL;
+		es.tex = greenL;
+		es.lsize = 100;
+		es.wsize = 0.002;
+		es.modulate = 0;
+		es.lofs = 0;
+		es.level = &level;
+		es.lpos = &dock_definitions[i].pos;
+		es.ldir = &dock_definitions[i].antidir;
+		UINT idx = AddExhaust(&es);
+		DockExhaustsID.push_back(idx);
+		es.tex = blueL;
+		es.ldir = &dock_definitions[i].antirot;
+		idx = AddExhaust(&es);
+		DockExhaustsID.push_back(idx);
+	}
+	return;
+}
+void StationBuilder1::DeleteDockExhausts() {
+	for (UINT i = 0; i < DockExhaustsID.size(); i++) {
+		DelExhaust(DockExhaustsID[i]);
+	}
+	return;
+}
+void StationBuilder1::CreateAttExhausts() {
+	EXHAUSTSPEC es;
+	double level = 1;
+	for (UINT i = 0; i < AttMng->GetAttCount(); i++) {
+		es.flags = EXHAUST_CONSTANTLEVEL;
+		es.th = NULL;
+		es.tex = greenL;
+		es.lsize = 100;
+		es.wsize = 0.002;
+		es.modulate = 0;
+		es.lofs = 0;
+		es.level = &level;
+		es.lpos = &AttMng->att_defs[i].pos;
+		es.ldir = &AttMng->att_defs[i].antidir;
+		UINT idx = AddExhaust(&es);
+		AttExhaustsID.push_back(idx);
+		es.tex = blueL;
+		es.ldir = &AttMng->att_defs[i].antirot;
+		idx = AddExhaust(&es);
+		AttExhaustsID.push_back(idx);
+	}
+	return;
+}
+void StationBuilder1::DeleteAttExhausts() {
+	for (UINT i = 0; i < AttExhaustsID.size(); i++) {
+		DelExhaust(AttExhaustsID[i]);
+	}
+	return;
 }
 
+/*
 void StationBuilder1::CreateDockBeacons() {
 	UINT ndocks = dock_definitions.size();
 	dockbcn = new BEACONSPOTS[ndocks * 5];
@@ -870,7 +938,7 @@ void StationBuilder1::UpdateDockBeaconsPos() {
 	}
 	return;
 }
-
+*/
 
 bool StationBuilder1::UsingD3D9() {
 //	oapiWriteLogV("SB1::UsingD3D9:%i", wD3D9);
