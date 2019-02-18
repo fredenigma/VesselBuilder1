@@ -5,23 +5,11 @@
 
 
 AnimCompDef::AnimCompDef() {
-	Reset();
-}
-AnimCompDef::~AnimCompDef() {
-	if (pgrps) {
-		delete[] pgrps;
-	}
-	if (mgt) {
-		delete mgt;
-	}
-	return;
-}
-void AnimCompDef::Reset() {
 	state0 = 0;
 	state1 = 1;
 	name.clear();
-	prefix.clear();
-	fullname.clear();
+	//	prefix.clear();
+	//	fullname.clear();
 	grps.clear();
 	pgrps = NULL;
 	ref = _V(0, 0, 0);
@@ -31,13 +19,40 @@ void AnimCompDef::Reset() {
 	angle = 0;
 	ach = NULL;
 	parent_ach = NULL;
-//	parent_comp_idx = (UINT)-1;
+	//	parent_comp_idx = (UINT)-1;
 	anim_idx = (UINT)-1;
-//	comp_idx = (UINT)-1;
-//	seq_idx = (UINT)-1;
-	if (mgt) {
-		delete mgt;
+	//	comp_idx = (UINT)-1;
+	//	seq_idx = (UINT)-1;
+	mgt = NULL;
+	ngrps = -1;
+	mesh = 0;
+	valid = true;
+	ParentACD = NULL;
+	ChildrenACD.clear();
+}
+AnimCompDef::~AnimCompDef() {
+	if (pgrps) {
+		delete[] pgrps;
 	}
+	if (mgt) {
+//		delete mgt;
+	}
+	return;
+}
+void AnimCompDef::Reset() {
+	state0 = 0;
+	state1 = 1;
+	name.clear();
+	grps.clear();
+	pgrps = NULL;
+	ref = _V(0, 0, 0);
+	shift = _V(0, 0, 0);
+	scale = _V(1, 1, 1);
+	axis = _V(0, 0, 1);
+	angle = 0;
+	ach = NULL;
+	parent_ach = NULL;
+	anim_idx = (UINT)-1;
 	mgt = NULL;
 	ngrps = -1;
 	mesh = 0;
@@ -50,8 +65,6 @@ void AnimCompDef::Init(MGROUP_TRANSFORM::TYPE type) {
 	state0 = 0;
 	state1 = 1;
 	name.clear();
-	prefix.clear();
-	fullname.clear();
 	grps.clear();
 	pgrps = NULL;
 	ref = _V(0, 0, 0);
@@ -61,10 +74,7 @@ void AnimCompDef::Init(MGROUP_TRANSFORM::TYPE type) {
 	angle = 0;
 	ach = NULL;
 	parent_ach = NULL;
-//	parent_comp_idx = (UINT)-1;
 	anim_idx = (UINT)-1;
-//	comp_idx = (UINT)-1;
-//	seq_idx = (UINT)-1;
 	mgt = NULL;
 	ngrps = -1;
 	mesh = 0;
@@ -132,22 +142,23 @@ double AnimCompDef::GetAngle() { return angle; }
 
 void AnimCompDef::SetName(string newname) {
 	name = newname;
-	fullname = prefix + newname;
+	//fullname = prefix + newname;
 	return;
 }
 string AnimCompDef::GetName() { return name; }
-string AnimCompDef::GetFullName() { return fullname; }
+//string AnimCompDef::GetFullName() { return fullname; }
 
-void AnimCompDef::SetPrefix(string newprefix) {
+/*void AnimCompDef::SetPrefix(string newprefix) {
 	prefix = newprefix;
 	fullname = newprefix + name;
 	return;
-}
-string AnimCompDef::GetPrefix() { return prefix; }
+}*/
+//string AnimCompDef::GetPrefix() { return prefix; }
 
 void AnimCompDef::SetMesh(UINT msh_idx) {
 	mesh = msh_idx;
-	switch (mgt->Type()) {
+	((ANIMATIONCOMP*)ach)->trans->mesh = msh_idx;
+	/*switch (mgt->Type()) {
 	case MGROUP_TRANSFORM::ROTATE:
 	{
 		((MGROUP_ROTATE*)mgt)->mesh = msh_idx;
@@ -163,30 +174,65 @@ void AnimCompDef::SetMesh(UINT msh_idx) {
 		((MGROUP_SCALE*)mgt)->mesh = msh_idx;
 		break;
 	}
-	}
+	}*/
 	return;
 }
 UINT AnimCompDef::GetMesh() { return mesh; }
+void AnimCompDef::ResetGroups() {
+	grps.clear();
+	if (pgrps) {
+		delete[] pgrps;
+	}
+	pgrps = NULL;
+	ngrps = 0;
+	return;
+}
+void AnimCompDef::RemakeGroups() {
+	ngrps = grps.size();
+	if (ngrps > 0) {
+		if (pgrps) {
+			delete[] pgrps;
+		}
+		pgrps = new UINT[ngrps];
+		for (UINT i = 0; i < grps.size(); i++) {
+			pgrps[i] = grps[i];
+		}
+	}
+	else {
+		if (pgrps) {
+			delete[] pgrps;
+		}
+		pgrps = NULL;
+	}
+	
+	((ANIMATIONCOMP*)ach)->trans->grp = pgrps;
+	((ANIMATIONCOMP*)ach)->trans->ngrp = ngrps;
 
+	return;
+}
 void AnimCompDef::AddGroups(vector<UINT> addgrps) {
 	for (UINT i = 0; i < addgrps.size(); i++) {
 		grps.push_back(addgrps[i]);
 	}
-	ngrps = grps.size();
-	if (pgrps) {
-		delete[] pgrps;
-	}
-	pgrps = new UINT[ngrps];
-	for (UINT i = 0; i < grps.size(); i++) {
-		pgrps[i] = grps[i];
-	}
-	((ANIMATIONCOMP*)ach)->trans->grp = pgrps;
-	((ANIMATIONCOMP*)ach)->trans->ngrp = ngrps;
-	
+	RemakeGroups();
 	
 	return;
 }
-
+void AnimCompDef::RemoveGroups(vector<UINT>remgrps) {
+	for (UINT i = 0; i < remgrps.size(); i++) {
+		vector<UINT>::iterator it = grps.begin();
+		while (it != grps.end()) {
+			if ((*it) == remgrps[i]) {
+				it = grps.erase(it);
+			}
+			else {
+				++it;
+			}
+		}
+	}
+	RemakeGroups();
+	return;
+}
 vector<UINT> AnimCompDef::GetGroups() { return grps; }
 int AnimCompDef::GetNgrps() { return ngrps; }
 
@@ -205,14 +251,67 @@ void AnimCompDef::GetScaleParams(VECTOR3 &_ref, VECTOR3 &_scale) {
 	return;
 }
 void AnimCompDef::AssignToAnimation(UINT _anim_idx,VESSEL *v) {
-	ach = v->AddAnimationComponent(_anim_idx, state0, state1, mgt, parent_ach);
+	ach = v->AddAnimationComponent(_anim_idx, state0, state1, mgt, NULL);// parent_ach);
 	anim_idx = _anim_idx;
 	return;
 }
-void AnimCompDef::SetParent(ANIMATIONCOMPONENT_HANDLE ach) {
-	if (ach == NULL) { return; }
-	((ANIMATIONCOMP*)ach)->parent = (ANIMATIONCOMP*)ach;
-	parent_ach = ach;
+//void AnimCompDef::SetParent(ANIMATIONCOMPONENT_HANDLE newParent_ach) {
+void AnimCompDef::SetParent(AnimCompDef* newparent_acd) {
+	oapiWriteLogV("SP1");
+	ANIMATIONCOMP* oldparent_ach = ((ANIMATIONCOMP*)ach)->parent;
+	if (oldparent_ach != NULL) {
+		int oldparent_nchildren = oldparent_ach->nchildren;
+		UINT oldme_index = 0;
+		for (UINT i = 0; i < oldparent_nchildren; i++) {
+			if (oldparent_ach->children[i] == (ANIMATIONCOMP*)ach) {
+				oldme_index = i;
+			}
+		}
+		ANIMATIONCOMP** oldparent_childrennew = new ANIMATIONCOMP*[oldparent_nchildren - 1];
+		for (UINT j = 0; j < oldparent_nchildren - 1; j++) {
+			if (j < oldme_index) {
+				oldparent_childrennew[j] = oldparent_ach->children[j];
+			}
+			else {
+				oldparent_childrennew[j] = oldparent_ach->children[j-1];
+			}	
+		}
+		oldparent_ach->nchildren = oldparent_nchildren - 1;
+		if (oldparent_ach->children) {
+			delete[] oldparent_ach->children;
+		}
+		oldparent_ach->children = oldparent_childrennew;
+
+	}
+	oapiWriteLogV("SP2");
+	//((ANIMATIONCOMP*)ach)->parent = (ANIMATIONCOMP*)newParent_ach;
+	ANIMATIONCOMP* newParent_ach;
+	if (newparent_acd == NULL) {
+		((ANIMATIONCOMP*)ach)->parent = NULL;
+		newParent_ach = NULL;
+	}
+	else {
+		newParent_ach = (ANIMATIONCOMP*)newparent_acd->ach;
+		((ANIMATIONCOMP*)ach)->parent = (ANIMATIONCOMP*)newparent_acd->ach;
+		if (newParent_ach != NULL) {
+			int newparent_nchildren = ((ANIMATIONCOMP*)newParent_ach)->nchildren;
+			ANIMATIONCOMP** newparent_children = new ANIMATIONCOMP*[newparent_nchildren + 1];
+			for (UINT k = 0; k < newparent_nchildren; k++) {
+				newparent_children[k] = ((ANIMATIONCOMP*)newParent_ach)->children[k];
+			}
+			newparent_children[newparent_nchildren] = (ANIMATIONCOMP*)ach;
+			if (((ANIMATIONCOMP*)newParent_ach)->children) {
+				delete[]((ANIMATIONCOMP*)newParent_ach)->children;
+			}
+			((ANIMATIONCOMP*)newParent_ach)->children = newparent_children;
+			((ANIMATIONCOMP*)newParent_ach)->nchildren = newparent_nchildren + 1;
+		}
+	}
+	
+	oapiWriteLogV("SP3");
+	parent_ach = newParent_ach;
+	oapiWriteLogV("SP4");
+	
 	return;
 }
 
@@ -235,9 +334,7 @@ MGROUP_TRANSFORM::TYPE AnimCompDef::GetType() {
 ANIMATIONCOMPONENT_HANDLE AnimCompDef::GetACH() {
 	return ach;
 }
-void AnimCompDef::RemoveGroups(vector<UINT>remgrps) {
-	return;
-}
+
 bool AnimCompDef::IsValid() {
 	return valid;
 }

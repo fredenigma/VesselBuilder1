@@ -1,32 +1,54 @@
 #include "StationBuilder1.h"
 #include "DialogControl.h"
 #include "MeshManager.h"
+#include "gcAPI.h"
+
+//GLOBALS
 
 
-MeshManager *MM;
-void LoadMeshClbk(MESHHANDLE msh_h, bool firstload) {
+bool WD3D9 = false;// MM->UsingD3D9();
+MATRIX3 g_RM = _M(1, 0, 0, 0, 1, 0, 0, 0, 1);
+
+void RotateMeshLoading(MESHHANDLE mesh, MATRIX3 rm) {
+	int k = oapiMeshGroupCount(mesh);
+	if (k <= 0) { return; }
 	
-	
-	//if (firstload) {
-	if (firstload) {
-		MM->RotateMeshLoading(msh_h, MM->msh_defs[MM->loading_msh_counter].rm);
-	}
-	else {
-		MM->RotateMeshLoading(msh_h, MM->msh_defs[MM->loading_msh_counter].rm*2);
-	}
-		
-		if (firstload) {
-			MM->LoadingRearrangeMaterials(msh_h);
+
+	for (int i = 0; i<k; i++) {
+		GROUPEDITSPEC grpspc;
+		grpspc.flags = GRPEDIT_VTXCRD | GRPEDIT_VTXNML;
+
+		MESHGROUP *m = oapiMeshGroup(mesh, i);
+		DWORD l = m->nVtx;
+		grpspc.nVtx = l;
+		grpspc.Vtx = new NTVERTEX[grpspc.nVtx];
+		grpspc.vIdx = new WORD[grpspc.nVtx];
+		for (DWORD j = 0; j<l; j++)
+		{
+			VECTOR3 p = _V(m->Vtx[j].x, m->Vtx[j].y, m->Vtx[j].z);
+			VECTOR3 n = _V(m->Vtx[j].nx, m->Vtx[j].ny, m->Vtx[j].nz);
+			p = mul(rm, (p));
+			n = mul(rm, (n));
+
+			grpspc.Vtx[j].x = p.x;
+			grpspc.Vtx[j].y = p.y;
+			grpspc.Vtx[j].z = p.z;
+			grpspc.Vtx[j].nx = n.x;
+			grpspc.Vtx[j].ny = n.y;
+			grpspc.Vtx[j].nz = n.z;
+			grpspc.vIdx[j] = j;
+
 		}
-		
-	//}	
-	return;
+		oapiEditMeshGroup(mesh, i, &grpspc);
+		delete[] grpspc.Vtx;
+		delete[] grpspc.vIdx;
+	}
+
 }
-
-
-void MeshManager::LoadingRearrangeMaterials(MESHHANDLE msh) {
-	if (UsingD3D9()) { //If D3D9
-		defaultMaterial = new MATERIAL;
+void LoadingRearrangeMaterials(MESHHANDLE msh) {
+	//oapiWriteLogV("D3D9 %i", WD3D9);
+	if (WD3D9) { //If D3D9
+		MATERIAL *defaultMaterial = new MATERIAL;
 		COLOUR4 colwhite = { 1,1,1,1 };
 		COLOUR4 colblack = { 0,0,0,1 };
 		defaultMaterial->diffuse = colwhite;
@@ -39,48 +61,47 @@ void MeshManager::LoadingRearrangeMaterials(MESHHANDLE msh) {
 
 		for (DWORD i = 0; i < groups_count; i++) {		//for every group			
 			MESHGROUP *mg = oapiMeshGroup(msh, i);		// get the group
-			DWORD matidx = mg->MtrlIdx;					// get its original material index;
-			
+			int matidx = mg->MtrlIdx;					// get its original material index;
 			MATERIAL *mat;
-			if (matidx == 0) {
+			if (matidx <= 0) {
 				mat = defaultMaterial;
 			}
 			else {
 				mat = oapiMeshMaterial(msh, matidx);		//get the group material
 			}
-			
+
 			DWORD newmatidx = oapiAddMaterial(msh, mat);		//add a copy of the material at the bootm
-			
 			mg->MtrlIdx = newmatidx;							//set the group material to the copy just added
-			delete defaultMaterial;
+			
 		}
+		delete defaultMaterial;
 		for (DWORD i = 1; i < initial_material_count; i++) {	//delete all the initial materials since now all the groups point to the copies
-		//	oapiDeleteMaterial(msh, i);
+																//	oapiDeleteMaterial(msh, i);
 		}
 	}
 	else {	//if NOT D3D9
 		COLOUR4 colred = { 1,0,0,1 };	//Red Color
 		COLOUR4 colgreen = { 0,1,0,1 };	//Green Color
 		COLOUR4 colblue = { 0,0,1,1 };	//Blue Color
-		matred = new MATERIAL;			//Create the tree new materials 
+		MATERIAL *matred = new MATERIAL;			//Create the tree new materials 
 		matred->ambient = colred;
 		matred->diffuse = colred;
 		matred->emissive = colred;
 		matred->specular = colred;
 		matred->power = 0;
-		matgreen = new MATERIAL;
+		MATERIAL *matgreen = new MATERIAL;
 		matgreen->ambient = colgreen;
 		matgreen->diffuse = colgreen;
 		matgreen->emissive = colgreen;
 		matgreen->specular = colgreen;
 		matgreen->power = 0;
-		matblue = new MATERIAL;
+		MATERIAL *matblue = new MATERIAL;
 		matblue->ambient = colblue;
 		matblue->diffuse = colblue;
 		matblue->emissive = colblue;
 		matblue->specular = colblue;
 		matblue->power = 0;
-		
+
 		DWORD green_idx = oapiAddMaterial(msh, matgreen);	//Add the new materials to the mesh
 		DWORD blue_idx = oapiAddMaterial(msh, matblue);
 		DWORD red_idx = oapiAddMaterial(msh, matred);
@@ -88,27 +109,46 @@ void MeshManager::LoadingRearrangeMaterials(MESHHANDLE msh) {
 		delete matgreen;
 		delete matblue;
 	}
-	
+
 	return;
 }
+void LoadMeshClbk(MESHHANDLE msh_h, bool firstload) {
+	WD3D9 = gcEnabled();
+
+	if (firstload) {
+		RotateMeshLoading(msh_h, g_RM);
+		LoadingRearrangeMaterials(msh_h);
+	}
+	return;
+}
+
+
+
+
+
+
+
 MeshManager::MeshManager(StationBuilder1 *_SB1) {
 	SB1 = _SB1;
 	msh_defs.clear();
-	loading_msh_counter = 0;
-	MM = this;
+	//loading_msh_counter = 0;
+	//MM = this;
 	HighLightColor = HIGHLIGHTCOLORRED;
 	md_restore.clear();
 	nMeshes = 0;
+	//MM = this;
+//	WD3D9 = UsingD3D9();
 	return;
 }
 MeshManager::~MeshManager(){
 	for (UINT i = 0; i < msh_defs.size(); i++) {
 		if (msh_defs[i].HighlightedGrps) {
 			delete[] msh_defs[i].HighlightedGrps;
+			msh_defs[i].HighlightedGrps = NULL;
 		}
 	}
 	SB1 = NULL;
-	MM = NULL;
+//	MM = NULL;
 	
 }
 void MeshManager::AddMeshDef() {
@@ -143,10 +183,19 @@ void MeshManager::LoadMeshes() {
 	//	msh_defs[i].template_msh_h = oapiLoadMeshGlobal(msh_defs[i].meshname.c_str(),LoadMeshClbk);
 	//}
 	for (UINT i = 0; i < msh_defs.size(); i++) {
-		loading_msh_counter = i;
+		//loading_msh_counter = i;
+		g_RM = msh_defs[i].rm;
 		msh_defs[i].msh_h = oapiLoadMeshGlobal(msh_defs[i].meshname.c_str(), LoadMeshClbk);
+		msh_defs[i].ngrps = oapiMeshGroupCount(msh_defs[i].msh_h);
 		msh_defs[i].msh_idx = SB1->AddMesh(msh_defs[i].msh_h, &msh_defs[i].ofs);
 		msh_defs[i].template_msh_h = SB1->CopyMeshFromTemplate(msh_defs[i].msh_idx);
+		if (msh_defs[i].ngrps > 0) {
+			msh_defs[i].HighlightedGrps = new bool[msh_defs[i].ngrps];
+			for (int j = 0; j < msh_defs[i].ngrps; j++) {
+				msh_defs[i].HighlightedGrps[j] = false;
+			}
+		}
+		
 		if (msh_defs[i].msh_h != NULL) {
 			SBLog("Loaded Mesh: %s @:%.3f %.3f %.3f", msh_defs[i].meshname.c_str(), msh_defs[i].ofs.x, msh_defs[i].ofs.y, msh_defs[i].ofs.z);
 		}
@@ -155,53 +204,10 @@ void MeshManager::LoadMeshes() {
 		}
 	}
 
-	SBLog("Loading of %i Meshes Complete", loading_msh_counter + 1);
+	SBLog("Loading of %i Meshes Complete", msh_defs.size());
 	return;
 }
 
-void MeshManager::RotateMeshLoading(MESHHANDLE mesh, MATRIX3 rm) {
-	int k = oapiMeshGroupCount(mesh);
-	if (k <= 0) { return; }
-	msh_defs[loading_msh_counter].ngrps = k;
-	if (msh_defs[loading_msh_counter].HighlightedGrps) {
-		delete[] msh_defs[loading_msh_counter].HighlightedGrps;
-	}
-	msh_defs[loading_msh_counter].HighlightedGrps = new bool[k];
-	for (int i = 0; i < k; i++) {
-		msh_defs[loading_msh_counter].HighlightedGrps[i] = false;
-	}
-
-	for (int i = 0; i<k; i++) {
-		GROUPEDITSPEC grpspc;
-		grpspc.flags = GRPEDIT_VTXCRD | GRPEDIT_VTXNML;
-
-		MESHGROUP *m = oapiMeshGroup(mesh, i);
-		DWORD l = m->nVtx;
-		grpspc.nVtx = l;
-		grpspc.Vtx = new NTVERTEX[grpspc.nVtx];
-		grpspc.vIdx = new WORD[grpspc.nVtx];
-		for (DWORD j = 0; j<l; j++)
-		{
-			VECTOR3 p = _V(m->Vtx[j].x, m->Vtx[j].y, m->Vtx[j].z);
-			VECTOR3 n = _V(m->Vtx[j].nx, m->Vtx[j].ny, m->Vtx[j].nz);
-			p = mul(rm, (p));
-			n = mul(rm, (n));
-
-			grpspc.Vtx[j].x = p.x;
-			grpspc.Vtx[j].y = p.y;
-			grpspc.Vtx[j].z = p.z;
-			grpspc.Vtx[j].nx = n.x;
-			grpspc.Vtx[j].ny = n.y;
-			grpspc.Vtx[j].nz = n.z;
-			grpspc.vIdx[j] = j;
-
-		}
-		oapiEditMeshGroup(mesh, i, &grpspc);
-		delete[] grpspc.Vtx;
-		delete[] grpspc.vIdx;
-	}
-	
-}
 void MeshManager::RotateMeshFromTemplate(msh_idx msh_idx, MATRIX3 rm) { //CORRETTO MA CON IL CLBKLOADFUNCTION IL TEMPLATE E RUOTATO E NON SI PUO USARE
 
 	MESHHANDLE msh_h = SB1->GetMeshTemplate(msh_idx);
@@ -370,6 +376,7 @@ bool MeshManager::DeleteMeshDef(def_idx idx) {
 	SB1->DelMesh(msh_defs[idx].msh_idx, false);
 	if (msh_defs[idx].HighlightedGrps) {
 		delete[] msh_defs[idx].HighlightedGrps;
+		msh_defs[idx].HighlightedGrps = NULL;
 	}
 	msh_defs.erase(msh_defs.begin() + idx);
 	nMeshes = msh_defs.size();
@@ -383,8 +390,25 @@ bool MeshManager::ChangeMeshFile(def_idx idx, string newmeshname) {
 
 	msh_defs[idx].meshname = newmeshname;
 	msh_defs[idx].msh_h = NULL;
-	loading_msh_counter = idx;
+	//loading_msh_counter = idx;
+	//oapiWriteLogV("loadingmc:%i idx:%i", loading_msh_counter, idx);
+	g_RM = msh_defs[idx].rm;
 	msh_defs[idx].msh_h = oapiLoadMeshGlobal(newmeshname.c_str(), LoadMeshClbk);
+	msh_defs[idx].ngrps = oapiMeshGroupCount(msh_defs[idx].msh_h);
+
+
+	if (msh_defs[idx].HighlightedGrps) {
+		delete[] msh_defs[idx].HighlightedGrps;
+		msh_defs[idx].HighlightedGrps = NULL;
+	}
+	if (msh_defs[idx].ngrps > 0) {
+		msh_defs[idx].HighlightedGrps = new bool[msh_defs[idx].ngrps];
+		for (int i = 0; i < msh_defs[idx].ngrps; i++) {
+			msh_defs[idx].HighlightedGrps[i] = false;
+		}
+	}
+	
+
 
 	if (msh_defs[idx].msh_h == NULL) {
 		SBLog("WARNING! Mesh File Not Valid!");
@@ -560,4 +584,8 @@ void MeshManager::ResetMeshGroupHighlights(msh_idx msh_idx) {
 			HighlightMeshGroup(msh_idx, i, false);
 		}
 	}
+}
+
+msh_idx MeshManager::GetMeshIdx(def_idx d_idx) {
+	return msh_defs[d_idx].msh_idx;
 }

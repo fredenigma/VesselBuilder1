@@ -160,14 +160,18 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		for (UINT i = 0; i < SB1->MshMng->GetMeshCount(); i++) {
 			insertstruct.hParent = hrootMeshes;
 			if (SB1->MshMng->GetMeshName(i).size() > 0) {
-				insertstruct.item.pszText = (LPSTR)SB1->MshMng->GetMeshName(i).c_str();
-				insertstruct.item.cchTextMax = SB1->MshMng->GetMeshName(i).size();
+				char cbuf[256] = { '\0' };
+				sprintf(cbuf, SB1->MshMng->GetMeshName(i).c_str());
+				insertstruct.item.pszText = (LPSTR)cbuf;
+				insertstruct.item.cchTextMax = ARRAYSIZE(cbuf);
+				//insertstruct.item.pszText = (LPSTR)SB1->MshMng->GetMeshName(i).c_str();
+				//insertstruct.item.cchTextMax = SB1->MshMng->GetMeshName(i).size();
 			}
 			else {
 				char cbuf[256] = { '\0' };
 				sprintf(cbuf, "Mesh_%i", i);
 				insertstruct.item.pszText = (LPSTR)cbuf;
-				insertstruct.item.cchTextMax = 10;;
+				insertstruct.item.cchTextMax = 10;
 			}
 			
 			TREE_ITEM_REF Tir = TREE_ITEM_REF();
@@ -223,8 +227,12 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
 		insertstruct.hParent = hrootAnimations;
 		for (UINT i = 0; i < AnimMng->GetAnimDefCount(); i++) {
-			insertstruct.item.pszText = (LPSTR)AnimMng->GetAnimFullName(i).c_str();
-			insertstruct.item.cchTextMax = AnimMng->GetAnimFullName(i).size();
+			char cbuf[256] = { '\0' };
+			sprintf(cbuf, AnimMng->GetAnimName(i).c_str());
+			insertstruct.item.pszText = (LPSTR)cbuf;
+			insertstruct.item.cchTextMax = ARRAYSIZE(cbuf);
+			//insertstruct.item.pszText = (LPSTR)AnimMng->GetAnimName(i).c_str();
+			//insertstruct.item.cchTextMax = AnimMng->GetAnimName(i).size();
 			TREE_ITEM_REF Tir = TREE_ITEM_REF();
 			Tir.Type = ANIMATIONS;
 			Tir.idx = i;
@@ -236,11 +244,16 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			for (UINT j = 0; j < AnimMng->GetAnimNComps(i); j++) {
 				AnimCompDef* acd = AnimMng->GetAnimComp(i, j);
 				UINT cidx = AnimMng->GetAnimCompDefCompIdx(acd);
-				insertstruct.item.pszText = (LPSTR)AnimMng->GetAnimCompDefFullName(cidx).c_str();
-				insertstruct.item.cchTextMax = AnimMng->GetAnimCompDefFullName(cidx).size();
+				if (cidx == -1) {continue;	}
+				char cbuf2[256] = { '\0' };
+				sprintf(cbuf2, AnimMng->GetAnimCompDefName(cidx).c_str());
+				insertstruct.item.pszText = (LPSTR)cbuf2;
+				insertstruct.item.cchTextMax = ARRAYSIZE(cbuf2);
+				//insertstruct.item.pszText = (LPSTR)AnimMng->GetAnimCompDefName(cidx).c_str();
+				//insertstruct.item.cchTextMax = AnimMng->GetAnimCompDefName(cidx).size();
 				TREE_ITEM_REF Tir = TREE_ITEM_REF();
 				Tir.Type = ANIM_COMP;
-				Tir.idx = j;
+				Tir.idx = cidx;
 				insertstruct.hParent = hparent;
 				Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 				TreeItem[Tir.hitem] = Tir;
@@ -600,4 +613,11 @@ bool DialogControl::IsUintInVector(UINT u, vector<UINT>v) {
 		}
 	}
 	return false;
+}
+
+double DialogControl::GetDlgItemDouble(HWND hWnd, int control_id) {
+	char cbuf[256] = { '\0' };
+	GetDlgItemText(hWnd, control_id, cbuf, 256);
+	double val = atof(cbuf);
+	return val;
 }

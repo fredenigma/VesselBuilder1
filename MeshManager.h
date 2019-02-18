@@ -1,5 +1,5 @@
 #pragma once
-
+//typedef void(MeshManager::*TestClbk)(MESHHANDLE hMesh, bool firstload);
 struct MSH_DEF {
 	string meshname;
 	VECTOR3 ofs;
@@ -27,7 +27,7 @@ struct MSH_DEF {
 		rot = _V(0, 1, 0);
 		Highlighted = false;
 		ngrps = 0;
-		HighlightedGrps = false;
+		HighlightedGrps = NULL;
 		//	animated_grps.clear();
 		//HighlightedGrps.clear();
 	}
@@ -40,8 +40,8 @@ public:
 	vector<MSH_DEF> msh_defs;
 	StationBuilder1 *SB1;
 	void LoadMeshes();
-	UINT loading_msh_counter;
-	void RotateMeshLoading(MESHHANDLE mesh, MATRIX3 rm);
+	//UINT loading_msh_counter;
+	//void RotateMeshLoading(MESHHANDLE mesh, MATRIX3 rm);
 	void RotateMesh(MESHHANDLE mesh, DEVMESHHANDLE devmesh, MATRIX3 rm);
 	void RotateMesh(msh_idx msh_idx, MATRIX3 rm);
 	void RotateMeshFromTemplate(msh_idx msh_idx, MATRIX3 rm);
@@ -79,12 +79,13 @@ public:
 	UINT GetMeshDefNGrps(def_idx def_idx);
 	vector<MSH_DEF> md_restore;
 	bool UsingD3D9();
-	void LoadingRearrangeMaterials(MESHHANDLE msh);
-	MATERIAL *matred;
-	MATERIAL *matgreen;
-	MATERIAL *matblue;
-	MATERIAL *defaultMaterial;
+//	void LoadingRearrangeMaterials(MESHHANDLE msh);
+	//MATERIAL *matred;
+	//MATERIAL *matgreen;
+	//MATERIAL *matblue;
+	//MATERIAL *defaultMaterial;
 	bool MeshGroupIsHighlighted(msh_idx msh_idx, UINT grp_idx);
 	void ResetMeshGroupHighlights(msh_idx msh_idx);
-
+	msh_idx GetMeshIdx(def_idx d_idx);
+	
 };

@@ -16,11 +16,11 @@ public:
 	UINT NextAnimSeq();
 	void SetAnimDefState(def_idx d_idx, double defstate);
 	double GetAnimDefState(def_idx d_idx);
-	void SetAnimPrefix(def_idx d_idx, string prefix);
-	string GetAnimPrefix(def_idx d_idx);
+	//void SetAnimPrefix(def_idx d_idx, string prefix);
+	//string GetAnimPrefix(def_idx d_idx);
 	void SetAnimName(def_idx d_idx, string name);
 	string GetAnimName(def_idx d_idx);
-	string GetAnimFullName(def_idx d_idx);
+	//string GetAnimFullName(def_idx d_idx);
 	void SetAnimCycleType(def_idx d_idx, AnimCycleType CycleType);
 	AnimCycleType GetAnimCycleType(def_idx d_idx);
 	bool IsAnimValid(def_idx d_idx);
@@ -36,6 +36,7 @@ public:
 	void DeleteAnimDef(def_idx d_idx);
 	void AddAnimCompDef(def_idx animdef_idx, MGROUP_TRANSFORM::TYPE type);
 	void AddAnimCompDef(def_idx animdef_idx, AnimCompDef* acd);
+	void AddAnimCompDef(def_idx animdef_idx, string name, double state0, double state1,int mesh, int ngrps, vector<UINT>grps, int parent, int type, VECTOR3 ref, VECTOR3 axis, VECTOR3 scale, VECTOR3 shift, double angle);
 	void DeleteAnimCompDef(def_idx d_idx);
 	void SetAnimCompDefState0(def_idx d_idx, double newState0);
 	void SetAnimCompDefState1(def_idx d_idx, double newState1);
@@ -45,12 +46,13 @@ public:
 	void SetAnimCompDefAxis(def_idx d_idx, VECTOR3 newAxis);
 	void SetAnimCompDefAngle(def_idx d_idx, double newAngle);
 	void SetAnimCompDefName(def_idx d_idx, string name);
-	void SetAnimCompDefPrefix(def_idx d_idx, string prefix);
+	//void SetAnimCompDefPrefix(def_idx d_idx, string prefix);
 	void SetAnimCompDefMesh(def_idx d_idx, msh_idx m_idx);
 	void AnimCompDefAddGroups(def_idx d_idx, vector<UINT>grps);
 	void AnimCompDefRemoveGroups(def_idx d_idx, vector<UINT>grps);
+	void AnimCompDefResetGroups(def_idx d_idx);
 	string GetAnimCompDefName(def_idx d_idx);
-	string GetAnimCompDefFullName(def_idx d_idx);
+	//string GetAnimCompDefFullName(def_idx d_idx);
 	double GetAnimCompDefState0(def_idx d_idx);
 	double GetAnimCompDefState1(def_idx d_idx);
 	VECTOR3 GetAnimCompDefRef(def_idx d_idx);
@@ -62,11 +64,13 @@ public:
 	vector<UINT> GetAnimCompDefGroups(def_idx d_idx);
 	int GetAnimCompDefNGroups(def_idx d_idx);
 	void AssignAnimCompDefToAnimation(def_idx comp_idx, anim_idx _anim_idx, VESSEL *v);
-	void SetAnimCompDefParent(def_idx d_idx, ANIMATIONCOMPONENT_HANDLE _parent);
+	//void SetAnimCompDefParent(def_idx d_idx, ANIMATIONCOMPONENT_HANDLE _parent);
+	void SetAnimCompDefParent(def_idx d_idx, AnimCompDef* newParent_acd);
 	UINT GetAnimCompDefCompIdx(AnimCompDef* acd);
 	UINT GetAnimCompDefSeqIdx(def_idx d_idx);
 	UINT GetAnimCompDefParentCompIdx(def_idx d_idx);
 	ANIMATIONCOMPONENT_HANDLE GetAnimCompDefParentACH(def_idx d_idx);
+	AnimCompDef* GetAnimCompDefParent(def_idx d_idx);
 	MGROUP_TRANSFORM::TYPE GetAnimCompDefType(def_idx d_idx);
 	ANIMATIONCOMPONENT_HANDLE GetAnimCompDefACH(def_idx d_idx);
 	UINT GetAnimDefCount();
@@ -82,13 +86,15 @@ public:
 	void StartAnim(def_idx d_idx);
 	void StopAnim(def_idx d_idx);
 	void ResetAnim(def_idx d_idx);
+	
 //	UINT anim_seq_counter;
 //	UINT anim_comp_counter;
 //	ANIMATIONCOMPONENT_HANDLE FindParentACH(UINT parent_comp_idx);
-	anim_idx FindAnimDefIndex(UINT comp_idx);
+//	anim_idx FindAnimDefIndex(UINT comp_idx);
 
 	void AnimationPreStep(double simt, double simdt, double mjd);
 	void ConsumeAnimKey(DWORD key, bool down, char *kstate);
 	bool AnimEditingMode;
+	void ParseCfgFile(FILEHANDLE fh);
 	void WriteCfg(FILEHANDLE fh);
 };

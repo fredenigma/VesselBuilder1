@@ -69,6 +69,7 @@ public:
 	map<DWORD, string> oapi_keys;
 	AnimationManager *AnimMng;
 	bool AnimTesting;
+	double GetDlgItemDouble(HWND hWnd, int control_id);
 //	HTREEITEM ItemToSelect;
 protected:
 	StationBuilder1 *SB1;

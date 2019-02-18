@@ -88,7 +88,7 @@ BOOL DialogControl::AnimDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 			
 			TVITEM tvi;
 			tvi.mask = TVIF_TEXT;
-			sprintf(cbuf,"%s", AnimMng->GetAnimFullName(idx).c_str());
+			sprintf(cbuf,"%s", AnimMng->GetAnimName(idx).c_str());
 			tvi.pszText = (LPSTR)cbuf;
 			tvi.hItem = CurrentSelection.hitem;
 			TreeView_SetItem(GetDlgItem(hDlg, IDC_TREE1), &tvi);

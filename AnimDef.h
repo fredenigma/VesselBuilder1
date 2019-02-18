@@ -46,7 +46,7 @@ public:
 	bool running;
 	bool backward;
 	string name;
-	string prefix;
+	//string prefix;
 	string fullname;
 	double duration;
 	double speed;
@@ -57,11 +57,11 @@ public:
 	double GetDefState();
 	void SetSeqIdx(UINT __seq_idx);
 	UINT GetSeqIdx();
-	void SetPrefix(string prefix);
-	string GetPrefix();
+	//void SetPrefix(string prefix);
+	//string GetPrefix();
 	void SetName(string name);
 	string GetName();
-	string GetFullName();
+	//string GetFullName();
 	void SetCycleType(AnimCycleType CycleType);
 	AnimCycleType GetCycleType();
 	bool valid;

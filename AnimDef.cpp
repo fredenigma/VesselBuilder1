@@ -18,7 +18,7 @@ void AnimDef::Reset() {
 	running = false;
 	backward = false;
 	name.clear();
-	prefix.clear();
+//	prefix.clear();
 	fullname.clear();
 	duration = 10;
 	speed = 0.1;
@@ -43,24 +43,24 @@ void AnimDef::SetSeqIdx(UINT __seq_idx) {
 UINT AnimDef::GetSeqIdx() {
 	return _seq_idx;
 }
-void AnimDef::SetPrefix(string _prefix) {
+/*void AnimDef::SetPrefix(string _prefix) {
 	prefix = _prefix;
 	fullname = prefix + name;
 	return;
-}
-string AnimDef::GetPrefix() {
+}*/
+/*string AnimDef::GetPrefix() {
 	return prefix;
-}
+}*/
 void AnimDef::SetName(string _name) {
 	name = _name;
-	fullname = prefix + name;
+	//fullname = prefix + name;
 }
 string AnimDef::GetName() {
 	return name;
 }
-string AnimDef::GetFullName() {
+/*string AnimDef::GetFullName() {
 	return fullname;
-}
+}*/
 void AnimDef::SetCycleType(AnimCycleType _CycleType) {
 	CycleType = _CycleType;
 }

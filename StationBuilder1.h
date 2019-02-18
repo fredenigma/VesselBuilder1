@@ -24,7 +24,7 @@
 #define HIGHLIGHTCOLORRED 2
 
 
-#include "orbitersdk.h"
+#include <Orbitersdk.h>
 #include <string>
 #include <vector>
 #include <map>

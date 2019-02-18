@@ -26,12 +26,20 @@
 //StationBuilder1 *SB1;
 HINSTANCE hDLL;
 
-
 //Creation
 StationBuilder1::StationBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
-	
+	gcInitialize();
+
+	OrbiterRoot.clear();
+	char root[MAX_PATH] = { '\0' };
+	GetCurrentDirectory(MAX_PATH, root);
+	OrbiterRoot.assign(root);
+	wD3D9 = false;
+	GetOrbiterDirs();
+
 	//mesh_definitions.clear();
 	MshMng = new MeshManager(this);
+
 	AnimMng = new AnimationManager(this);
 	dock_definitions.clear();
 	att_definitions.clear();
@@ -53,12 +61,7 @@ StationBuilder1::StationBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel)
 	Dlg = new DialogControl(this);
 	FMDlg = new FollowMeDlg(this);
 	//HighLightColor = HIGHLIGHTCOLORRED;
-	OrbiterRoot.clear();
-	char root[MAX_PATH] = { '\0' };
-	GetCurrentDirectory(MAX_PATH, root);
-	OrbiterRoot.assign(root);
-	wD3D9 = false;
-	GetOrbiterDirs();
+	
 	vclip = V_CLIPBOARD();
 	colwhite = _V(1, 1, 1);
 	colblue = _V(0, 0, 1);
@@ -92,9 +95,10 @@ StationBuilder1::~StationBuilder1(){
 
 void StationBuilder1::GetOrbiterDirs() {
 	string cfgname("Orbiter.cfg");
-	if (gcInitialize()) { 
+	if (gcEnabled()) { 
 		cfgname.assign("Orbiter_NG.cfg"); 
 		wD3D9 = true;
+//		oapiWriteLogV("wD3D9:%i", wD3D9);
 	}
 	meshdir.assign(".\\Meshes\\");
 	configdir.assign(".\\Config\\");
@@ -608,31 +612,8 @@ void StationBuilder1::ParseCfgFile(FILEHANDLE fh) {
 	}
 	SBLog("Found %i Dock Definitions", dock_definitions.size());
 
-	UINT anim_counter = 0;
-	sprintf(cbuf, "ANIM_%i_ID",anim_counter);
-	int id;
+	AnimMng->ParseCfgFile(fh);
 	
-	while (oapiReadItem_int(fh, cbuf, id)) {
-		sprintf(cbuf, "ANIM_%i_NAME", anim_counter);
-		char anim_name[256] = { '\0' };
-		oapiReadItem_string(fh, cbuf, anim_name);
-		string name(anim_name);
-		double defstate;
-		sprintf(cbuf, "ANIM_%i_DEFSTATE", anim_counter);
-		oapiReadItem_float(fh, cbuf, defstate);
-		double duration;
-		sprintf(cbuf, "ANIM_%i_DURATION", anim_counter);
-		oapiReadItem_float(fh, cbuf, duration);
-		int key;
-		sprintf(cbuf, "ANIM_%i_KEY", anim_counter);
-		oapiReadItem_int(fh, cbuf, key);
-		int cycletype;
-		sprintf(cbuf, "ANIM_%i_CYCLE", anim_counter);
-		oapiReadItem_int(fh, cbuf, cycletype);
-		AnimMng->AddAnimDef(defstate, duration, key, name, (AnimCycleType)cycletype);
-		anim_counter++;
-		sprintf(cbuf, "ANIM_%i_ID", anim_counter);
-	}
 
 	SBLog("Parsing Completed");
 	return;
@@ -892,6 +873,7 @@ void StationBuilder1::UpdateDockBeaconsPos() {
 
 
 bool StationBuilder1::UsingD3D9() {
+//	oapiWriteLogV("SB1::UsingD3D9:%i", wD3D9);
 	return wD3D9;
 }
 MATRIX3 StationBuilder1::Inverse(MATRIX3 m) {
