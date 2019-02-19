@@ -139,7 +139,7 @@ StationBuilder1(OBJHANDLE hObj,int fmodel);
  NOTEHANDLE follow_me_noteh;
  V_CLIPBOARD vclip;
  string cfgfilename;
- 
+ void ConsumeFollowMeKey(char *kstate);
 
  //HWND hDlg;
 

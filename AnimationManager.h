@@ -86,14 +86,19 @@ public:
 	void StartAnim(def_idx d_idx);
 	void StopAnim(def_idx d_idx);
 	void ResetAnim(def_idx d_idx);
-	
+	bool ManualArmMoving;
+	void StartManualArm();
+	void StopManualArm();
+	bool ManualArmActive();
+	int CurrentManualAnim;
 //	UINT anim_seq_counter;
 //	UINT anim_comp_counter;
 //	ANIMATIONCOMPONENT_HANDLE FindParentACH(UINT parent_comp_idx);
 //	anim_idx FindAnimDefIndex(UINT comp_idx);
 
 	void AnimationPreStep(double simt, double simdt, double mjd);
-	void ConsumeAnimKey(DWORD key, bool down, char *kstate);
+	void ConsumeAnimBufferedKey(DWORD key, bool down, char *kstate);
+	void ConsumeAnimDirectKey(char *kstate);
 	bool AnimEditingMode;
 	void ParseCfgFile(FILEHANDLE fh);
 	void WriteCfg(FILEHANDLE fh);

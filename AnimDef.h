@@ -1,6 +1,6 @@
 #pragma once
 
-enum AnimCycleType { GOANDSTOP, RESTART, REVERSE, MANUAL };
+enum AnimCycleType { GOANDSTOP, RESTART, REVERSE, MANUAL,AUTOMATIC };
 
 /*struct ANIM_DEF {
 	UINT anim_idx;

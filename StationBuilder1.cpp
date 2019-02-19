@@ -263,97 +263,101 @@ void StationBuilder1::RotateFollowMe(VECTOR3 axis) {
 	follow_me_rm = mul(early_rm, rot_m);
 	return;
 }
-int StationBuilder1::clbkConsumeDirectKey(char *kstate) {
-	if (follow_me) {
-		if (KEYDOWN(kstate, OAPI_KEY_UP)) {
-			if (KEYMOD_SHIFT(kstate)) {
-				double angle = follow_me_rotation_speed*oapiGetSimStep();
-				VECTOR3 axis = _V(1, 0, 0);
-				MATRIX3 rot_m = rotm(axis, angle);
-				MATRIX3 early_rm = follow_me_rm;
-				follow_me_rm = mul(early_rm, rot_m);
-				RESETKEY(kstate, OAPI_KEY_UP);
-			}
-			else if (KEYMOD_ALT(kstate)) {
-				follow_me_pos.y += follow_me_translation_speed*oapiGetSimStep();
-				RESETKEY(kstate, OAPI_KEY_UP);
-			}
-			else {
-				follow_me_pos.z += follow_me_translation_speed*oapiGetSimStep();
-				RESETKEY(kstate, OAPI_KEY_UP);
-			}
-			return 1;
+void StationBuilder1::ConsumeFollowMeKey(char *kstate) {
+	if (KEYDOWN(kstate, OAPI_KEY_UP)) {
+		if (KEYMOD_SHIFT(kstate)) {
+			double angle = follow_me_rotation_speed*oapiGetSimStep();
+			VECTOR3 axis = _V(1, 0, 0);
+			MATRIX3 rot_m = rotm(axis, angle);
+			MATRIX3 early_rm = follow_me_rm;
+			follow_me_rm = mul(early_rm, rot_m);
+			RESETKEY(kstate, OAPI_KEY_UP);
 		}
-		if (KEYDOWN(kstate, OAPI_KEY_RIGHT)) {
-			if (KEYMOD_SHIFT(kstate)) {
-				double angle = follow_me_rotation_speed*oapiGetSimStep();
-				VECTOR3 axis = _V(0, 1, 0);
-				MATRIX3 rot_m = rotm(axis, angle);
-				MATRIX3 early_rm = follow_me_rm;
-				follow_me_rm = mul(early_rm, rot_m);
-				RESETKEY(kstate, OAPI_KEY_RIGHT);
-			}
-			else {
-				follow_me_pos.x += follow_me_translation_speed*oapiGetSimStep();
-				RESETKEY(kstate, OAPI_KEY_RIGHT);
-			}
-			
+		else if (KEYMOD_ALT(kstate)) {
+			follow_me_pos.y += follow_me_translation_speed*oapiGetSimStep();
+			RESETKEY(kstate, OAPI_KEY_UP);
 		}
-		if (KEYDOWN(kstate, OAPI_KEY_LEFT)) {
-			if (KEYMOD_SHIFT(kstate)) {
-				double angle = -follow_me_rotation_speed*oapiGetSimStep();
-				VECTOR3 axis = _V(0, 1, 0);
-				MATRIX3 rot_m = rotm(axis, angle);
-				MATRIX3 early_rm = follow_me_rm;
-				follow_me_rm = mul(early_rm, rot_m);
-				RESETKEY(kstate, OAPI_KEY_LEFT);
-			}
-			else {
-				follow_me_pos.x -= follow_me_translation_speed*oapiGetSimStep();
-				RESETKEY(kstate, OAPI_KEY_LEFT);
-			}
+		else {
+			follow_me_pos.z += follow_me_translation_speed*oapiGetSimStep();
+			RESETKEY(kstate, OAPI_KEY_UP);
 		}
-		if (KEYDOWN(kstate, OAPI_KEY_DOWN)) {
-			if (KEYMOD_SHIFT(kstate)) {
-				double angle = -follow_me_rotation_speed*oapiGetSimStep();
-				VECTOR3 axis = _V(1, 0, 0);
-				MATRIX3 rot_m = rotm(axis, angle);
-				MATRIX3 early_rm = follow_me_rm;
-				follow_me_rm = mul(early_rm, rot_m);
-				RESETKEY(kstate, OAPI_KEY_DOWN);
-			}
-			else if (KEYMOD_ALT(kstate)) {
-				follow_me_pos.y -= follow_me_translation_speed*oapiGetSimStep();
-				RESETKEY(kstate, OAPI_KEY_DOWN);
-			}
-			else {
-				follow_me_pos.z -= follow_me_translation_speed*oapiGetSimStep();
-				RESETKEY(kstate, OAPI_KEY_DOWN);
-			}
+	}
+	if (KEYDOWN(kstate, OAPI_KEY_RIGHT)) {
+		if (KEYMOD_SHIFT(kstate)) {
+			double angle = follow_me_rotation_speed*oapiGetSimStep();
+			VECTOR3 axis = _V(0, 1, 0);
+			MATRIX3 rot_m = rotm(axis, angle);
+			MATRIX3 early_rm = follow_me_rm;
+			follow_me_rm = mul(early_rm, rot_m);
+			RESETKEY(kstate, OAPI_KEY_RIGHT);
 		}
-		if (KEYDOWN(kstate, OAPI_KEY_NEXT)) {
-			if (KEYMOD_SHIFT(kstate)) {
-				double angle = -follow_me_rotation_speed*oapiGetSimStep();
-				VECTOR3 axis = _V(0, 0, 1);
-				MATRIX3 rot_m = rotm(axis, angle);
-				MATRIX3 early_rm = follow_me_rm;
-				follow_me_rm = mul(early_rm, rot_m);
-				RESETKEY(kstate, OAPI_KEY_NEXT);
-			}
-			
-		}
-		if (KEYDOWN(kstate, OAPI_KEY_PRIOR)) {
-			if (KEYMOD_SHIFT(kstate)) {
-				double angle = follow_me_rotation_speed*oapiGetSimStep();
-				VECTOR3 axis = _V(0, 0, 1);
-				MATRIX3 rot_m = rotm(axis, angle);
-				MATRIX3 early_rm = follow_me_rm;
-				follow_me_rm = mul(early_rm, rot_m);
-				RESETKEY(kstate, OAPI_KEY_PRIOR);
-			}
+		else {
+			follow_me_pos.x += follow_me_translation_speed*oapiGetSimStep();
+			RESETKEY(kstate, OAPI_KEY_RIGHT);
 		}
 
 	}
+	if (KEYDOWN(kstate, OAPI_KEY_LEFT)) {
+		if (KEYMOD_SHIFT(kstate)) {
+			double angle = -follow_me_rotation_speed*oapiGetSimStep();
+			VECTOR3 axis = _V(0, 1, 0);
+			MATRIX3 rot_m = rotm(axis, angle);
+			MATRIX3 early_rm = follow_me_rm;
+			follow_me_rm = mul(early_rm, rot_m);
+			RESETKEY(kstate, OAPI_KEY_LEFT);
+		}
+		else {
+			follow_me_pos.x -= follow_me_translation_speed*oapiGetSimStep();
+			RESETKEY(kstate, OAPI_KEY_LEFT);
+		}
+	}
+	if (KEYDOWN(kstate, OAPI_KEY_DOWN)) {
+		if (KEYMOD_SHIFT(kstate)) {
+			double angle = -follow_me_rotation_speed*oapiGetSimStep();
+			VECTOR3 axis = _V(1, 0, 0);
+			MATRIX3 rot_m = rotm(axis, angle);
+			MATRIX3 early_rm = follow_me_rm;
+			follow_me_rm = mul(early_rm, rot_m);
+			RESETKEY(kstate, OAPI_KEY_DOWN);
+		}
+		else if (KEYMOD_ALT(kstate)) {
+			follow_me_pos.y -= follow_me_translation_speed*oapiGetSimStep();
+			RESETKEY(kstate, OAPI_KEY_DOWN);
+		}
+		else {
+			follow_me_pos.z -= follow_me_translation_speed*oapiGetSimStep();
+			RESETKEY(kstate, OAPI_KEY_DOWN);
+		}
+	}
+	if (KEYDOWN(kstate, OAPI_KEY_NEXT)) {
+		if (KEYMOD_SHIFT(kstate)) {
+			double angle = -follow_me_rotation_speed*oapiGetSimStep();
+			VECTOR3 axis = _V(0, 0, 1);
+			MATRIX3 rot_m = rotm(axis, angle);
+			MATRIX3 early_rm = follow_me_rm;
+			follow_me_rm = mul(early_rm, rot_m);
+			RESETKEY(kstate, OAPI_KEY_NEXT);
+		}
+
+	}
+	if (KEYDOWN(kstate, OAPI_KEY_PRIOR)) {
+		if (KEYMOD_SHIFT(kstate)) {
+			double angle = follow_me_rotation_speed*oapiGetSimStep();
+			VECTOR3 axis = _V(0, 0, 1);
+			MATRIX3 rot_m = rotm(axis, angle);
+			MATRIX3 early_rm = follow_me_rm;
+			follow_me_rm = mul(early_rm, rot_m);
+			RESETKEY(kstate, OAPI_KEY_PRIOR);
+		}
+	}
+
+	return;
+}
+int StationBuilder1::clbkConsumeDirectKey(char *kstate) {
+	if (follow_me) {
+		ConsumeFollowMeKey(kstate);
+	}
+	AnimMng->ConsumeAnimDirectKey(kstate);
 	return 0;
 }
 
@@ -363,7 +367,8 @@ int StationBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 	if (!down) return 0; 
 	if (Playback()) return 0; //
 	//if (!AnimEditingMode) {
-	AnimMng->ConsumeAnimKey(key, down, kstate);
+	
+	AnimMng->ConsumeAnimBufferedKey(key, down, kstate);
 	//}
 	
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == OAPI_KEY_SPACE) {
@@ -384,7 +389,7 @@ int StationBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 		
 		return 1;
 	}
-	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && KEYMOD_CONTROL(kstate) && key == OAPI_KEY_SPACE) {
+	if (!KEYMOD_ALT(kstate) && KEYMOD_SHIFT(kstate) && KEYMOD_CONTROL(kstate) && key == OAPI_KEY_SPACE) {
 		if (follow_me) {
 			DeleteFollowMe();
 			

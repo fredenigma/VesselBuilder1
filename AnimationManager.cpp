@@ -11,6 +11,8 @@ AnimationManager::AnimationManager(StationBuilder1 *_SB1) {
 	anim_defs.clear();
 	animcomp_defs.clear();
 	AnimEditingMode = false;
+	ManualArmMoving = false;
+	CurrentManualAnim = -1;
 }
 AnimationManager::~AnimationManager() {
 	for (UINT i = 0; i < animcomp_defs.size(); i++) {
@@ -154,7 +156,7 @@ void AnimationManager::CompsCleanUp() {
 			++it;
 		}
 	}
-	
+
 	return;
 }
 void AnimationManager::DeleteAnimDef(def_idx d_idx) {
@@ -164,7 +166,7 @@ void AnimationManager::DeleteAnimDef(def_idx d_idx) {
 		}
 	}
 	anim_defs[d_idx]->Comps.clear();
-	
+
 	CompsCleanUp();
 	anim_idx idx = IdxDef2Ani(d_idx);
 	SB1->DelAnimation(idx);
@@ -178,30 +180,153 @@ void AnimationManager::SetAnimKey(def_idx d_idx, DWORD key) {
 UINT AnimationManager::GetAnimNComps(def_idx d_idx) {
 	return anim_defs[d_idx]->GetNComps();
 }
+void AnimationManager::StartManualArm() {
+	ManualArmMoving = true;
+	if (CurrentManualAnim == -1) {
+		for (UINT i = 0; i < anim_defs.size(); i++) {
+			if ((anim_defs[i]->GetKey() == 0) && (anim_defs[i]->GetCycleType() == AnimCycleType::MANUAL)) {
+				CurrentManualAnim = i;
+				return;
+			}
+		}
+		StopManualArm();
+	}
+	return;
+}
+void AnimationManager::StopManualArm() {
+	ManualArmMoving = false;
+	sprintf(oapiDebugString(), " ");
+	return;
+}
+bool AnimationManager::ManualArmActive() {
+	return ManualArmMoving;
+}
 
-
-void AnimationManager::ConsumeAnimKey(DWORD key, bool down, char *kstate) {
+void AnimationManager::ConsumeAnimBufferedKey(DWORD key, bool down, char *kstate) {
 	for (UINT i = 0; i < anim_defs.size(); i++) {
 		if (!KEYMOD_ALT(kstate) && KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == anim_defs[i]->GetKey()) {
+			if ((anim_defs[i]->GetCycleType() == AnimCycleType::MANUAL) || (anim_defs[i]->GetCycleType() == AnimCycleType::AUTOMATIC)) { continue; }
 			if (anim_defs[i]->IsRunning()) {
 				anim_defs[i]->Stop();
 			}
 			else {
 				anim_defs[i]->StartForward();
 			}
+
 		}
 		if (!KEYMOD_ALT(kstate) && KEYMOD_SHIFT(kstate) && KEYMOD_CONTROL(kstate) && key == anim_defs[i]->GetKey()) {
+			if ((anim_defs[i]->GetCycleType() == AnimCycleType::MANUAL) || (anim_defs[i]->GetCycleType() == AnimCycleType::AUTOMATIC)) { continue; }
 			if (anim_defs[i]->IsRunning()) {
 				anim_defs[i]->Stop();
 			}
 			else {
 				anim_defs[i]->StartBackward();
 			}
+
 		}
+	}
+	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && KEYMOD_CONTROL(kstate) && key == OAPI_KEY_SPACE) {
+		if (ManualArmActive()) {
+			StopManualArm();
+		}
+		else {
+			StartManualArm();
+		}
+	}
+	
+	if (!KEYMOD_ALT(kstate) && KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == OAPI_KEY_LEFT) {
+		if (ManualArmActive()) {
+			vector<UINT> manualAnimsIdx;
+			manualAnimsIdx.clear();
+			for (UINT i = 0; i < anim_defs.size(); i++) {
+				if ((anim_defs[i]->GetKey() == 0) && (anim_defs[i]->GetCycleType() == AnimCycleType::MANUAL)) {
+					manualAnimsIdx.push_back(i);
+				}
+			}
+			if (manualAnimsIdx.size() <= 0) {
+				StopManualArm();
+			}
+			vector<UINT>::iterator it = find(manualAnimsIdx.begin(), manualAnimsIdx.end(), CurrentManualAnim);
+			int index = distance(manualAnimsIdx.begin(), it);
+			if (index != 0) {
+				CurrentManualAnim = manualAnimsIdx[index - 1];
+			}
+		}
+	}
+	
+	if (!KEYMOD_ALT(kstate) && KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == OAPI_KEY_RIGHT) {
+		if (ManualArmActive()) {
+			
+			vector<UINT> manualAnimsIdx;
+			manualAnimsIdx.clear();
+			for (UINT i = 0; i < anim_defs.size(); i++) {
+				if ((anim_defs[i]->GetKey() == 0) && (anim_defs[i]->GetCycleType() == AnimCycleType::MANUAL)) {
+					manualAnimsIdx.push_back(i);
+				}
+			}
+			if (manualAnimsIdx.size() <= 0){
+				StopManualArm();
+			}
+			vector<UINT>::iterator it = find(manualAnimsIdx.begin(), manualAnimsIdx.end(), CurrentManualAnim);
+			int index = distance(manualAnimsIdx.begin(), it);
+			if (index != manualAnimsIdx.size() - 1) {
+				CurrentManualAnim = manualAnimsIdx[index + 1];
+			}
+		}
+	}
+	
+
+	return;
+}
+void AnimationManager::ConsumeAnimDirectKey(char *kstate) {
+	for (UINT i = 0; i < anim_defs.size(); i++) {
+		if (anim_defs[i]->GetCycleType() != AnimCycleType::MANUAL) { continue; }
+		if (!KEYMOD_ALT(kstate) && KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && KEYDOWN(kstate, anim_defs[i]->GetKey())) {
+			double speed = anim_defs[i]->GetSpeed();
+			double state = anim_defs[i]->GetState();
+			state += speed*oapiGetSimStep();
+			if (state > 1) { state = 1; }
+			SetAnimationState(i, state);
+			RESETKEY(kstate, anim_defs[i]->GetKey());
+			
+		}
+		if (!KEYMOD_ALT(kstate) && KEYMOD_SHIFT(kstate) && KEYMOD_CONTROL(kstate) && KEYDOWN(kstate, anim_defs[i]->GetKey())) {
+			double speed =(-1)* anim_defs[i]->GetSpeed();
+			double state = anim_defs[i]->GetState();
+			state += speed*oapiGetSimStep();
+			if (state < 0) { state = 0; }
+			SetAnimationState(i, state);
+			RESETKEY(kstate, anim_defs[i]->GetKey());
+			
+		}
+	}
+	if (ManualArmActive()) {
+		if (KEYMOD_SHIFT(kstate)) {
+			if (KEYDOWN(kstate, OAPI_KEY_UP)) {
+				double speed = anim_defs[CurrentManualAnim]->GetSpeed();
+				double state = anim_defs[CurrentManualAnim]->GetState();
+				state += speed*oapiGetSimStep();
+				if (state > 1) { state = 1; }
+				SetAnimationState(CurrentManualAnim, state);
+				RESETKEY(kstate, OAPI_KEY_UP);
+				return;
+			}
+			if (KEYDOWN(kstate, OAPI_KEY_DOWN)) {
+				double speed = (-1)* anim_defs[CurrentManualAnim]->GetSpeed();
+				double state = anim_defs[CurrentManualAnim]->GetState();
+				state += speed*oapiGetSimStep();
+				if (state < 0) { state = 0; }
+				SetAnimationState(CurrentManualAnim, state);
+				RESETKEY(kstate, OAPI_KEY_DOWN);
+				return;
+			}
+		}
+		//oapiWriteLogV("keydown lshift:%i %.3f", kstate[OAPI_KEY_LSHIFT],oapiGetSimTime());
+		//oapiWriteLogV("keydown numpad8:%i %.3f", kstate[OAPI_KEY_NUMPAD8], oapiGetSimTime());
+		
 	}
 	return;
 }
-
 
 
 
@@ -311,7 +436,9 @@ void AnimationManager::AnimationPreStep(double simt, double simdt, double mjd) {
 		}
 	}
 
-
+	if (ManualArmActive()) {
+		sprintf(oapiDebugString(), "Manual Anim:%s %.3f",anim_defs[CurrentManualAnim]->GetName().c_str(),anim_defs[CurrentManualAnim]->GetState());
+	}
 	return;
 }
 

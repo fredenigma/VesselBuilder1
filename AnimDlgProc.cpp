@@ -67,6 +67,9 @@ BOOL DialogControl::AnimDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 		SendDlgItemMessage(hWnd, IDC_COMBO_ANIMTYPE, CB_SETITEMDATA, 2, (LPARAM)AnimCycleType::RESTART);
 		SendDlgItemMessage(hWnd, IDC_COMBO_ANIMTYPE, CB_INSERTSTRING, 3, (LPARAM)"MANUAL");
 		SendDlgItemMessage(hWnd, IDC_COMBO_ANIMTYPE, CB_SETITEMDATA, 3, (LPARAM)AnimCycleType::MANUAL);
+		SendDlgItemMessage(hWnd, IDC_COMBO_ANIMTYPE, CB_INSERTSTRING, 4, (LPARAM)"AUTOMATIC");
+		SendDlgItemMessage(hWnd, IDC_COMBO_ANIMTYPE, CB_SETITEMDATA, 4, (LPARAM)AnimCycleType::AUTOMATIC);
+
 
 		SendDlgItemMessage(hWnd, IDC_EDIT_ANIMNCOMPS, EM_SETREADONLY, true, 0);
 		InitAnimKeyCombo(hWnd);
@@ -231,7 +234,7 @@ BOOL DialogControl::AnimDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
 void DialogControl::InitAnimKeyCombo(HWND hWnd) {
 	SendDlgItemMessage(hWnd, IDC_COMBO_ANIMKEY, CB_INSERTSTRING, 0, (LPARAM)"NONE");
-	SendDlgItemMessage(hWnd, IDC_COMBO_ANIMKEY, CB_SETITEMDATA, 0, (LPARAM)-1);
+	SendDlgItemMessage(hWnd, IDC_COMBO_ANIMKEY, CB_SETITEMDATA, 0, (LPARAM)0);
 
 	UINT counter = 1;
 	for (map<DWORD, string>::iterator it = oapi_keys.begin(); it != oapi_keys.end(); ++it) {
