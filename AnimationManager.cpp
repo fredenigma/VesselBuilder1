@@ -3,6 +3,7 @@
 #include "MeshManager.h"
 #include "AnimDef.h"
 #include "AnimCompDef.h"
+#include "AttachmentManager.h"
 #include "AnimationManager.h"
 
 AnimationManager::AnimationManager(StationBuilder1 *_SB1) {
@@ -45,6 +46,7 @@ void AnimationManager::AddAnimDef(double defstate, double duration,DWORD key, st
 	acd->duration = duration;
 	acd->speed = 1 / duration;
 	acd->key = key;
+	acd->SetState(defstate);
 	acd->SetName(name);
 	acd->SetCycleType(CycleType);
 	return AddAnimDef(acd);
@@ -83,8 +85,12 @@ void AnimationManager::SetAnimDefState(def_idx d_idx, double defstate) {
 	anim_idx idx = anim_defs[d_idx]->GetAnimIdx();
 	ANIMATION* anim;
 	SB1->GetAnimPtr(&anim);
+	anim[idx].state = defstate;
 	anim[idx].defstate = defstate;
+	
 	anim_defs[d_idx]->SetDefState(defstate);
+	anim_defs[d_idx]->SetState(defstate);
+	
 	return;		
 }
 void AnimationManager::ResetAnimation(def_idx d_idx) {
@@ -96,6 +102,24 @@ void AnimationManager::SetAnimationState(def_idx d_idx,double state) {
 	anim_idx idx = IdxDef2Ani(d_idx);
 	SB1->SetAnimation(idx, state);
 	anim_defs[d_idx]->SetState(state);
+	//UpdateTip(d_idx);
+	return;
+}
+void AnimationManager::UpdateTip(def_idx d_idx) {
+	bool hastip = false;
+	UINT CompIdx = 0;
+	for (UINT i = 0; i < anim_defs[d_idx]->Comps.size(); i++) {
+		if (anim_defs[d_idx]->Comps[i]->IsArmTip()) {
+			hastip = true;
+			CompIdx = i;
+		}
+	}
+	if (!hastip) { return; }
+	//sprintf(oapiDebugString(), "Att Tip:%i", anim_defs[d_idx]->Comps[CompIdx]->GetAttTip());
+	def_idx attidx = anim_defs[d_idx]->Comps[CompIdx]->GetAttTip();
+	ATTACHMENTHANDLE ah = SB1->AttMng->GetAttDefAH(attidx);
+	//SB1->AttMng->ModifyAttDef(anim_defs[d_idx]->Comps[CompIdx]->GetAttTip(), anim_defs[d_idx]->Comps[CompIdx]->Tip[0], anim_defs[d_idx]->Comps[CompIdx]->Tip[1] - anim_defs[d_idx]->Comps[CompIdx]->Tip[0], anim_defs[d_idx]->Comps[CompIdx]->Tip[2] - anim_defs[d_idx]->Comps[CompIdx]->Tip[0]);
+	SB1->SetAttachmentParams(ah, anim_defs[d_idx]->Comps[CompIdx]->Tip[0], anim_defs[d_idx]->Comps[CompIdx]->Tip[1] - anim_defs[d_idx]->Comps[CompIdx]->Tip[0], anim_defs[d_idx]->Comps[CompIdx]->Tip[2] - anim_defs[d_idx]->Comps[CompIdx]->Tip[0]);
 	return;
 }
 void AnimationManager::SetAnimDuration(def_idx d_idx, double duration) {
@@ -195,7 +219,7 @@ void AnimationManager::StartManualArm() {
 }
 void AnimationManager::StopManualArm() {
 	ManualArmMoving = false;
-	sprintf(oapiDebugString(), " ");
+	sprintf(oapiDebugString(), "");
 	return;
 }
 bool AnimationManager::ManualArmActive() {
@@ -321,8 +345,6 @@ void AnimationManager::ConsumeAnimDirectKey(char *kstate) {
 				return;
 			}
 		}
-		//oapiWriteLogV("keydown lshift:%i %.3f", kstate[OAPI_KEY_LSHIFT],oapiGetSimTime());
-		//oapiWriteLogV("keydown numpad8:%i %.3f", kstate[OAPI_KEY_NUMPAD8], oapiGetSimTime());
 		
 	}
 	return;
@@ -435,7 +457,18 @@ void AnimationManager::AnimationPreStep(double simt, double simdt, double mjd) {
 			SetAnimationState(i,state);
 		}
 	}
-
+	for (UINT i = 0; i < animcomp_defs.size(); i++) {
+		if (animcomp_defs[i]->IsArmTip()) {
+			if ((!SB1->AreVector3Equal(animcomp_defs[i]->Tip[0], animcomp_defs[i]->oldTip[0]))||(!SB1->AreVector3Equal(animcomp_defs[i]->Tip[1], animcomp_defs[i]->oldTip[1]))||(!SB1->AreVector3Equal(animcomp_defs[i]->Tip[2], animcomp_defs[i]->oldTip[2]))) {
+				animcomp_defs[i]->oldTip[0] = animcomp_defs[i]->Tip[0];
+				animcomp_defs[i]->oldTip[1] = animcomp_defs[i]->Tip[1];
+				animcomp_defs[i]->oldTip[2] = animcomp_defs[i]->Tip[2];
+				def_idx attidx = animcomp_defs[i]->GetAttTip();
+				ATTACHMENTHANDLE ah = SB1->AttMng->GetAttDefAH(attidx);
+				SB1->SetAttachmentParams(ah, animcomp_defs[i]->Tip[0], animcomp_defs[i]->Tip[1]- animcomp_defs[i]->Tip[0], animcomp_defs[i]->Tip[2]- animcomp_defs[i]->Tip[0]);
+			}
+		}
+	}
 	if (ManualArmActive()) {
 		sprintf(oapiDebugString(), "Manual Anim:%s %.3f",anim_defs[CurrentManualAnim]->GetName().c_str(),anim_defs[CurrentManualAnim]->GetState());
 	}
@@ -722,6 +755,13 @@ void AnimationManager::WriteCfg(FILEHANDLE fh) {
 		oapiWriteItem_float(fh,cbuf,animcomp_defs[i]->GetState0());
 		sprintf(cbuf, "ANIMCOMP_%i_STATE1", i);
 		oapiWriteItem_float(fh, cbuf, animcomp_defs[i]->GetState1());
+		bool isArmTip = animcomp_defs[i]->IsArmTip();
+		sprintf(cbuf, "ANIMCOMP_%i_ARMTIP", i);
+		oapiWriteItem_bool(fh, cbuf, isArmTip);
+		if (isArmTip) {
+			sprintf(cbuf, "ANIMCOMP_%i_ARMATT", i);
+			oapiWriteItem_int(fh, cbuf, animcomp_defs[i]->GetAttTip());
+		}
 		sprintf(cbuf, "ANIMCOMP_%i_MESH", i);
 		oapiWriteItem_int(fh, cbuf, animcomp_defs[i]->GetMesh());
 		sprintf(cbuf, "ANIMCOMP_%i_TYPE", i);
@@ -899,9 +939,21 @@ void AnimationManager::ParseCfgFile(FILEHANDLE fh) {
 			oapiReadItem_vec(fh, cbuf, ref);
 
 		}
+		bool isArmTip = false;
+		sprintf(cbuf, "ANIMCOMP_%i_ARMTIP", animcomp_counter);
+		oapiReadItem_bool(fh, cbuf, isArmTip);
+		int AttIdx = -1;
+		if (isArmTip) {
+			sprintf(cbuf, "ANIMCOMP_%i_ARMATT", animcomp_counter);
+			oapiReadItem_int(fh, cbuf, AttIdx);
+		}
+		
+
 
 		AddAnimCompDef(seq, name, state0, state1, mesh, ngrps, grps, parent_idx,type, ref, axis, scale, shift, angle);
-
+		if (isArmTip) {
+			SetAnimCompDefArmTip(animcomp_defs.size() - 1, AttIdx);
+		}
 		animcomp_counter++;
 		sprintf(cbuf, "ANIMCOMP_%i_ID", animcomp_counter);
 	}
@@ -977,6 +1029,40 @@ void AnimationManager::AddAnimCompDef(def_idx animdef_idx, string name, double s
 
 }
 
+
+bool AnimationManager::IsAnimCompDefArmTip(def_idx d_idx) {
+	return animcomp_defs[d_idx]->IsArmTip();
+}
+void AnimationManager::GetAnimCompDefTips(def_idx d_idx, VECTOR3 &v1, VECTOR3 &v2, VECTOR3 &v3) {
+	return animcomp_defs[d_idx]->GetTips(v1, v2, v3);
+}
+def_idx AnimationManager::GetAnimCompDefAttTip(def_idx d_idx) {
+	return animcomp_defs[d_idx]->GetAttTip();
+}
+void AnimationManager::SetAnimCompDefTips(def_idx d_idx, VECTOR3 v1, VECTOR3 v2, VECTOR3 v3) {
+	return animcomp_defs[d_idx]->SetTips(v1, v2, v3);
+}
+
+void AnimationManager::SetIsAnimCompDefArmTip(def_idx d_idx, bool set) {
+	return animcomp_defs[d_idx]->SetIsArmTip(set);
+}
+void AnimationManager::SetAnimCompDefAttTip(def_idx d_idx, def_idx att_idx) {
+	return animcomp_defs[d_idx]->SetAttTip(att_idx);
+}
+void AnimationManager::SetAnimCompDefArmTip(def_idx d_idx, def_idx AttIdx) {
+
+	animcomp_defs[d_idx]->SetIsArmTip(true);
+	animcomp_defs[d_idx]->SetAttTip(AttIdx);
+	SetAnimCompDefMesh(d_idx, LOCALVERTEXLIST);
+	AnimCompDefResetGroups(d_idx);
+	VECTOR3 pos, dir, rot;
+	SB1->AttMng->GetAttDefPosDirRot(AttIdx, pos, dir, rot);
+	animcomp_defs[d_idx]->SetTips(pos, pos + dir, pos + rot);
+	((ANIMATIONCOMP*)animcomp_defs[d_idx]->ach)->trans->grp = MAKEGROUPARRAY(animcomp_defs[d_idx]->Tip);
+	((ANIMATIONCOMP*)animcomp_defs[d_idx]->ach)->trans->ngrp = 3;
+//	animcomp_defs[d_idx]->ngrps = 3;
+	return;
+}
 /*
 for (UINT i = 0; i < animcomp_defs.size(); i++) {
 	

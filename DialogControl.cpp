@@ -83,6 +83,12 @@ void DialogControl::Open(HINSTANCE hDLL) {
 void DialogControl::Close() {
 	open = false;
 	SB1->MshMng->ResetHighlights();
+	if (SB1->DockExhaustsActive) {
+		SB1->DeleteDockExhausts();
+	}
+	if (SB1->AttExhaustsActive) {
+		SB1->DeleteAttExhausts();
+	}
 //	if (SB1->DockBeaconsActive) {
 //		SB1->DeleteDockBeacons();
 //	}

@@ -14,7 +14,7 @@ public:
 //	string fullname;
 	vector<UINT> grps;
 	int ngrps;
-	UINT mesh;
+	int mesh;
 	UINT *pgrps;
 	VECTOR3 ref;
 	VECTOR3 shift;
@@ -80,4 +80,16 @@ public:
 	void Reset();
 	AnimCompDef* ParentACD;
 	vector<AnimCompDef*> ChildrenACD;
+	bool ArmTip;
+	VECTOR3 oldTip[3];
+	VECTOR3 Tip[3];
+	def_idx TipAttIdx;
+	bool IsArmTip();
+	void GetTips(VECTOR3 &v1, VECTOR3 &v2, VECTOR3 &v3);
+	void SetTips(VECTOR3 v1, VECTOR3 v2, VECTOR3 v3);
+	void SetAttTip(def_idx AttIdx);
+	def_idx GetAttTip();
+	void SetIsArmTip(bool set);
+
+
 };

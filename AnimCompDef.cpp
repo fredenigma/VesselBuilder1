@@ -29,6 +29,14 @@ AnimCompDef::AnimCompDef() {
 	valid = true;
 	ParentACD = NULL;
 	ChildrenACD.clear();
+	ArmTip = false;
+	TipAttIdx = (UINT)-1;
+	Tip[0] = _V(0, 0, 0);
+	Tip[1] = _V(0, 0, 1);
+	Tip[2] = _V(0, 1, 0);
+	oldTip[0] = Tip[0];
+	oldTip[1] = Tip[1];
+	oldTip[2] = Tip[2];
 }
 AnimCompDef::~AnimCompDef() {
 	if (pgrps) {
@@ -59,6 +67,14 @@ void AnimCompDef::Reset() {
 	valid = true;
 	ParentACD = NULL;
 	ChildrenACD.clear();
+	ArmTip = false;
+	TipAttIdx = (UINT)-1;
+	Tip[0] = _V(0, 0, 0);
+	Tip[1] = _V(0, 0, 1);
+	Tip[2] = _V(0, 1, 0);
+	oldTip[0] = Tip[0];
+	oldTip[1] = Tip[1];
+	oldTip[2] = Tip[2];
 	return;
 }
 void AnimCompDef::Init(MGROUP_TRANSFORM::TYPE type) {
@@ -347,3 +363,32 @@ void AnimCompDef::Invalidate() {
 	Reset();
 	valid = false;
 }
+
+bool AnimCompDef::IsArmTip() { return ArmTip; }
+void AnimCompDef::GetTips(VECTOR3 &v1, VECTOR3 &v2, VECTOR3 &v3) {
+	v1 = Tip[0];
+	v2 = Tip[1];
+	v3 = Tip[2];
+	return;
+}
+
+void AnimCompDef::SetAttTip(def_idx _AttIdx) {
+	TipAttIdx = _AttIdx;
+	//We'll see if we come up with an idea
+}
+def_idx AnimCompDef::GetAttTip() {
+	return TipAttIdx;
+}
+void AnimCompDef::SetTips(VECTOR3 v1, VECTOR3 v2, VECTOR3 v3) {
+	Tip[0] = v1;
+	Tip[1] = v2;
+	Tip[2] = v3;
+	oldTip[0] = Tip[0];
+	oldTip[1] = Tip[1];
+	oldTip[2] = Tip[2];
+	return;
+}
+void AnimCompDef::SetIsArmTip(bool set) {
+	ArmTip = set;
+}
+

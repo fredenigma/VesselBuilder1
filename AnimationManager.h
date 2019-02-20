@@ -91,6 +91,15 @@ public:
 	void StopManualArm();
 	bool ManualArmActive();
 	int CurrentManualAnim;
+	void SetIsAnimCompDefArmTip(def_idx d_idx, bool set);
+	bool IsAnimCompDefArmTip(def_idx d_idx);
+	void GetAnimCompDefTips(def_idx d_idx,VECTOR3 &v1, VECTOR3 &v2, VECTOR3 &v3);
+	void SetAnimCompDefTips(def_idx d_idx,VECTOR3 v1, VECTOR3 v2, VECTOR3 v3);
+	void SetAnimCompDefAttTip(def_idx d_idx, def_idx att_idx);
+	def_idx GetAnimCompDefAttTip(def_idx d_idx);
+	void SetAnimCompDefArmTip(def_idx d_idx, def_idx AttIdx);
+	void UpdateTip(def_idx d_idx);
+
 //	UINT anim_seq_counter;
 //	UINT anim_comp_counter;
 //	ANIMATIONCOMPONENT_HANDLE FindParentACH(UINT parent_comp_idx);

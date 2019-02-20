@@ -135,6 +135,7 @@
 #define IDC_BUTTON_ANIMCOMPNAMESET      1146
 #define IDC_BUTTON_ANIMCOMPDEL          1147
 #define IDC_CHECK_ATTPARENT             1148
+#define IDC_BUTTON_ANIMCOMPTIPSET       1148
 #define IDC_CHECK_ATTHIGHLIGHT          1149
 #define IDC_EDIT_ATTPOSX                1150
 #define IDC_EDIT_ATTPOSY                1151
@@ -157,6 +158,12 @@
 #define IDC_SPIN_ATTPOSX                1168
 #define IDC_SPIN_ATTPOSY                1169
 #define IDC_SPIN_ATTPOSZ                1170
+#define IDC_STATIC_ANIMCOMPGRPS         1171
+#define IDC_EDIT_ATTRANGE               1171
+#define IDC_CHECK_ANIMCOMPARMTIP        1172
+#define IDC_BUTTON_ATTROT_SET2          1172
+#define IDC_BUTTON_ATTRANGESET          1172
+#define IDC_LIST_ANIMCOMPATTS           1173
 
 // Next default values for new objects
 // 
@@ -164,7 +171,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1171
+#define _APS_NEXT_CONTROL_VALUE         1174
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

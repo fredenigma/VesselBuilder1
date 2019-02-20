@@ -186,6 +186,10 @@ StationBuilder1(OBJHANDLE hObj,int fmodel);
  bool UsingD3D9();
  bool wD3D9;
  MATRIX3 Inverse(MATRIX3 m);
+ bool AreVector3Equal(VECTOR3 v1, VECTOR3 v2);
+ bool GrabMode;
+ int currentGrabAtt;
+ bool Grapple();
  /*
  vector<ANIM_COMPDEF> animcomps_definitions;
  vector<ANIM_DEF> animations_definitions;
@@ -194,7 +198,7 @@ StationBuilder1(OBJHANDLE hObj,int fmodel);
  void ClearDelete(vector<MGROUP_ROTATE*>vmgr);
  */
 
-
+ //VECTOR3 arm_tip[3];
 };
 
 

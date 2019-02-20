@@ -14,7 +14,7 @@ void AttachmentManager::CreateAttDef() {
 	return CreateAttDef(attd);
 }
 
-void AttachmentManager::CreateAttDef(bool toparent, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot, string id, bool loose) {
+void AttachmentManager::CreateAttDef(bool toparent, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot, string id,double range, bool loose) {
 	ATT_DEF attd = ATT_DEF();
 	attd.toparent = toparent;
 	attd.pos = pos;
@@ -24,12 +24,14 @@ void AttachmentManager::CreateAttDef(bool toparent, VECTOR3 pos, VECTOR3 dir, VE
 	attd.antirot = rot*(-1);
 	attd.id = id;
 	attd.loose = loose;
+	attd.range = range;
 	return CreateAttDef(attd);
 }
 
 void AttachmentManager::CreateAttDef(ATT_DEF att_d) {
 	ATT_DEF att = att_d;
 	att.ah = SB1->CreateAttachment(att.toparent, att.pos, att.dir, att.rot, att.id.c_str(), att.loose);
+	oapiWriteLogV("Attachment count:%i %i", SB1->AttachmentCount(true), SB1->AttachmentCount(false));
 	att.created = true;
 	att_defs.push_back(att);
 	return;
@@ -100,12 +102,15 @@ void AttachmentManager::ParseCfgFile(FILEHANDLE fh) {
 		oapiReadItem_vec(fh, cbuf, dir);
 		sprintf(cbuf, "ATT_%i_ROT", att_counter);
 		oapiReadItem_vec(fh, cbuf, rot);
+		double range = 10;
+		sprintf(cbuf, "ATT_%i_RANGE", att_counter);
+		oapiReadItem_float(fh, cbuf, range);
 		sprintf(cbuf, "ATT_%i_ID", att_counter);
 		oapiReadItem_string(fh, cbuf, idbuf);
 		string id(idbuf);
 		sprintf(cbuf, "ATT_%i_TOPARENT", att_counter);
 		oapiReadItem_bool(fh, cbuf, toparent);
-		CreateAttDef(toparent, pos, dir, rot, id, false);
+		CreateAttDef(toparent, pos, dir, rot, id,range, false);
 		att_counter++;
 		sprintf(cbuf, "ATT_%i_IDX", att_counter);
 	}
@@ -129,6 +134,8 @@ void AttachmentManager::WriteCfg(FILEHANDLE fh) {
 		oapiWriteItem_vec(fh, cbuf, att_defs[i].dir);
 		sprintf(cbuf, "ATT_%i_ROT", counter);
 		oapiWriteItem_vec(fh, cbuf, att_defs[i].rot);
+		sprintf(cbuf, "ATT_%i_RANGE", counter);
+		oapiWriteItem_float(fh, cbuf, att_defs[i].range);
 		sprintf(cbuf, "ATT_%i_ID", counter);
 		char cbuf2[256] = { '\0' };
 		sprintf(cbuf2, att_defs[i].id.c_str());
@@ -140,4 +147,24 @@ void AttachmentManager::WriteCfg(FILEHANDLE fh) {
 		
 	}
 	return;
+}
+
+ATTACHMENTHANDLE AttachmentManager::GetAttDefAH(def_idx d_idx) {
+	return att_defs[d_idx].ah;
+}
+def_idx AttachmentManager::IdxAtt2Def(UINT att_idx) {
+	ATTACHMENTHANDLE ah = SB1->GetAttachmentHandle(false, att_idx);
+	for (UINT i = 0; i < GetAttCount(); i++) {
+		if (att_defs[i].ah == ah) {
+			return i;
+		}
+	}
+	return 0;
+}
+
+void AttachmentManager::SetAttDefRange(def_idx d_idx, double newrange) {
+	att_defs[d_idx].range = newrange;
+}
+double AttachmentManager::GetAttDefRange(def_idx d_idx) {
+	return att_defs[d_idx].range;
 }

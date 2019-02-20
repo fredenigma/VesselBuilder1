@@ -74,6 +74,8 @@ StationBuilder1::StationBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel)
 	DockExhaustsID.clear();
 	AttExhaustsActive = false;
 	AttExhaustsID.clear();
+	GrabMode = false;
+	currentGrabAtt = 0;
 	//animcomps_definanitions.clear();
 	//animations_definitions.clear();
 	SBLog("Class Initialize");
@@ -177,7 +179,7 @@ void StationBuilder1::clbkSetClassCaps(FILEHANDLE cfg){
 
 	SBLog("ClassName:%s", GetClassName());
 	
-	
+	ResetVehicle();
 	ParseCfgFile(cfg);
 	VehicleSetup();
 	WriteBackupFile();
@@ -250,7 +252,42 @@ void StationBuilder1::clbkPostCreation() {
 	
 }
 
-
+bool StationBuilder1::Grapple() {
+	def_idx AttIdx = AttMng->IdxAtt2Def(currentGrabAtt);
+	
+	VECTOR3 gpos, grms, pos, dir, rot;
+	ATTACHMENTHANDLE ah = GetAttachmentHandle(false, currentGrabAtt);
+	GetAttachmentParams(ah, pos, dir, rot);
+	Local2Global(pos, grms);  // global position of RMS tip
+	double distbar = AttMng->GetAttDefRange(AttIdx);
+	OBJHANDLE h_candidate = NULL;
+	int index_candidate = -1;
+	ATTACHMENTHANDLE att_h_candidate = NULL;
+	for (DWORD i = 0; i < oapiGetVesselCount(); i++) {
+		OBJHANDLE hV = oapiGetVesselByIndex(i);
+		if (hV == GetHandle()) continue; // we don't want to grapple ourselves ...
+		oapiGetGlobalPos(hV, &gpos);
+			VESSEL *v = oapiGetVesselInterface(hV);
+			DWORD nAttach = v->AttachmentCount(true);
+			for (DWORD j = 0; j < nAttach; j++) { // now scan all attachment points of the candidate
+				ATTACHMENTHANDLE hAtt = v->GetAttachmentHandle(true, j);
+				v->GetAttachmentParams(hAtt, pos, dir, rot);
+				v->Local2Global(pos, gpos);
+				if (dist(gpos, grms) < distbar) {
+					distbar = dist(gpos, grms);
+					h_candidate = hV;
+					index_candidate = j;
+					att_h_candidate = hAtt;
+				}
+			}
+	}
+	if ((index_candidate == -1) || (h_candidate == NULL)) {
+		return false;
+	}
+	AttachChild(h_candidate, ah, att_h_candidate);
+	return true;
+	
+}
 
 void StationBuilder1::MoveFollowMe(VECTOR3 axis) {
 	follow_me_pos += axis*follow_me_translation_speed*oapiGetSimStep();
@@ -401,7 +438,8 @@ int StationBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 		return 1;
 	}
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == OAPI_KEY_K) {
-		
+	//	CreateAttachment(false, _V(0, 0, 0), _V(0, 0, 1), _V(0, 1, 0), "test", false);
+	//	sprintf(oapiDebugString(), "Att count:%i %i", AttachmentCount(true), AttachmentCount(false));
 	//	((MGROUP_ROTATE*)((ANIMATIONCOMP*)(anim_defs[0].animcomps[0].ach))->trans)->axis = _V(1, 0, 0);
 		
 	/*	anim_defs[0].animcomps[0].grps.clear();
@@ -455,6 +493,9 @@ int StationBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 		return 1;
 	}
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == OAPI_KEY_G) {
+		if (GrabMode) {
+			Grapple();
+		}
 	/*	ANIM_COMPDEF acd;
 		acd.state0 = 0;
 		acd.state1 = 1;
@@ -473,15 +514,47 @@ int StationBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 		return 1;
 	}
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && KEYMOD_CONTROL(kstate) && key == OAPI_KEY_G) {
-		SetAnimation(0, 1);
+		if (!GrabMode) {
+			if (AttachmentCount(false) > 0) {
+				GrabMode = true;
+			}
+		}
+		else {
+			GrabMode = false;
+			sprintf(oapiDebugString(), "");
+		}
+
 		return 1;
 	}
+	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && KEYMOD_CONTROL(kstate) && key == OAPI_KEY_RIGHT) {
+		if (GrabMode) {
+			if (currentGrabAtt < (AttachmentCount(false) - 1)) {
+				currentGrabAtt += 1;
+			}
+			return 1;
+		}
+		
+	}
+	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && KEYMOD_CONTROL(kstate) && key == OAPI_KEY_LEFT) {
+		if (GrabMode) {
+			if (currentGrabAtt > 0) {
+				currentGrabAtt -= 1;
+			}
+			return 1;
+		}
+
+	}
+
 	return 0;
 }
 
 
 
 void StationBuilder1::clbkPreStep(double simt, double simdt, double mjd) {
+	if (GrabMode) {
+		def_idx attidx = AttMng->IdxAtt2Def(currentGrabAtt);
+		sprintf(oapiDebugString(), "Attachment ready for Grab: %i %s", currentGrabAtt, AttMng->GetAttDefId(attidx).c_str());
+	}
 	AnimMng->AnimationPreStep(simt, simdt, mjd);
 	if (follow_me) {
 		UpdateFollowMe();
@@ -512,7 +585,7 @@ bool StationBuilder1::clbkLoadVC(int id) {
 
 void StationBuilder1::VehicleSetup() {
 	SBLog("Vehicle Setup Started...");
-	ResetVehicle();
+//	ResetVehicle();
 	MshMng->LoadMeshes();
 	CreateDocks();
 	SBLog("Vehicle Setup Finished...");
@@ -966,7 +1039,15 @@ MATRIX3 StationBuilder1::Inverse(MATRIX3 m) {
 
 	return r;
 }
+bool StationBuilder1::AreVector3Equal(VECTOR3 v1, VECTOR3 v2) {
+	if ((v1.x == v2.x) && (v1.y == v2.y) && (v1.z == v2.z)) {
+		return true;
+	}
+	else {
+		return false;
+	}
 
+}
 
 
 

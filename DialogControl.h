@@ -62,6 +62,7 @@ public:
 	int ComboFindItemData(HWND hWnd, DWORD Data);
 	int ComboFindItemData(HWND hWnd, void* data);
 	void UpdateAnimCompGroupLists(HWND hWnd, def_idx meshdef_idx);
+	void ShowAnimCompArmTip(HWND hWnd, bool show);
 	bool IsUintInVector(UINT u, vector<UINT>v);
 	HWND hwnd_Mesh;
 	HWND hWnd_Dock;

@@ -1,6 +1,7 @@
 #pragma once
 struct ATT_DEF {
 	bool toparent;
+	
 	VECTOR3 pos;
 	VECTOR3 dir;
 	VECTOR3 rot;
@@ -10,6 +11,7 @@ struct ATT_DEF {
 	string id;
 	bool loose;
 	bool created;
+	double range;
 	ATT_DEF() {
 		pos = _V(0, 0, 0);
 		dir = _V(0, 0, 1);
@@ -21,6 +23,7 @@ struct ATT_DEF {
 		toparent = false;
 		id.clear();
 		created = false;
+		range = 10;
 	}
 };
 
@@ -33,10 +36,11 @@ public:
 	void CreateAttDef();
 	void AddAttDefNoCreate();
 	void CreateAttDef(ATT_DEF att_d);
-	void CreateAttDef(bool toparent, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot, string id, bool loose);
+	void CreateAttDef(bool toparent, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot, string id, double range, bool loose);
 	void DeleteAttDef(def_idx d_idx);
 	void ModifyAttDef(def_idx d_idx, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot);
 	UINT GetAttCount();
+	//UINT GetValidAttCount();
 	bool AttIsCreated(def_idx d_idx);
 	string GetAttDefId(def_idx d_idx);
 	bool AttToParent(def_idx d_idx);
@@ -44,6 +48,10 @@ public:
 	void SetAttDefID(def_idx d_idx, string id);
 	void SetAttDefCreated(def_idx d_idx);
 	void SetAttDefToParent(def_idx d_idx, bool toparent);
+	ATTACHMENTHANDLE GetAttDefAH(def_idx d_idx);
 	void ParseCfgFile(FILEHANDLE fh);
 	void WriteCfg(FILEHANDLE fh);
+	def_idx IdxAtt2Def(UINT att_idx);
+	void SetAttDefRange(def_idx d_idx, double newrange);
+	double GetAttDefRange(def_idx d_idx);
 };

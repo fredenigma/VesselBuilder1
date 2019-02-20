@@ -20,6 +20,7 @@ void DialogControl::UpdateAttDialog(HWND hWnd) {
 		SendDlgItemMessage(hWnd, IDC_EDIT_ATTROTX, EM_SETREADONLY, false, 0);
 		SendDlgItemMessage(hWnd, IDC_EDIT_ATTROTY, EM_SETREADONLY, false, 0);
 		SendDlgItemMessage(hWnd, IDC_EDIT_ATTROTZ, EM_SETREADONLY, false, 0);
+		SendDlgItemMessage(hWnd, IDC_EDIT_ATTRANGE, EM_SETREADONLY, false, 0);
 		EnableWindow(GetDlgItem(hWnd, IDC_SPIN_ATTPITCH), true);
 		EnableWindow(GetDlgItem(hWnd, IDC_SPIN_ATTROLL), true);
 		EnableWindow(GetDlgItem(hWnd, IDC_SPIN_ATTYAW), true);
@@ -31,6 +32,7 @@ void DialogControl::UpdateAttDialog(HWND hWnd) {
 		EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_ATTPOS_SET), true);
 		EnableWindow(GetDlgItem(hWnd, IDC_BTN_ATTPASTEV), true);
 		EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_CRDELATTDEF), true);
+		EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_ATTRANGESET), true);
 		SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_CRDELATTDEF), (LPCSTR)TEXT("DELETE THIS ATTACHMENT"));
 
 	}
@@ -47,6 +49,7 @@ void DialogControl::UpdateAttDialog(HWND hWnd) {
 		SendDlgItemMessage(hWnd, IDC_EDIT_ATTROTX, EM_SETREADONLY, true, 0);
 		SendDlgItemMessage(hWnd, IDC_EDIT_ATTROTY, EM_SETREADONLY, true, 0);
 		SendDlgItemMessage(hWnd, IDC_EDIT_ATTROTZ, EM_SETREADONLY, true, 0);
+		SendDlgItemMessage(hWnd, IDC_EDIT_ATTRANGE, EM_SETREADONLY, true, 0);
 		EnableWindow(GetDlgItem(hWnd, IDC_SPIN_ATTPITCH), false);
 		EnableWindow(GetDlgItem(hWnd, IDC_SPIN_ATTROLL), false);
 		EnableWindow(GetDlgItem(hWnd, IDC_SPIN_ATTYAW), false);
@@ -58,6 +61,7 @@ void DialogControl::UpdateAttDialog(HWND hWnd) {
 		EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_ATTPOS_SET), false);
 		EnableWindow(GetDlgItem(hWnd, IDC_BTN_ATTPASTEV), false);
 		EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_CRDELATTDEF), true);
+		EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_ATTRANGESET), false);
 		SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_CRDELATTDEF), (LPCSTR)TEXT("CREATE THE ATTACHMENT"));
 
 	}
@@ -78,6 +82,10 @@ void DialogControl::UpdateAttDialog(HWND hWnd) {
 	if (SB1->AttExhaustsActive) {
 		SendDlgItemMessage(hWnd, IDC_CHECK_ATTHIGHLIGHT, BM_SETCHECK, BST_CHECKED, 0);
 	}
+
+	char cbuf[256] = { '\0' };
+	sprintf(cbuf, "%.2f", AttMng->GetAttDefRange(idx));
+	SetDlgItemText(hWnd, IDC_EDIT_ATTRANGE, cbuf);
 
 	return;
 }
@@ -180,7 +188,12 @@ BOOL DialogControl::AttDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 			}
 			break;
 		}
-
+		case IDC_BUTTON_ATTRANGESET:
+		{
+			double newrange = GetDlgItemDouble(hWnd, IDC_EDIT_ATTRANGE);
+			AttMng->SetAttDefRange(idx, newrange);
+			break;
+		}
 
 		}
 		break;
