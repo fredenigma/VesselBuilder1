@@ -34,6 +34,12 @@
     <ClInclude Include="AttachmentManager.h">
       <Filter>Vessel</Filter>
     </ClInclude>
+    <ClInclude Include="PropellantManager.h">
+      <Filter>Vessel</Filter>
+    </ClInclude>
+    <ClInclude Include="ThrusterManager.h">
+      <Filter>Vessel</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\Orbitersdk\lib\orbiter.lib">
@@ -101,6 +107,18 @@
       <Filter>Vessel</Filter>
     </ClCompile>
     <ClCompile Include="AttDlgProc.cpp">
+      <Filter>Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="PrpDlgProc.cpp">
+      <Filter>Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="PropellantManager.cpp">
+      <Filter>Vessel</Filter>
+    </ClCompile>
+    <ClCompile Include="ThrusterManager.cpp">
+      <Filter>Vessel</Filter>
+    </ClCompile>
+    <ClCompile Include="ThrustersDlgProc.cpp">
       <Filter>Dialog</Filter>
     </ClCompile>
   </ItemGroup>

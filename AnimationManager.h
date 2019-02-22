@@ -33,6 +33,7 @@ public:
 	double GetAnimDuration(def_idx d_idx);
 	void ResetAnimation(def_idx d_idx);
 	void SetAnimationState(def_idx d_idx,double state);
+	double GetAnimationState(def_idx d_idx);
 	void DeleteAnimDef(def_idx d_idx);
 	void AddAnimCompDef(def_idx animdef_idx, MGROUP_TRANSFORM::TYPE type);
 	void AddAnimCompDef(def_idx animdef_idx, AnimCompDef* acd);
@@ -84,6 +85,7 @@ public:
 	UINT GetAnimNComps(def_idx d_idx);
 	void CompsCleanUp();
 	void StartAnim(def_idx d_idx);
+	void SetAnimBackward(def_idx d_idx,bool bw);
 	void StopAnim(def_idx d_idx);
 	void ResetAnim(def_idx d_idx);
 	bool ManualArmMoving;
@@ -108,7 +110,10 @@ public:
 	void AnimationPreStep(double simt, double simdt, double mjd);
 	void ConsumeAnimBufferedKey(DWORD key, bool down, char *kstate);
 	void ConsumeAnimDirectKey(char *kstate);
-	bool AnimEditingMode;
+	//bool AnimEditingMode;
 	void ParseCfgFile(FILEHANDLE fh);
 	void WriteCfg(FILEHANDLE fh);
+	bool IsAnimationRunning(def_idx d_idx);
+	bool IsAnimationBackward(def_idx d_idx);
+	int AnimationRunStatus(def_idx d_idx);
 };

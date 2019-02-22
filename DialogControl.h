@@ -1,7 +1,7 @@
 #pragma once
 #include <CommCtrl.h>
 
-enum ItemType { MESH, DOCK, ATTACHMENT, LIGHT, CAMERA, SPECIAL, SETTINGS,ROOTS,NONE,ANIMATIONS,ANIM_COMP };
+enum ItemType { MESH, DOCK, ATTACHMENT, LIGHT, CAMERA, SPECIAL, SETTINGS,ROOTS,NONE,ANIMATIONS,ANIM_COMP,PROPELLANT,THRUSTERS };
 struct TREE_ITEM_REF {
 	ItemType Type;
 	UINT idx;
@@ -24,6 +24,11 @@ public:
 	BOOL AnimDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL AnimCompDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL AttDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	BOOL PrpDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	BOOL ThrDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+
+
 	map<HTREEITEM, TREE_ITEM_REF> TreeItem;
 	TREE_ITEM_REF CurrentSelection;
 
@@ -44,6 +49,8 @@ public:
 	HTREEITEM hrootCameras;
 	HTREEITEM hrootAnimations;
 	HTREEITEM hrootSettings;
+	HTREEITEM hrootPropellant;
+	HTREEITEM hrootThrusters;
 
 	void SetDlgItemsTextVector3(HWND hWnd, int id1, int id2, int id3, VECTOR3 v3);
 	VECTOR3 GetDlgItemsVector3(HWND hWnd, int id1, int id2, int id3);
@@ -55,6 +62,8 @@ public:
 	void UpdateAnimDialog(HWND hWnd);
 	void UpdateAnimCompDialog(HWND hWnd);
 	void UpdateAttDialog(HWND hWnd);
+	void UpdatePrpDialog(HWND hWnd);
+	void UpdateThrDialog(HWND hWnd);
 	HTREEITEM FindHtreeItem(ItemType type, UINT idx);
 	void InitAnimKeyCombo(HWND hWnd);
 	void UpdateTree(HWND hWnd,ItemType type,HTREEITEM select);
@@ -69,10 +78,15 @@ public:
 	HWND hWnd_Anim;
 	HWND hWnd_AnimComp;
 	HWND hWnd_Atts;
+	HWND hWnd_Prp;
+	HWND hWnd_Thr;
+
 	HWND GetDlg() { return hDlg; }
 	map<DWORD, string> oapi_keys;
 	AnimationManager *AnimMng;
 	AttachmentManager *AttMng;
+	PropellantManager *PrpMng;
+	ThrusterManager *ThrMng;
 	bool AnimTesting;
 	double GetDlgItemDouble(HWND hWnd, int control_id);
 //	HTREEITEM ItemToSelect;

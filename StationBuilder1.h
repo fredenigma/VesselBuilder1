@@ -51,6 +51,7 @@ struct V_CLIPBOARD {
 
 
 
+
 struct DCK_DEF {
 	VECTOR3 pos;
 	VECTOR3 dir;
@@ -69,13 +70,6 @@ struct DCK_DEF {
 };
 
 
-struct BEACONSPOTS {
-	VECTOR3 pos;
-	BEACONLIGHTSPEC bls;
-	BEACONSPOTS() {
-		pos = _V(0, 0, 0);
-	}
-};
 
 class DialogControl;
 class FollowMeDlg;
@@ -83,6 +77,9 @@ class AnimCompDef;
 class MeshManager;
 class AttachmentManager;
 class AnimationManager;
+class PropellantManager;
+class ThrusterManager;
+
 class StationBuilder1 :public VESSEL4{
 public:
 StationBuilder1(OBJHANDLE hObj,int fmodel);
@@ -104,6 +101,8 @@ StationBuilder1(OBJHANDLE hObj,int fmodel);
  MeshManager* MshMng;
  AttachmentManager* AttMng;
  AnimationManager* AnimMng;
+ PropellantManager* PrpMng;
+ ThrusterManager* ThrMng;
  VISHANDLE visual;
  
  vector <DCK_DEF> dock_definitions;
@@ -181,7 +180,10 @@ StationBuilder1(OBJHANDLE hObj,int fmodel);
  vector<UINT> AttExhaustsID;
  void CreateAttExhausts();
  void DeleteAttExhausts();
- 
+ bool thExhaustsActive;
+ vector<UINT>ThExaustsID;
+ void CreateThExhausts();
+ void DeleteThExhausts();
  
  bool UsingD3D9();
  bool wD3D9;
@@ -189,7 +191,10 @@ StationBuilder1(OBJHANDLE hObj,int fmodel);
  bool AreVector3Equal(VECTOR3 v1, VECTOR3 v2);
  bool GrabMode;
  int currentGrabAtt;
- bool Grapple();
+ bool ToggleGrapple();
+ bool NoEditor;
+ 
+ 
  /*
  vector<ANIM_COMPDEF> animcomps_definitions;
  vector<ANIM_DEF> animations_definitions;
@@ -198,7 +203,8 @@ StationBuilder1(OBJHANDLE hObj,int fmodel);
  void ClearDelete(vector<MGROUP_ROTATE*>vmgr);
  */
 
- //VECTOR3 arm_tip[3];
+ 
+
 };
 
 

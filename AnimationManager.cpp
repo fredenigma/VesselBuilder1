@@ -11,7 +11,7 @@ AnimationManager::AnimationManager(StationBuilder1 *_SB1) {
 	animcomp_defs.clear();
 	anim_defs.clear();
 	animcomp_defs.clear();
-	AnimEditingMode = false;
+	//AnimEditingMode = false;
 	ManualArmMoving = false;
 	CurrentManualAnim = -1;
 }
@@ -104,6 +104,9 @@ void AnimationManager::SetAnimationState(def_idx d_idx,double state) {
 	anim_defs[d_idx]->SetState(state);
 	//UpdateTip(d_idx);
 	return;
+}
+double AnimationManager::GetAnimationState(def_idx d_idx) {
+	return anim_defs[d_idx]->GetState();
 }
 void AnimationManager::UpdateTip(def_idx d_idx) {
 	bool hastip = false;
@@ -820,6 +823,10 @@ void AnimationManager::StartAnim(def_idx d_idx) {
 	anim_defs[d_idx]->Start();
 	return;
 }
+void AnimationManager::SetAnimBackward(def_idx d_idx, bool bw) {
+	anim_defs[d_idx]->SetBackward(bw);
+	return;
+}
 void AnimationManager::StopAnim(def_idx d_idx) {
 	anim_defs[d_idx]->Stop();
 	return;
@@ -1063,6 +1070,26 @@ void AnimationManager::SetAnimCompDefArmTip(def_idx d_idx, def_idx AttIdx) {
 //	animcomp_defs[d_idx]->ngrps = 3;
 	return;
 }
+
+bool AnimationManager::IsAnimationRunning(def_idx d_idx) {
+	return anim_defs[d_idx]->IsRunning();
+}
+bool AnimationManager::IsAnimationBackward(def_idx d_idx) {
+	return anim_defs[d_idx]->IsBackward();
+}
+int AnimationManager::AnimationRunStatus(def_idx d_idx) {
+	if ((anim_defs[d_idx]->IsRunning()) && (!anim_defs[d_idx]->IsBackward())) {
+		return 1;
+	}
+	else if ((anim_defs[d_idx]->IsRunning()) && (anim_defs[d_idx]->IsBackward())) {
+		return -1;
+	}
+	else {
+		return 0;
+	}
+}
+
+
 /*
 for (UINT i = 0; i < animcomp_defs.size(); i++) {
 	

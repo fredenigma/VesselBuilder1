@@ -6,6 +6,8 @@
 #include "AnimDef.h"
 #include "AttachmentManager.h"
 #include "AnimationManager.h"
+#include "PropellantManager.h"
+#include "ThrusterManager.h"
 #pragma comment(lib, "comctl32.lib")
 
 
@@ -54,11 +56,28 @@ BOOL CALLBACK AttDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
 	return DlgCtrl->AttDlgProc(hWnd, uMsg, wParam, lParam);
 }
+BOOL CALLBACK PrpDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	if (uMsg == WM_INITDIALOG) {
+		SetWindowLong(hWnd, GWL_USERDATA, (LONG)lParam);
+	}
+	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
+	return DlgCtrl->PrpDlgProc(hWnd, uMsg, wParam, lParam);
+}
+BOOL CALLBACK ThrDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	if (uMsg == WM_INITDIALOG) {
+		SetWindowLong(hWnd, GWL_USERDATA, (LONG)lParam);
+	}
+	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
+	return DlgCtrl->ThrDlgProc(hWnd, uMsg, wParam, lParam);
+}
+
 
 DialogControl::DialogControl(StationBuilder1 *_SB1) {
 	SB1 = _SB1;
 	AnimMng = SB1->AnimMng;
 	AttMng = SB1->AttMng;
+	PrpMng = SB1->PrpMng;
+	ThrMng = SB1->ThrMng;
 	open = false;
 	hDlg = NULL;
 	TreeItem.clear();
@@ -73,6 +92,9 @@ DialogControl::DialogControl(StationBuilder1 *_SB1) {
 DialogControl::~DialogControl() {
 	SB1 = NULL;
 	AnimMng = NULL;
+	AttMng = NULL;
+	PrpMng = NULL;
+	ThrMng = NULL;
 	hDlg = NULL;
 	open = false;
 }
@@ -88,6 +110,9 @@ void DialogControl::Close() {
 	}
 	if (SB1->AttExhaustsActive) {
 		SB1->DeleteAttExhausts();
+	}
+	if (SB1->thExhaustsActive) {
+		SB1->DeleteThExhausts();
 	}
 //	if (SB1->DockBeaconsActive) {
 //		SB1->DeleteDockBeacons();
@@ -108,6 +133,8 @@ void DialogControl::InitDialog(HWND hWnd) {
 	hWnd_Anim = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_ANIM), hWnd, AnimDlgProcHook, (LPARAM)this);
 	hWnd_AnimComp = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_ANIMCOMP), hWnd, AnimCompDlgProcHook, (LPARAM)this);
 	hWnd_Atts = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_ATT), hWnd, AttDlgProcHook, (LPARAM)this);
+	hWnd_Prp = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_PROPELLANT), hWnd, PrpDlgProcHook, (LPARAM)this);
+	hWnd_Thr = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_THRUSTERS), hWnd, ThrDlgProcHook, (LPARAM)this);
 	SetWindowPos(hwnd_Mesh, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hwnd_Mesh, SW_HIDE);
 	SetWindowPos(hWnd_Dock, NULL, 255, 10, 0, 0, SWP_NOSIZE);
@@ -118,6 +145,10 @@ void DialogControl::InitDialog(HWND hWnd) {
 	ShowWindow(hWnd_AnimComp, SW_HIDE);
 	SetWindowPos(hWnd_Atts, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hWnd_Atts, SW_HIDE);
+	SetWindowPos(hWnd_Prp, NULL, 255, 10, 0, 0, SWP_NOSIZE);
+	ShowWindow(hWnd_Prp, SW_HIDE);
+	SetWindowPos(hWnd_Thr, NULL, 255, 10, 0, 0, SWP_NOSIZE);
+	ShowWindow(hWnd_Thr, SW_HIDE);
 	return;
 }
 
@@ -285,7 +316,7 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			char cbuf[256] = { '\0' };
 			sprintf(cbuf, AnimMng->GetAnimName(i).c_str());
 			insertstruct.item.pszText = (LPSTR)cbuf;
-			insertstruct.item.cchTextMax = ARRAYSIZE(cbuf);
+			insertstruct.item.cchTextMax = strlen(cbuf);
 			//insertstruct.item.pszText = (LPSTR)AnimMng->GetAnimName(i).c_str();
 			//insertstruct.item.cchTextMax = AnimMng->GetAnimName(i).size();
 			TREE_ITEM_REF Tir = TREE_ITEM_REF();
@@ -316,23 +347,80 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 				insertstruct.hParent = hrootAnimations;
 			}
 		}
-	//	TreeView_Select(GetDlgItem(hWnd, IDC_TREE1), hrootAnimations, 0);
-	/*	for (UINT j = 0; j < AnimMng->GetAnimCompDefCount(); j++) {
-			insertstruct.item.pszText = (LPSTR)AnimMng->GetAnimCompDefFullName(j).c_str();
-			insertstruct.item.cchTextMax = AnimMng->GetAnimCompDefFullName(j).size();
-			TREE_ITEM_REF Tir = TREE_ITEM_REF();
-			Tir.Type = ANIM_COMP;
-			Tir.idx = j;
-			UINT index = AnimMng->FindAnimDefIndex(AnimMng->GetAnimCompDefSeqIdx(j));
-			if (index == (UINT)-1) { continue; }
-			HTREEITEM hAnimParent = FindHtreeItem(ANIMATIONS,index);
-			if (hAnimParent == NULL) { continue; }
-			insertstruct.hParent = hAnimParent;
-			Tir.hitem=TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
-			TreeItem[Tir.hitem] = Tir;			
-		}*/
+	
 		break;
 	}
+	case PROPELLANT:
+	{
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootPropellant);
+		while (ht != NULL) {
+			TreeItem.erase(ht);
+			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootPropellant);
+		}
+		TVINSERTSTRUCT insertstruct = { 0 };
+
+		insertstruct.hInsertAfter = TVI_ROOT;
+		insertstruct.item.mask = TVIF_TEXT;
+		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
+		insertstruct.hParent = hrootPropellant;
+		for (UINT i = 0; i < PrpMng->GetPropCount(); i++) {
+			char cbuf[256] = { '\0' };
+			if (PrpMng->GetTankName(i).size()> 0) {
+				sprintf(cbuf, "%s", PrpMng->GetTankName(i).c_str());
+			}
+			else {
+				sprintf(cbuf, "Tank_%i", i);
+			}
+			insertstruct.item.pszText = (LPSTR)cbuf;
+			insertstruct.item.cchTextMax = strlen(cbuf);
+			TREE_ITEM_REF Tir = TREE_ITEM_REF();
+			Tir.Type = PROPELLANT;
+			Tir.idx = i;
+			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			TreeItem[Tir.hitem] = Tir;
+			TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootPropellant, TVE_EXPAND);
+		}
+		break;
+	}
+
+	case THRUSTERS:
+	{
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootThrusters);
+		while (ht != NULL) {
+			TreeItem.erase(ht);
+			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootThrusters);
+		}
+		TVINSERTSTRUCT insertstruct = { 0 };
+
+		insertstruct.hInsertAfter = TVI_ROOT;
+		insertstruct.item.mask = TVIF_TEXT;
+		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
+		insertstruct.hParent = hrootThrusters;
+		for (UINT i = 0; i < ThrMng->GetThrCount(); i++) {
+			char cbuf[256] = { '\0' };
+			if (ThrMng->GetThrName(i).size()> 0) {
+				sprintf(cbuf, "%s", ThrMng->GetThrName(i).c_str());
+			}
+			else {
+				sprintf(cbuf, "Thruster_%i", i);
+			}
+			insertstruct.item.pszText = (LPSTR)cbuf;
+			insertstruct.item.cchTextMax = strlen(cbuf);
+			TREE_ITEM_REF Tir = TREE_ITEM_REF();
+			Tir.Type = THRUSTERS;
+			Tir.idx = i;
+			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			TreeItem[Tir.hitem] = Tir;
+			TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootThrusters, TVE_EXPAND);
+		}
+		break;
+	}
+
+
+
+
 	}
 	
 	//if (ItemToSelect != NULL) { TreeView_SelectItem(GetDlgItem(hWnd, IDC_TREE1), ItemToSelect); }
@@ -384,6 +472,25 @@ void DialogControl::InitTree(HWND hWnd) {
 	Tir.hitem = hrootAttachments;
 	TreeItem[Tir.hitem] = Tir;
 
+	insertstruct.item.pszText = (LPSTR)TEXT("Animations\0");
+	insertstruct.item.cchTextMax = 11;
+	hrootAnimations = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+	Tir.hitem = hrootAnimations;
+	TreeItem[Tir.hitem] = Tir;
+
+	insertstruct.item.pszText = (LPSTR)TEXT("Propellants\0");
+	insertstruct.item.cchTextMax = 12;
+	hrootPropellant = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+	Tir.hitem = hrootPropellant;
+	TreeItem[Tir.hitem] = Tir;
+
+	insertstruct.item.pszText = (LPSTR)TEXT("Thrusters\0");
+	insertstruct.item.cchTextMax = 10;
+	hrootThrusters = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+	Tir.hitem = hrootThrusters;
+	TreeItem[Tir.hitem] = Tir;
+
+
 	insertstruct.item.pszText = (LPSTR)TEXT("Lights\0");
 	insertstruct.item.cchTextMax = 7;
 	hrootLights = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
@@ -396,13 +503,6 @@ void DialogControl::InitTree(HWND hWnd) {
 	Tir.hitem = hrootCameras;
 	TreeItem[Tir.hitem] = Tir;
 
-	insertstruct.item.pszText = (LPSTR)TEXT("Animations\0");
-	insertstruct.item.cchTextMax = 11;
-	hrootAnimations = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
-	Tir.hitem = hrootAnimations;
-	TreeItem[Tir.hitem] = Tir;
-
-
 	insertstruct.item.pszText = (LPSTR)TEXT("Settings\0");
 	insertstruct.item.cchTextMax = 9;
 	hrootSettings = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
@@ -410,7 +510,8 @@ void DialogControl::InitTree(HWND hWnd) {
 	UpdateTree(hWnd, DOCK,0);
 	UpdateTree(hWnd, ATTACHMENT, 0);
 	UpdateTree(hWnd, ANIMATIONS,0);
-	
+	UpdateTree(hWnd, PROPELLANT, 0);
+	UpdateTree(hWnd, THRUSTERS, 0);
 	return;
 }
 
@@ -435,6 +536,12 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 	}
 	if (type != ATTACHMENT) {
 		ShowWindow(hWnd_Atts, SW_HIDE);
+	}
+	if (type != PROPELLANT) {
+		ShowWindow(hWnd_Prp, SW_HIDE);
+	}
+	if (type != THRUSTERS) {
+		ShowWindow(hWnd_Thr, SW_HIDE);
 	}
 	switch (type) {
 	case MESH:
@@ -462,8 +569,18 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 	case ATTACHMENT:
 	{
 		ShowWindow(hWnd_Atts, SW_SHOW);
+		break;
 	}
-
+	case PROPELLANT:
+	{
+		ShowWindow(hWnd_Prp, SW_SHOW);
+		break;
+	}
+	case THRUSTERS:
+	{
+		ShowWindow(hWnd_Thr, SW_SHOW);
+		break;
+	}
 	}
 
 	return;
@@ -499,6 +616,14 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 			else if (CurrentSelection.hitem == hrootAttachments) {
 				AttMng->AddAttDefNoCreate();
 				UpdateTree(hWnd, ATTACHMENT, 0);
+			}
+			else if (CurrentSelection.hitem == hrootPropellant) {
+				PrpMng->AddTankDef();				
+				UpdateTree(hWnd, PROPELLANT, 0);
+			}
+			else if (CurrentSelection.hitem == hrootThrusters) {
+				ThrMng->AddThrDef();
+				UpdateTree(hWnd, THRUSTERS, 0);
 			}
 			break;
 		}
@@ -549,6 +674,14 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD ANIMATION");
 					}
+					else if (CurrentSelection.hitem == hrootPropellant) {
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
+						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD PROPELLANT TANK");
+					}
+					else if (CurrentSelection.hitem == hrootThrusters) {
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
+						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD THRUSTER");
+					}
 					else {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_HIDE);
 					}
@@ -587,6 +720,17 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 						case ATTACHMENT:
 						{
 							UpdateAttDialog(hWnd_Atts);
+							break;
+						}
+						case PROPELLANT:
+						{
+							UpdatePrpDialog(hWnd_Prp);
+							break;
+						}
+						case THRUSTERS:
+						{
+							UpdateThrDialog(hWnd_Thr);
+							//TO DO
 							break;
 						}
 					}

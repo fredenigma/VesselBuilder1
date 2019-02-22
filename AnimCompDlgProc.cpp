@@ -72,6 +72,7 @@ void DialogControl::UpdateAnimCompDialog(HWND hWnd) {
 		int selindex = -1;
 		for (UINT i = 0; i < AttMng->GetAttCount(); i++) {
 			if (!AttMng->AttIsCreated(i)) { continue; }
+			if (AttMng->AttToParent(i)) { continue; }
 			char cbuf[256] = { '\0' };
 			if (AttMng->GetAttDefId(i).size() <= 0) {
 				sprintf(cbuf, "Attachment_%i", i);

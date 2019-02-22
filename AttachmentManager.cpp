@@ -31,7 +31,7 @@ void AttachmentManager::CreateAttDef(bool toparent, VECTOR3 pos, VECTOR3 dir, VE
 void AttachmentManager::CreateAttDef(ATT_DEF att_d) {
 	ATT_DEF att = att_d;
 	att.ah = SB1->CreateAttachment(att.toparent, att.pos, att.dir, att.rot, att.id.c_str(), att.loose);
-	oapiWriteLogV("Attachment count:%i %i", SB1->AttachmentCount(true), SB1->AttachmentCount(false));
+	//oapiWriteLogV("Attachment count:%i %i", SB1->AttachmentCount(true), SB1->AttachmentCount(false));
 	att.created = true;
 	att_defs.push_back(att);
 	return;

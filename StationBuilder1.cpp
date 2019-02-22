@@ -18,7 +18,8 @@
 #include "AnimCompDef.h"
 #include "AttachmentManager.h"
 #include "AnimationManager.h"
-
+#include "PropellantManager.h"
+#include "ThrusterManager.h"
 //#define _CRT_SECURE_NO_WARNINGS
 //#define _CRT_NONSTDC_NO_DEPRECATE
 
@@ -42,6 +43,8 @@ StationBuilder1::StationBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel)
 	MshMng = new MeshManager(this);
 	AttMng = new AttachmentManager(this);
 	AnimMng = new AnimationManager(this);
+	PrpMng = new PropellantManager(this);
+	ThrMng = new ThrusterManager(this);
 	dock_definitions.clear();
 	//att_definitions.clear();
 	
@@ -74,8 +77,12 @@ StationBuilder1::StationBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel)
 	DockExhaustsID.clear();
 	AttExhaustsActive = false;
 	AttExhaustsID.clear();
+	thExhaustsActive = false;
+	ThExaustsID.clear();
 	GrabMode = false;
 	currentGrabAtt = 0;
+	NoEditor = false;
+	
 	//animcomps_definanitions.clear();
 	//animations_definitions.clear();
 	SBLog("Class Initialize");
@@ -93,6 +100,10 @@ StationBuilder1::~StationBuilder1(){
 	AttMng = NULL;
 	delete AnimMng;
 	AnimMng = NULL;
+	delete PrpMng;
+	PrpMng = NULL;
+	delete ThrMng;
+	ThrMng = NULL;
 	CloseSBLog();
 	
 	//ClearDelete(mgr);
@@ -182,46 +193,45 @@ void StationBuilder1::clbkSetClassCaps(FILEHANDLE cfg){
 	ResetVehicle();
 	ParseCfgFile(cfg);
 	VehicleSetup();
-	WriteBackupFile();
+	if (!NoEditor) {
+		WriteBackupFile();
+	}
 	
 	
-
-	
-
 	return;
 }
 void StationBuilder1::clbkLoadStateEx(FILEHANDLE scn,void *vs)
 {
 	SBLog("Loading State...");
-	bool wCfgFile = false;
 	char *line;
-	char cfgfile[256] = { '\0' };
 	while (oapiReadScenario_nextline(scn, line)) {
-	//	if(!strnicmp(line, "CONFIG_FILE", 11)) {
-	//		wCfgFile = true;
-	//		sscanf(line + 11, "%s", &cfgfile);
-	//	}else{
+		if (!_strnicmp(line, "ANIM_", 5)) {
+			UINT seq = 0;
+			sscanf(line + 5, "%i", &seq);
+			if (seq >= AnimMng->GetAnimDefCount()) { continue; }
+			UINT c = 1;
+			if ((seq > 9)&&(seq<100)) { c = 2; }
+			else if ((seq > 99) && (seq < 1000)) { c = 3; }
+			else if ((seq > 999) && (seq < 10000)) { c = 4; }
+			double state;
+			int status;
+			sscanf(line + 5 + 1 + c, "%lf %d", &state, &status);
+			AnimMng->SetAnimationState(seq, state);
+			if (status == 1) {
+				AnimMng->StartAnim(seq);
+				AnimMng->SetAnimBackward(seq, false);
+			}
+			else if (status == -1) {
+				AnimMng->StartAnim(seq);
+				AnimMng->SetAnimBackward(seq, true);
+			}
+		}
+		
+		else{ 
 			ParseScenarioLineEx(line, vs); 
-	//	}
-			
-		
-		
+		}	
 	}
-	
-	/*if (wCfgFile) {
-		SBLog("Configuration File Found: %s", cfgfile);
-		cfgfilename.assign(cfgfile);
-		ParseCfgFile(cfgfilename);
-		string cfgbackup = cfgfilename.substr(0,cfgfilename.size()-4);
-		cfgbackup += "__BACKUP";
-		cfgbackup += ".cfg";
-		WriteCfgFile(cfgbackup);
-	}*/
 
-//	string fn("ISS_AtoZ_UV.cfg");
-
-	
-	//VehicleSetup();
 
 	SBLog("Loading State Finished");
 }
@@ -229,13 +239,19 @@ void StationBuilder1::clbkSaveState(FILEHANDLE scn)
 {
 	SBLog("Saving State...");
 
-	char buff[256] = { '\0' };
+	
 	
 	SaveDefaultState(scn);
 
-	//sprintf(buff, cfgfilename.c_str());
-	//oapiWriteScenario_string(scn, "CONFIG_FILE", buff);
-
+	for (UINT i = 0; i < AnimMng->GetAnimDefCount(); i++) {
+		char buff[256] = { '\0' };
+		char buff2[256] = { '\0' };
+		sprintf(buff, "ANIM_%i",i);
+		sprintf(buff2,"%.5f %i", AnimMng->GetAnimationState(i), AnimMng->AnimationRunStatus(i));
+		oapiWriteScenario_string(scn, buff, buff2);
+		//oapiWriteScenario_float(scn, buff, AnimMng->GetAnimationState(i));
+	}
+	
 
 	if (follow_me) {
 		DeleteFollowMe();
@@ -244,7 +260,10 @@ void StationBuilder1::clbkSaveState(FILEHANDLE scn)
 	string cn(GetClassName());
 	fn += cn;
 	fn += ".cfg";
-	WriteCfgFile(fn);
+	if (!NoEditor) {
+		WriteCfgFile(fn);
+	}
+	
 	
 	SBLog("Save State Finished");
 }
@@ -252,21 +271,24 @@ void StationBuilder1::clbkPostCreation() {
 	
 }
 
-bool StationBuilder1::Grapple() {
+bool StationBuilder1::ToggleGrapple() {
 	def_idx AttIdx = AttMng->IdxAtt2Def(currentGrabAtt);
 	
-	VECTOR3 gpos, grms, pos, dir, rot;
+	
 	ATTACHMENTHANDLE ah = GetAttachmentHandle(false, currentGrabAtt);
-	GetAttachmentParams(ah, pos, dir, rot);
-	Local2Global(pos, grms);  // global position of RMS tip
-	double distbar = AttMng->GetAttDefRange(AttIdx);
-	OBJHANDLE h_candidate = NULL;
-	int index_candidate = -1;
-	ATTACHMENTHANDLE att_h_candidate = NULL;
-	for (DWORD i = 0; i < oapiGetVesselCount(); i++) {
-		OBJHANDLE hV = oapiGetVesselByIndex(i);
-		if (hV == GetHandle()) continue; // we don't want to grapple ourselves ...
-		oapiGetGlobalPos(hV, &gpos);
+	OBJHANDLE h_attached = GetAttachmentStatus(ah);
+	if (h_attached != NULL) {
+		VECTOR3 gpos, grms, pos, dir, rot;
+		GetAttachmentParams(ah, pos, dir, rot);
+		Local2Global(pos, grms);  // global position of RMS tip
+		double distbar = AttMng->GetAttDefRange(AttIdx);
+		OBJHANDLE h_candidate = NULL;
+		int index_candidate = -1;
+		ATTACHMENTHANDLE att_h_candidate = NULL;
+		for (DWORD i = 0; i < oapiGetVesselCount(); i++) {
+			OBJHANDLE hV = oapiGetVesselByIndex(i);
+			if (hV == GetHandle()) continue; // we don't want to grapple ourselves ...
+			oapiGetGlobalPos(hV, &gpos);
 			VESSEL *v = oapiGetVesselInterface(hV);
 			DWORD nAttach = v->AttachmentCount(true);
 			for (DWORD j = 0; j < nAttach; j++) { // now scan all attachment points of the candidate
@@ -280,12 +302,17 @@ bool StationBuilder1::Grapple() {
 					att_h_candidate = hAtt;
 				}
 			}
+		}
+		if ((index_candidate == -1) || (h_candidate == NULL)) {
+			return false;
+		}
+		AttachChild(h_candidate, ah, att_h_candidate);
+		return true;
 	}
-	if ((index_candidate == -1) || (h_candidate == NULL)) {
-		return false;
+	else {
+		DetachChild(ah, 0.01);
 	}
-	AttachChild(h_candidate, ah, att_h_candidate);
-	return true;
+	
 	
 }
 
@@ -303,7 +330,7 @@ void StationBuilder1::RotateFollowMe(VECTOR3 axis) {
 void StationBuilder1::ConsumeFollowMeKey(char *kstate) {
 	if (KEYDOWN(kstate, OAPI_KEY_UP)) {
 		if (KEYMOD_SHIFT(kstate)) {
-			double angle = follow_me_rotation_speed*oapiGetSimStep();
+			double angle = 60*RAD*oapiGetSimStep();
 			VECTOR3 axis = _V(1, 0, 0);
 			MATRIX3 rot_m = rotm(axis, angle);
 			MATRIX3 early_rm = follow_me_rm;
@@ -311,17 +338,17 @@ void StationBuilder1::ConsumeFollowMeKey(char *kstate) {
 			RESETKEY(kstate, OAPI_KEY_UP);
 		}
 		else if (KEYMOD_ALT(kstate)) {
-			follow_me_pos.y += follow_me_translation_speed*oapiGetSimStep();
+			follow_me_pos.y += 6*oapiGetSimStep();
 			RESETKEY(kstate, OAPI_KEY_UP);
 		}
 		else {
-			follow_me_pos.z += follow_me_translation_speed*oapiGetSimStep();
+			follow_me_pos.z += 6*oapiGetSimStep();
 			RESETKEY(kstate, OAPI_KEY_UP);
 		}
 	}
 	if (KEYDOWN(kstate, OAPI_KEY_RIGHT)) {
 		if (KEYMOD_SHIFT(kstate)) {
-			double angle = follow_me_rotation_speed*oapiGetSimStep();
+			double angle = 60 * RAD*oapiGetSimStep();
 			VECTOR3 axis = _V(0, 1, 0);
 			MATRIX3 rot_m = rotm(axis, angle);
 			MATRIX3 early_rm = follow_me_rm;
@@ -329,14 +356,14 @@ void StationBuilder1::ConsumeFollowMeKey(char *kstate) {
 			RESETKEY(kstate, OAPI_KEY_RIGHT);
 		}
 		else {
-			follow_me_pos.x += follow_me_translation_speed*oapiGetSimStep();
+			follow_me_pos.x += 6*oapiGetSimStep();
 			RESETKEY(kstate, OAPI_KEY_RIGHT);
 		}
 
 	}
 	if (KEYDOWN(kstate, OAPI_KEY_LEFT)) {
 		if (KEYMOD_SHIFT(kstate)) {
-			double angle = -follow_me_rotation_speed*oapiGetSimStep();
+			double angle = -60 * RAD*oapiGetSimStep();
 			VECTOR3 axis = _V(0, 1, 0);
 			MATRIX3 rot_m = rotm(axis, angle);
 			MATRIX3 early_rm = follow_me_rm;
@@ -344,13 +371,13 @@ void StationBuilder1::ConsumeFollowMeKey(char *kstate) {
 			RESETKEY(kstate, OAPI_KEY_LEFT);
 		}
 		else {
-			follow_me_pos.x -= follow_me_translation_speed*oapiGetSimStep();
+			follow_me_pos.x -= 6*oapiGetSimStep();
 			RESETKEY(kstate, OAPI_KEY_LEFT);
 		}
 	}
 	if (KEYDOWN(kstate, OAPI_KEY_DOWN)) {
 		if (KEYMOD_SHIFT(kstate)) {
-			double angle = -follow_me_rotation_speed*oapiGetSimStep();
+			double angle = -60 * RAD*oapiGetSimStep();
 			VECTOR3 axis = _V(1, 0, 0);
 			MATRIX3 rot_m = rotm(axis, angle);
 			MATRIX3 early_rm = follow_me_rm;
@@ -358,17 +385,17 @@ void StationBuilder1::ConsumeFollowMeKey(char *kstate) {
 			RESETKEY(kstate, OAPI_KEY_DOWN);
 		}
 		else if (KEYMOD_ALT(kstate)) {
-			follow_me_pos.y -= follow_me_translation_speed*oapiGetSimStep();
+			follow_me_pos.y -= 6*oapiGetSimStep();
 			RESETKEY(kstate, OAPI_KEY_DOWN);
 		}
 		else {
-			follow_me_pos.z -= follow_me_translation_speed*oapiGetSimStep();
+			follow_me_pos.z -= 6*oapiGetSimStep();
 			RESETKEY(kstate, OAPI_KEY_DOWN);
 		}
 	}
 	if (KEYDOWN(kstate, OAPI_KEY_NEXT)) {
 		if (KEYMOD_SHIFT(kstate)) {
-			double angle = -follow_me_rotation_speed*oapiGetSimStep();
+			double angle = -60 * RAD*oapiGetSimStep();
 			VECTOR3 axis = _V(0, 0, 1);
 			MATRIX3 rot_m = rotm(axis, angle);
 			MATRIX3 early_rm = follow_me_rm;
@@ -379,7 +406,7 @@ void StationBuilder1::ConsumeFollowMeKey(char *kstate) {
 	}
 	if (KEYDOWN(kstate, OAPI_KEY_PRIOR)) {
 		if (KEYMOD_SHIFT(kstate)) {
-			double angle = follow_me_rotation_speed*oapiGetSimStep();
+			double angle = 60 * RAD*oapiGetSimStep();
 			VECTOR3 axis = _V(0, 0, 1);
 			MATRIX3 rot_m = rotm(axis, angle);
 			MATRIX3 early_rm = follow_me_rm;
@@ -394,7 +421,10 @@ int StationBuilder1::clbkConsumeDirectKey(char *kstate) {
 	if (follow_me) {
 		ConsumeFollowMeKey(kstate);
 	}
-	AnimMng->ConsumeAnimDirectKey(kstate);
+	if (!Dlg->IsOpen()) {
+		AnimMng->ConsumeAnimDirectKey(kstate);
+	}
+	
 	return 0;
 }
 
@@ -404,17 +434,22 @@ int StationBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 	if (!down) return 0; 
 	if (Playback()) return 0; //
 	//if (!AnimEditingMode) {
+	if (!Dlg->IsOpen()) {
+		AnimMng->ConsumeAnimBufferedKey(key, down, kstate);
+	}
 	
-	AnimMng->ConsumeAnimBufferedKey(key, down, kstate);
 	//}
 	
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == OAPI_KEY_SPACE) {
-		if (Dlg->IsOpen()) {
-			Dlg->Close();
+		if (!NoEditor) {
+			if (Dlg->IsOpen()) {
+				Dlg->Close();
+			}
+			else {
+				Dlg->Open(hDLL);
+			}
 		}
-		else {
-			Dlg->Open(hDLL);
-		}
+		
 		/*if (hDlg) {
 			oapiCloseDialog(hDlg);
 			hDlg = NULL;
@@ -494,7 +529,7 @@ int StationBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 	}
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == OAPI_KEY_G) {
 		if (GrabMode) {
-			Grapple();
+			ToggleGrapple();
 		}
 	/*	ANIM_COMPDEF acd;
 		acd.state0 = 0;
@@ -564,7 +599,6 @@ void StationBuilder1::clbkPreStep(double simt, double simdt, double mjd) {
 	return;
 }
 void StationBuilder1::clbkPostStep(double simt, double simdt, double mjd) {
-	
 	return;
 }
 void StationBuilder1::clbkVisualCreated(VISHANDLE vis, int refcount) {
@@ -702,8 +736,9 @@ void StationBuilder1::ParseCfgFile(FILEHANDLE fh) {
 	SBLog("Found %i Dock Definitions", dock_definitions.size());
 	AttMng->ParseCfgFile(fh);
 	AnimMng->ParseCfgFile(fh);
-	
-
+	PrpMng->ParseCfgFile(fh);
+	ThrMng->ParseCfgFile(fh);
+	if (!oapiReadItem_bool(fh, "NOEDITOR", NoEditor)) { NoEditor = false; }
 	SBLog("Parsing Completed");
 	return;
 }
@@ -715,7 +750,8 @@ void StationBuilder1::WriteCfgFile(string filename) {
 	oapiWriteLine(fh, " ");
 	sprintf_s(cbuf, ";CONFIGURATION FILE FOR %s",GetName());
 	oapiWriteLine(fh, cbuf);
-	
+	oapiWriteLine(fh, " ");
+	oapiWriteItem_bool(fh, "NOEDITOR", NoEditor);
 
 	
 	MshMng->WriteCfg(fh);
@@ -734,7 +770,8 @@ void StationBuilder1::WriteCfgFile(string filename) {
 	}
 	AttMng->WriteCfg(fh);
 	AnimMng->WriteCfg(fh);
-
+	PrpMng->WriteCfg(fh);
+	ThrMng->WriteCfg(fh);
 	oapiCloseFile(fh, FILE_OUT);
 	return;
 }
@@ -899,12 +936,14 @@ void StationBuilder1::CreateDockExhausts() {
 		idx = AddExhaust(&es);
 		DockExhaustsID.push_back(idx);
 	}
+	DockExhaustsActive = true;
 	return;
 }
 void StationBuilder1::DeleteDockExhausts() {
 	for (UINT i = 0; i < DockExhaustsID.size(); i++) {
 		DelExhaust(DockExhaustsID[i]);
 	}
+	DockExhaustsActive = false;
 	return;
 }
 void StationBuilder1::CreateAttExhausts() {
@@ -928,14 +967,48 @@ void StationBuilder1::CreateAttExhausts() {
 		idx = AddExhaust(&es);
 		AttExhaustsID.push_back(idx);
 	}
+	AttExhaustsActive = true;
 	return;
 }
 void StationBuilder1::DeleteAttExhausts() {
 	for (UINT i = 0; i < AttExhaustsID.size(); i++) {
 		DelExhaust(AttExhaustsID[i]);
 	}
+	AttExhaustsActive = false;
 	return;
 }
+
+
+void StationBuilder1::CreateThExhausts() {
+	EXHAUSTSPEC es;
+	double level = 1;
+	for (UINT i = 0; i < ThrMng->GetThrCount(); i++) {
+		es.flags = EXHAUST_CONSTANTLEVEL;
+		es.th = NULL;
+		es.tex = greenL;
+		es.lsize = 100;
+		es.wsize = 0.005;
+		es.modulate = 0;
+		es.lofs = 0;
+		es.level = &level;
+		es.lpos = &ThrMng->thr_defs[i].pos;
+		es.ldir = &ThrMng->thr_defs[i].antidir;
+		UINT idx = AddExhaust(&es);
+		ThExaustsID.push_back(idx);	
+	}
+	thExhaustsActive = true;
+}
+void StationBuilder1::DeleteThExhausts() {
+	for (UINT i = 0; i < ThExaustsID.size(); i++) {
+		DelExhaust(ThExaustsID[i]);
+	}
+	thExhaustsActive = false;
+	return;
+}
+
+
+
+
 
 /*
 void StationBuilder1::CreateDockBeacons() {

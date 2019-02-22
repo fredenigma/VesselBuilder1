@@ -9,6 +9,8 @@
 #define IDD_DIALOG_ANIM                 107
 #define IDD_DIALOG_ANIMCOMP             108
 #define IDD_DIALOG_ATT                  109
+#define IDD_DIALOG_PROPELLANT           110
+#define IDD_DIALOG_THRUSTERS            111
 #define IDC_TREE1                       1001
 #define IDC_SPIN_POSZ_S                 1005
 #define IDC_SPIN_POSZ_L                 1006
@@ -16,21 +18,36 @@
 #define IDC_EDIT_MESHNAME               1008
 #define IDC_BUTTON_LOADMESH             1009
 #define IDC_EDIT_POSX                   1010
+#define IDC_EDIT_TANKNAME               1010
 #define IDC_EDIT_POSY                   1011
+#define IDC_BUTTON_TANKNAMESET          1011
 #define IDC_EDIT_POSZ                   1012
+#define IDC_EDIT_TANKMAXMASS            1013
+#define IDC_EDIT_THPOSY                 1013
 #define IDC_SPIN_POSY_L                 1014
+#define IDC_EDIT_TANKEFFIC              1014
 #define IDC_SPIN_POSX_S                 1015
+#define IDC_EDIT_TANKCURRMASS           1015
 #define IDC_SPIN_POSX_L                 1016
+#define IDC_EDIT_TANKISPRIMARY          1016
 #define IDC_BUTTON_POS_SET              1017
 #define IDC_CHECK_HIGHLIGHT_MSH         1019
 #define IDC_EDIT_DIRX                   1020
 #define IDC_EDIT_DIRY                   1021
 #define IDC_EDIT_DIRZ                   1022
+#define IDC_EDIT_THMAX                  1023
+#define IDC_EDIT_THISPREF               1024
+#define IDC_EDIT_THISP                  1025
+#define IDC_EDIT_THPREF                 1026
 #define IDC_BUTTON_DIR_SET              1027
 #define IDC_EDIT_ROTX                   1028
+#define IDC_BUTTON_THMAXSET             1028
 #define IDC_EDIT_ROTY                   1029
+#define IDC_BUTTON_THISPSET             1029
 #define IDC_EDIT_ROTZ                   1030
+#define IDC_BUTTON_THISPREFSET          1030
 #define IDC_BUTTON_ROT_SET              1031
+#define IDC_BUTTON_THPREFSET            1031
 #define IDC_EDIT_GETANGLE               1038
 #define IDC_STATIC_MSH1                 1039
 #define IDC_STATIC_MSH2                 1040
@@ -48,11 +65,15 @@
 #define IDC_STATIC_MSH14                1052
 #define IDC_STATIC_MSH15                1053
 #define IDC_BUTTON_DELETEMESHDEF        1054
+#define IDC_STATIC_MSH16                1055
 #define IDC_SPIN_ROLL                   1056
+#define IDC_STATIC_MSH17                1056
 #define IDC_SPIN_PITCH                  1057
 #define IDC_BUTTON_ADD                  1057
+#define IDC_STATIC_MSH18                1057
 #define IDC_SPIN_YAW                    1058
 #define IDC_EDIT_FMPOS                  1058
+#define IDC_STATIC_MSH19                1058
 #define IDC_EDIT_FMDIR                  1059
 #define IDC_EDIT_ROT                    1060
 #define IDC_EDIT_FMROT                  1060
@@ -161,9 +182,38 @@
 #define IDC_STATIC_ANIMCOMPGRPS         1171
 #define IDC_EDIT_ATTRANGE               1171
 #define IDC_CHECK_ANIMCOMPARMTIP        1172
-#define IDC_BUTTON_ATTROT_SET2          1172
 #define IDC_BUTTON_ATTRANGESET          1172
 #define IDC_LIST_ANIMCOMPATTS           1173
+#define IDC_BUTTON_TANKMAXMASSSET       1174
+#define IDC_BUTTON_TANKEFFICSET         1175
+#define IDC_BUTTON_TANKCURRMASSSET      1176
+#define IDC_BUTTON_DELETETANK           1177
+#define IDC_BUTTON_TANKPRIMARY          1178
+#define IDC_BUTTON_THXP                 1179
+#define IDC_BUTTON_THXM                 1180
+#define IDC_BUTTON_THYP                 1181
+#define IDC_BUTTON_THYM                 1182
+#define IDC_BUTTON_THZP                 1183
+#define IDC_BUTTON_THZM                 1184
+#define IDC_COMBO_THPH                  1185
+#define IDC_COMBO_THEX                  1186
+#define IDC_LIST1                       1187
+#define IDC_LIST_THPART                 1187
+#define IDC_CHECK_THSHOW                1188
+#define IDC_EDIT_THNAME                 1189
+#define IDC_BUTTON_THNAMESET            1190
+#define IDC_EDIT_THPOSX                 1191
+#define IDC_EDIT_THPOSZ                 1192
+#define IDC_BUTTON_THPOSSET             1193
+#define IDC_SPIN_THPOSX                 1194
+#define IDC_SPIN_THPOSY                 1195
+#define IDC_SPIN_THPOSZ                 1196
+#define IDC_EDIT_THDIRX                 1197
+#define IDC_EDIT_THDIRY                 1198
+#define IDC_EDIT_THDIRZ                 1199
+#define IDC_BUTTON_THDIRSET             1200
+#define IDC_BTN_THPASTEV                1201
+#define IDC_BUTTON_DELETETH             1202
 
 // Next default values for new objects
 // 
@@ -171,7 +221,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1174
+#define _APS_NEXT_CONTROL_VALUE         1203
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

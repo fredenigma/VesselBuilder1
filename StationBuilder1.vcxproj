@@ -140,8 +140,10 @@
     <ClInclude Include="FollowMeDlg.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="MeshManager.h" />
+    <ClInclude Include="PropellantManager.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="StationBuilder1.h" />
+    <ClInclude Include="ThrusterManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AnimationManager.cpp" />
@@ -157,12 +159,16 @@
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="MeshDialogProc.cpp" />
     <ClCompile Include="MeshManager.cpp" />
+    <ClCompile Include="PropellantManager.cpp" />
+    <ClCompile Include="PrpDlgProc.cpp" />
     <ClCompile Include="StationBuilder1.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <ClCompile Include="ThrusterManager.cpp" />
+    <ClCompile Include="ThrustersDlgProc.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\lib\DlgCtrl.lib" />
