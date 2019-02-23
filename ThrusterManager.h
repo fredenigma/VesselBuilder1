@@ -6,6 +6,9 @@ struct THR_DEF {
 	double isp_ref;
 	VECTOR3 pos;
 	VECTOR3 antidir;
+	UINT ExhaustID;
+	bool HasExhaust;
+	bool testing;
 	THR_DEF() {
 		th = NULL;
 		name.clear();
@@ -13,8 +16,12 @@ struct THR_DEF {
 		isp_ref = 0;
 		pos = _V(0, 0, 0);
 		antidir = _V(0, 0, -1);
+		ExhaustID = (UINT)-1;
+		HasExhaust = false;
+		testing = false;
 	}
 };
+
 
 class ThrusterManager {
 public:
@@ -23,7 +30,7 @@ public:
 	StationBuilder1 *SB1;
 	vector<THR_DEF> thr_defs;
 	void AddThrDef();
-	void AddThrDef(string name, VECTOR3 pos, VECTOR3 dir, double maxth, PROPELLANT_HANDLE ph, double isp0, double isp_ref, double p_ref);
+	UINT AddThrDef(string name, VECTOR3 pos, VECTOR3 dir, double maxth, PROPELLANT_HANDLE ph, double isp0, double isp_ref, double p_ref);
 	void DelThrDef(def_idx d_idx);
 	string GetThrName(def_idx d_idx);
 	VECTOR3 GetThrPos(def_idx d_idx);
@@ -45,4 +52,27 @@ public:
 	THRUSTER_HANDLE GetThrTH(def_idx d_idx);
 	void ParseCfgFile(FILEHANDLE fh);
 	void WriteCfg(FILEHANDLE fh);
+	bool ThrHasExhaust(def_idx d_idx);
+	void SetThrExhaust(def_idx d_idx, double length, double width, SURFHANDLE tex);
+	void SetThrHasExhaust(def_idx d_idx, bool set);
+	void SetThrExhaustLength(def_idx d_idx, double newlength);
+	void SetThrExhaustWidth(def_idx d_idx, double newwidth);
+	double GetThrExhaustLength(def_idx d_idx);
+	double GetThrExhaustWidth(def_idx d_idx);
+	SURFHANDLE GetThrExhaustTex(def_idx d_idx);
+	void SetThrExhaustTex(def_idx d_idx, SURFHANDLE newtex);
+	void ToggleThrusterTest(def_idx d_idx);
+	bool ThrIsTesting(def_idx d_idx);
+	UINT GetThrIdx(THRUSTER_HANDLE th);
+};
+
+class ThrusterGroupManager {
+public:
+	ThrusterGroupManager(StationBuilder1 *_SB1);
+	~ThrusterGroupManager();
+	StationBuilder1 *SB1;
+	map<THGROUP_TYPE , bool> Defined;
+	map<THGROUP_TYPE , vector<THRUSTER_HANDLE> > Thrusters;
+	void DefineGroup(THGROUP_TYPE thgt, vector<THRUSTER_HANDLE>thrusters);
+	void UndefineGroup(THGROUP_TYPE thgt);
 };

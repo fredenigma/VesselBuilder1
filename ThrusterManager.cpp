@@ -14,16 +14,17 @@ void ThrusterManager::AddThrDef() {
 	char cbuf[256] = { '\0' };
 	sprintf(cbuf, "Thruster_%i", n);
 	string name(cbuf);
-	return AddThrDef(name, _V(0, 0, 0), _V(0, 0, 1), 1000, NULL, 1000, 0, 101400);
+	AddThrDef(name, _V(0, 0, 0), _V(0, 0, 1), 1000, NULL, 1000, 0, 101400);
+	return;
 }
-void ThrusterManager::AddThrDef(string name, VECTOR3 pos, VECTOR3 dir, double maxth, PROPELLANT_HANDLE ph, double isp0, double isp_ref, double p_ref) {
+UINT ThrusterManager::AddThrDef(string name, VECTOR3 pos, VECTOR3 dir, double maxth, PROPELLANT_HANDLE ph, double isp0, double isp_ref, double p_ref) {
 	THR_DEF thr = THR_DEF();
 	thr.name = name;
 	thr.th = SB1->CreateThruster(pos, dir, maxth, ph, isp0, isp_ref, p_ref);
 	thr.pos = pos;
 	thr.antidir = dir*(-1);
 	thr_defs.push_back(thr);
-	return;
+	return thr_defs.size()-1;
 }
 void ThrusterManager::DelThrDef(def_idx d_idx) {
 	SB1->DelThruster(thr_defs[d_idx].th);
@@ -129,7 +130,31 @@ void ThrusterManager::ParseCfgFile(FILEHANDLE fh) {
 		if (ph_idx != -1) {
 			ph = SB1->PrpMng->GetTankPH(ph_idx);
 		}
-		AddThrDef(name, pos, dir, Max0, ph, isp, ispref, pref);
+		UINT thidx = AddThrDef(name, pos, dir, Max0, ph, isp, ispref, pref);
+
+		bool hasexhaust;
+		double ex_l, ex_w;
+		int ex_idx;
+
+		sprintf(cbuf, "THR_%i_HASEXHAUST", thr_counter);
+		oapiReadItem_bool(fh, cbuf, hasexhaust);
+		if (hasexhaust) {
+			sprintf(cbuf, "THR_%i_EX_L", thr_counter);
+			oapiReadItem_float(fh, cbuf, ex_l);
+			sprintf(cbuf, "THR_%i_EX_W", thr_counter);
+			oapiReadItem_float(fh, cbuf, ex_w);
+			sprintf(cbuf, "THR_%i_EX_TEX", thr_counter);
+			oapiReadItem_int(fh, cbuf, ex_idx);
+			if (ex_idx > -1) {
+				SetThrExhaust(thidx, ex_l, ex_w, SB1->GetExTexSurf(ex_idx));
+			}
+			else {
+				SetThrExhaust(thidx, ex_l, ex_w, NULL);
+			}
+			
+		}
+		
+
 
 		thr_counter++;
 		sprintf(cbuf, "THR_%i_ID", thr_counter);
@@ -162,7 +187,161 @@ void ThrusterManager::WriteCfg(FILEHANDLE fh) {
 		oapiWriteItem_float(fh, cbuf, GetThrPRef(i));
 		sprintf(cbuf, "THR_%i_TANK", i);
 		oapiWriteItem_int(fh, cbuf, SB1->PrpMng->GetPrpIdx(GetThrPh(i)));
+		sprintf(cbuf, "THR_%i_HASEXHAUST", i);
+		oapiWriteItem_bool(fh, cbuf, ThrHasExhaust(i));
+		sprintf(cbuf, "THR_%i_EX_L", i);
+		oapiWriteItem_float(fh, cbuf, GetThrExhaustLength(i));
+		sprintf(cbuf, "THR_%i_EX_W", i);
+		oapiWriteItem_float(fh, cbuf, GetThrExhaustWidth(i));
+		sprintf(cbuf, "THR_%i_EX_TEX", i);
+		oapiWriteItem_int(fh, cbuf, SB1->GetExTexIdx(GetThrExhaustTex(i)));
 		oapiWriteLine(fh, " ");
 	}
+	return;
+}
+
+bool ThrusterManager::ThrHasExhaust(def_idx d_idx) {
+	return thr_defs[d_idx].HasExhaust;
+}
+void ThrusterManager::SetThrExhaust(def_idx d_idx, double length,double width,SURFHANDLE tex) {
+	EXHAUSTSPEC es;
+	es.th = thr_defs[d_idx].th;
+	es.ldir = NULL;
+	es.lpos = NULL;
+	es.level = NULL;
+	es.lofs = 0;
+	es.modulate = 0.05;
+	es.tex = tex;
+	es.lsize = length;
+	es.wsize = width;
+	thr_defs[d_idx].ExhaustID = SB1->AddExhaust(&es);
+	thr_defs[d_idx].HasExhaust = true;
+
+	return;
+}
+void ThrusterManager::SetThrHasExhaust(def_idx d_idx, bool set) {
+	if (set) {
+		if (thr_defs[d_idx].ExhaustID != (UINT)-1) {
+			SB1->DelExhaust(thr_defs[d_idx].ExhaustID);
+		}
+		EXHAUSTSPEC es;
+		es.th = thr_defs[d_idx].th;
+		es.ldir = NULL;
+		es.lpos = NULL;
+		es.level = NULL;
+		es.lofs = 0;
+		es.modulate = 0.05;
+		es.tex = NULL;
+		es.lsize = 6;
+		es.wsize = 1;
+		thr_defs[d_idx].ExhaustID=SB1->AddExhaust(&es );
+		thr_defs[d_idx].HasExhaust = true;
+	}
+	else {
+		if (thr_defs[d_idx].ExhaustID != (UINT)-1) {
+			SB1->DelExhaust(thr_defs[d_idx].ExhaustID);
+		}
+		thr_defs[d_idx].ExhaustID = (UINT)-1;
+		thr_defs[d_idx].HasExhaust = false;
+	}
+}
+void ThrusterManager::SetThrExhaustLength(def_idx d_idx, double newlength) {
+	EXHAUSTSPEC es;
+	SB1->GetExhaustSpec(thr_defs[d_idx].ExhaustID, &es);
+	es.lsize = newlength;
+	SB1->DelExhaust(thr_defs[d_idx].ExhaustID);
+	thr_defs[d_idx].ExhaustID = SB1->AddExhaust(&es);
+	return;
+}
+void ThrusterManager::SetThrExhaustWidth(def_idx d_idx, double newwidth) {
+	EXHAUSTSPEC es;
+	SB1->GetExhaustSpec(thr_defs[d_idx].ExhaustID, &es);
+	es.wsize = newwidth;
+	SB1->DelExhaust(thr_defs[d_idx].ExhaustID);
+	thr_defs[d_idx].ExhaustID = SB1->AddExhaust(&es);
+	return;
+}
+double ThrusterManager::GetThrExhaustLength(def_idx d_idx) {
+	if (ThrHasExhaust(d_idx)) {
+		EXHAUSTSPEC es;
+		SB1->GetExhaustSpec(thr_defs[d_idx].ExhaustID, &es);
+		return es.lsize;
+	}
+	else {
+		return 0;
+	}
+}
+double ThrusterManager::GetThrExhaustWidth(def_idx d_idx) {
+	if (ThrHasExhaust(d_idx)) {
+		EXHAUSTSPEC es;
+		SB1->GetExhaustSpec(thr_defs[d_idx].ExhaustID, &es);
+		return es.wsize;
+	}
+	else {
+		return 0;
+	}
+}
+SURFHANDLE ThrusterManager::GetThrExhaustTex(def_idx d_idx) {
+	if (ThrHasExhaust(d_idx)) {
+		EXHAUSTSPEC es;
+		SB1->GetExhaustSpec(thr_defs[d_idx].ExhaustID, &es);
+		return es.tex;
+	}
+	else {
+		return NULL;
+	}
+}
+void ThrusterManager::SetThrExhaustTex(def_idx d_idx, SURFHANDLE newtex) {
+	EXHAUSTSPEC es;
+	SB1->GetExhaustSpec(thr_defs[d_idx].ExhaustID, &es);
+	es.tex = newtex;
+	SB1->DelExhaust(thr_defs[d_idx].ExhaustID);
+	thr_defs[d_idx].ExhaustID = SB1->AddExhaust(&es);
+	return;
+}
+
+void ThrusterManager::ToggleThrusterTest(def_idx d_idx) {
+	if (thr_defs[d_idx].testing) {
+		thr_defs[d_idx].testing = false;
+		SB1->SetThrusterLevel(thr_defs[d_idx].th, 0);
+	}
+	else {
+		thr_defs[d_idx].testing = true;
+		SB1->SetThrusterLevel(thr_defs[d_idx].th, 1);
+	}
+	return;
+}
+bool ThrusterManager::ThrIsTesting(def_idx d_idx) {
+	return thr_defs[d_idx].testing;
+}
+
+UINT ThrusterManager::GetThrIdx(THRUSTER_HANDLE th) {
+	for (UINT i = 0; i < thr_defs.size(); i++) {
+		if (thr_defs[i].th == th) {
+			return i;
+		}
+	}
+	return (UINT)-1;
+}
+
+ThrusterGroupManager::ThrusterGroupManager(StationBuilder1 *_SB1) {
+	SB1 = _SB1;
+	return;
+}
+ThrusterGroupManager::~ThrusterGroupManager() {}
+void ThrusterGroupManager::DefineGroup(THGROUP_TYPE thgt, vector<THRUSTER_HANDLE>thrusters) {
+	Defined[thgt] = true;
+	Thrusters[thgt] = thrusters;
+	THRUSTER_HANDLE* th = new THRUSTER_HANDLE[thrusters.size()];
+	for (UINT i = 0; i < thrusters.size(); i++) {
+		th[i] = thrusters[i];
+	}
+	SB1->CreateThrusterGroup(th, thrusters.size(), thgt);
+	return;
+}
+void ThrusterGroupManager::UndefineGroup(THGROUP_TYPE thgt) {
+	SB1->DelThrusterGroup(thgt, false);
+	Defined[thgt] = false;
+	Thrusters[thgt].clear();//indeciso, serve? oppure è meglio lasciare quelli se magari ne devo aggiungere 1?
 	return;
 }

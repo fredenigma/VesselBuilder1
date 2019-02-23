@@ -11,6 +11,7 @@
 #define IDD_DIALOG_ATT                  109
 #define IDD_DIALOG_PROPELLANT           110
 #define IDD_DIALOG_THRUSTERS            111
+#define IDD_DIALOG_EXTEX                112
 #define IDC_TREE1                       1001
 #define IDC_SPIN_POSZ_S                 1005
 #define IDC_SPIN_POSZ_L                 1006
@@ -75,9 +76,12 @@
 #define IDC_EDIT_FMPOS                  1058
 #define IDC_STATIC_MSH19                1058
 #define IDC_EDIT_FMDIR                  1059
+#define IDC_STATIC_MSH20                1059
 #define IDC_EDIT_ROT                    1060
 #define IDC_EDIT_FMROT                  1060
+#define IDC_STATIC_MSH21                1060
 #define IDC_SLIDER_FMSPEED              1061
+#define IDC_STATIC_MSH22                1061
 #define IDC_SPIN_FMX                    1062
 #define IDC_SPIN_FMY                    1063
 #define IDC_SPIN_FMZ                    1065
@@ -196,8 +200,7 @@
 #define IDC_BUTTON_THZP                 1183
 #define IDC_BUTTON_THZM                 1184
 #define IDC_COMBO_THPH                  1185
-#define IDC_COMBO_THEX                  1186
-#define IDC_LIST1                       1187
+#define IDC_BUTTON_THEXWSET             1186
 #define IDC_LIST_THPART                 1187
 #define IDC_CHECK_THSHOW                1188
 #define IDC_EDIT_THNAME                 1189
@@ -214,6 +217,16 @@
 #define IDC_BUTTON_THDIRSET             1200
 #define IDC_BTN_THPASTEV                1201
 #define IDC_BUTTON_DELETETH             1202
+#define IDC_CHECK_THEX                  1203
+#define IDC_COMBO_THEXTEX               1204
+#define IDC_EDIT_THEXW                  1205
+#define IDC_BUTTON_THEXLSET             1206
+#define IDC_EDIT_THEXL                  1207
+#define IDC_BUTTON_THTEST               1208
+#define IDC_EDIT1                       1209
+#define IDC_EDIT_EXTEXNAME              1209
+#define IDC_BUTTON_EXTEXLOAD            1210
+#define IDC_BUTTON_DELETEEXTEX          1212
 
 // Next default values for new objects
 // 
@@ -221,7 +234,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1203
+#define _APS_NEXT_CONTROL_VALUE         1213
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

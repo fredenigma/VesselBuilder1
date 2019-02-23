@@ -121,6 +121,9 @@
     <ClCompile Include="ThrustersDlgProc.cpp">
       <Filter>Dialog</Filter>
     </ClCompile>
+    <ClCompile Include="ExTexDlgProc.cpp">
+      <Filter>Dialog</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="StationBuilder1.rc">

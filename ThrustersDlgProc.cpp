@@ -48,6 +48,58 @@ void DialogControl::UpdateThrDialog(HWND hWnd) {
 		SendDlgItemMessage(hWnd, IDC_COMBO_THPH, CB_SETCURSEL, 0, 0);
 	}
 
+	if (ThrMng->ThrHasExhaust(idx)) {
+		SendDlgItemMessage(hWnd, IDC_CHECK_THEX, BM_SETCHECK, BST_CHECKED, 0);
+		SendDlgItemMessage(hWnd, IDC_EDIT_THEXL, EM_SETREADONLY, false, 0);
+		SendDlgItemMessage(hWnd, IDC_EDIT_THEXW, EM_SETREADONLY, false, 0);
+		EnableWindow(GetDlgItem(hWnd, IDC_COMBO_THEXTEX), true);
+		EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_THEXLSET), true);
+		EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_THEXWSET), true);
+		SendDlgItemMessage(hWnd, IDC_CHECK_THEX, BM_SETCHECK, BST_CHECKED, 0);
+		sprintf(cbuf, "%.1f", ThrMng->GetThrExhaustLength(idx));
+		SetDlgItemText(hWnd, IDC_EDIT_THEXL, cbuf);
+		sprintf(cbuf, "%.1f", ThrMng->GetThrExhaustWidth(idx));
+		SetDlgItemText(hWnd, IDC_EDIT_THEXW, cbuf);
+
+		SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_RESETCONTENT, 0, 0);
+		int index = SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_ADDSTRING, 0, (LPARAM)"DEFAULT");
+		SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_SETITEMDATA, index, (LPARAM)NULL);
+		int topick2 = -1;
+		for (UINT i = 0; i <SB1->GetExTexCount(); i++) {
+			if (!SB1->IsExTexCreated(i)) { continue; }
+			index = SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_ADDSTRING, 0, (LPARAM)SB1->GetExTexName(i).c_str());
+			SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_SETITEMDATA, index, (LPARAM)SB1->GetExTexSurf(i));
+			if (ThrMng->ThrHasExhaust(idx)) {
+				if (ThrMng->GetThrExhaustTex(idx) == SB1->GetExTexSurf(i)) {
+					topick2 = index;
+				}
+			}
+		}
+		if (topick2 != -1) {
+			SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_SETCURSEL, topick2, 0);
+		}
+		else {
+			SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_SETCURSEL, 0, 0);
+		}
+		
+	}
+	else {
+		SendDlgItemMessage(hWnd, IDC_CHECK_THEX, BM_SETCHECK, BST_UNCHECKED, 0);
+		SendDlgItemMessage(hWnd, IDC_EDIT_THEXL, EM_SETREADONLY, true, 0);
+		SetDlgItemText(hWnd, IDC_EDIT_THEXL, "");
+		SendDlgItemMessage(hWnd, IDC_EDIT_THEXW, EM_SETREADONLY, true, 0);
+		SetDlgItemText(hWnd, IDC_EDIT_THEXW, "");
+		EnableWindow(GetDlgItem(hWnd, IDC_COMBO_THEXTEX), false);
+		EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_THEXLSET), false);
+		EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_THEXWSET), false);
+	}
+
+	if (ThrMng->ThrIsTesting(idx)) {
+		SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_THTEST), "STOP TEST");
+	}
+	else {
+		SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_THTEST), "TEST THRUSTER");
+	}
 	return;
 }
 BOOL DialogControl::ThrDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -187,7 +239,54 @@ BOOL DialogControl::ThrDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 			}
 			break;
 		}
-
+		case IDC_CHECK_THEX:
+		{
+			if (HIWORD(wParam) == BN_CLICKED) {
+				LRESULT getcheck = SendDlgItemMessage(hWnd, IDC_CHECK_THEX, BM_GETCHECK, 0, 0);
+				if (getcheck == BST_CHECKED) {
+					ThrMng->SetThrHasExhaust(idx, true);
+					UpdateThrDialog(hWnd);
+				}
+				else {
+					ThrMng->SetThrHasExhaust(idx, false);
+					UpdateThrDialog(hWnd);
+				}
+			}
+			break;
+		}
+		case IDC_BUTTON_THTEST:
+		{
+			ThrMng->ToggleThrusterTest(idx);
+			if (ThrMng->ThrIsTesting(idx)) {
+				SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_THTEST), "STOP TEST");
+			}
+			else {
+				SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_THTEST), "TEST THRUSTER");
+			}
+			
+			break;
+		}
+		case IDC_BUTTON_THEXLSET:
+		{
+			double newlength = GetDlgItemDouble(hWnd, IDC_EDIT_THEXL);
+			ThrMng->SetThrExhaustLength(idx, newlength);
+			break;
+		}
+		case IDC_BUTTON_THEXWSET:
+		{
+			double newwidth = GetDlgItemDouble(hWnd, IDC_EDIT_THEXW);
+			ThrMng->SetThrExhaustWidth(idx, newwidth);
+			break;
+		}
+		case IDC_COMBO_THEXTEX:
+		{
+			if (HIWORD(wParam) == CBN_SELCHANGE) {
+				int index = SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_GETCURSEL, 0, 0);
+				SURFHANDLE surf= (SURFHANDLE)SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_GETITEMDATA, index, 0);
+				ThrMng->SetThrExhaustTex(idx, surf);
+			}
+			break;
+		}
 
 		}
 		break;

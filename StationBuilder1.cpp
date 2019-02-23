@@ -46,6 +46,7 @@ StationBuilder1::StationBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel)
 	PrpMng = new PropellantManager(this);
 	ThrMng = new ThrusterManager(this);
 	dock_definitions.clear();
+	extex_defs.clear();
 	//att_definitions.clear();
 	
 	cfgfilename.clear();
@@ -737,6 +738,23 @@ void StationBuilder1::ParseCfgFile(FILEHANDLE fh) {
 	AttMng->ParseCfgFile(fh);
 	AnimMng->ParseCfgFile(fh);
 	PrpMng->ParseCfgFile(fh);
+
+	UINT extex_counter = 0;
+	int id;
+	sprintf(cbuf, "EXTEX_%i_ID", extex_counter);
+	while (oapiReadItem_int(fh, cbuf, id)) {
+		char namebuf[256] = { '\0' };
+		sprintf(cbuf, "EXTEX_%i_TEXNAME", extex_counter);
+		oapiReadItem_string(fh, cbuf, namebuf);
+		string name(namebuf);
+		AddExTexDef(name);
+		extex_counter++;
+		sprintf(cbuf, "EXTEX_%i_ID", extex_counter);
+	}
+
+	
+
+
 	ThrMng->ParseCfgFile(fh);
 	if (!oapiReadItem_bool(fh, "NOEDITOR", NoEditor)) { NoEditor = false; }
 	SBLog("Parsing Completed");
@@ -771,7 +789,26 @@ void StationBuilder1::WriteCfgFile(string filename) {
 	AttMng->WriteCfg(fh);
 	AnimMng->WriteCfg(fh);
 	PrpMng->WriteCfg(fh);
+	oapiWriteLine(fh, " ");
+	oapiWriteLine(fh, ";<-------------------------EXHAUST TEXTURES DEFINITIONS------------------------->");
+	oapiWriteLine(fh, " ");
+	UINT extex_counter = 0;
+	for (UINT i = 0; i < GetExTexCount(); i++) {
+		if (IsExTexCreated(i)) {
+			sprintf(cbuf, "EXTEX_%i_ID", extex_counter);
+			oapiWriteItem_int(fh, cbuf, extex_counter);
+			sprintf(cbuf, "EXTEX_%i_TEXNAME", extex_counter);
+			char namebuf[256] = { '\0' };
+			sprintf(namebuf, "%s", GetExTexName(i).c_str());
+			oapiWriteItem_string(fh, cbuf, namebuf);
+			extex_counter++;
+			oapiWriteLine(fh, " ");
+		}
+	}
+
 	ThrMng->WriteCfg(fh);
+
+
 	oapiCloseFile(fh, FILE_OUT);
 	return;
 }
@@ -894,26 +931,60 @@ bool StationBuilder1::DeleteDockDef(int idx) {
 	dock_definitions.erase(dock_definitions.begin() + idx);
 	return true;
 }
-/*void StationBuilder1::AddAttDef() {
-	ATT_DEF ad = ATT_DEF();
-	ad.ah = CreateAttachment(ad.toparent, ad.pos, ad.dir, ad.rot, ad.id.c_str(), ad.loose);
-	att_definitions.push_back(ad);
+void StationBuilder1::AddExTexDef() {
+	EXTEX_DEF ex = EXTEX_DEF();
+	extex_defs.push_back(ex);
 	return;
 }
-void StationBuilder1::AddAttDef(ATT_DEF ad) {
-	ad.ah = CreateAttachment(ad.toparent, ad.pos, ad.dir, ad.rot, ad.id.c_str(), ad.loose);
-	att_definitions.push_back(ad);
+void StationBuilder1::AddExTexDef(string texname) {
+	EXTEX_DEF ex = EXTEX_DEF();
+	ex.TexName = texname;
+	char cbuf[256] = { '\0' };
+	sprintf(cbuf, "%s", texname.c_str());
+	ex.tex = oapiRegisterExhaustTexture(cbuf);
+	ex.created = true;
+	extex_defs.push_back(ex);
 	return;
 }
-bool StationBuilder1::DeleteAttDef(int idx) {
-	if ((att_definitions.size() - 1 < idx) || (idx<0)) {
-		SBLog("WARNING: Called a Delete Attachment Definition with out of range index");
+bool StationBuilder1::StoreExTexDef(string texname,def_idx d_idx) {
+	extex_defs[d_idx].TexName = texname;
+	char cbuf[256] = { '\0' };
+	sprintf(cbuf, "%s", texname.c_str());
+	extex_defs[d_idx].tex = oapiRegisterExhaustTexture(cbuf);
+	if (extex_defs[d_idx].tex != NULL) {
+		extex_defs[d_idx].created = true;
+		return true;
+	}
+	else {
 		return false;
 	}
-	DelAttachment(att_definitions[idx].ah);
-	att_definitions.erase(att_definitions.begin() + idx);
-	return true;
-}*/
+}
+void StationBuilder1::DelExTedDef(def_idx d_idx) {
+	extex_defs.erase(extex_defs.begin() + d_idx);
+	return;
+}
+SURFHANDLE StationBuilder1::GetExTexSurf(def_idx d_idx) {
+	return extex_defs[d_idx].tex;
+}
+string StationBuilder1::GetExTexName(def_idx d_idx) {
+	return extex_defs[d_idx].TexName;
+}
+UINT StationBuilder1::GetExTexCount() {
+	return extex_defs.size();
+}
+bool StationBuilder1::IsExTexCreated(def_idx d_idx) {
+	return extex_defs[d_idx].created;
+}
+UINT StationBuilder1::GetExTexIdx(SURFHANDLE tex) {
+	for (UINT i = 0; i < extex_defs.size(); i++) {
+		if (extex_defs[i].tex == tex) {
+			return i;
+		}
+	}
+	return (UINT)-1;
+}
+
+
 
 void StationBuilder1::CreateDockExhausts() {
 	EXHAUSTSPEC es;

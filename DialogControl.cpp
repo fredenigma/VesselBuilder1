@@ -63,6 +63,13 @@ BOOL CALLBACK PrpDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
 	return DlgCtrl->PrpDlgProc(hWnd, uMsg, wParam, lParam);
 }
+BOOL CALLBACK ExTexDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	if (uMsg == WM_INITDIALOG) {
+		SetWindowLong(hWnd, GWL_USERDATA, (LONG)lParam);
+	}
+	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
+	return DlgCtrl->ExTexDlgProc(hWnd, uMsg, wParam, lParam);
+}
 BOOL CALLBACK ThrDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	if (uMsg == WM_INITDIALOG) {
 		SetWindowLong(hWnd, GWL_USERDATA, (LONG)lParam);
@@ -134,6 +141,7 @@ void DialogControl::InitDialog(HWND hWnd) {
 	hWnd_AnimComp = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_ANIMCOMP), hWnd, AnimCompDlgProcHook, (LPARAM)this);
 	hWnd_Atts = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_ATT), hWnd, AttDlgProcHook, (LPARAM)this);
 	hWnd_Prp = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_PROPELLANT), hWnd, PrpDlgProcHook, (LPARAM)this);
+	hWnd_ExTex = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_EXTEX), hWnd, ExTexDlgProcHook, (LPARAM)this);
 	hWnd_Thr = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_THRUSTERS), hWnd, ThrDlgProcHook, (LPARAM)this);
 	SetWindowPos(hwnd_Mesh, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hwnd_Mesh, SW_HIDE);
@@ -147,6 +155,8 @@ void DialogControl::InitDialog(HWND hWnd) {
 	ShowWindow(hWnd_Atts, SW_HIDE);
 	SetWindowPos(hWnd_Prp, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hWnd_Prp, SW_HIDE);
+	SetWindowPos(hWnd_ExTex, NULL, 255, 10, 0, 0, SWP_NOSIZE);
+	ShowWindow(hWnd_ExTex, SW_HIDE);
 	SetWindowPos(hWnd_Thr, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hWnd_Thr, SW_HIDE);
 	return;
@@ -384,6 +394,46 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		break;
 	}
 
+	case EXTEX:
+	{
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootExTex);
+		while (ht != NULL) {
+			TreeItem.erase(ht);
+			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootExTex);
+		}
+		TVINSERTSTRUCT insertstruct = { 0 };
+
+		insertstruct.hInsertAfter = TVI_ROOT;
+		insertstruct.item.mask = TVIF_TEXT;
+		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
+		insertstruct.hParent = hrootExTex;
+		for (UINT i = 0; i < SB1->GetExTexCount(); i++) {
+			char cbuf[256] = { '\0' };
+			if (SB1->GetExTexName(i).size()> 0) {
+				if (SB1->IsExTexCreated(i)) {
+					sprintf(cbuf, "%s", SB1->GetExTexName(i).c_str());
+				}
+				else {
+					sprintf(cbuf, "*%s", SB1->GetExTexName(i).c_str());
+				}
+				
+			}
+			else {
+				sprintf(cbuf, "*ExhaustTexture_%i", i);
+			}
+			insertstruct.item.pszText = (LPSTR)cbuf;
+			insertstruct.item.cchTextMax = strlen(cbuf);
+			TREE_ITEM_REF Tir = TREE_ITEM_REF();
+			Tir.Type = EXTEX;
+			Tir.idx = i;
+			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			TreeItem[Tir.hitem] = Tir;
+			TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootExTex, TVE_EXPAND);
+		}
+		break;
+	}
+
 	case THRUSTERS:
 	{
 		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootThrusters);
@@ -484,6 +534,12 @@ void DialogControl::InitTree(HWND hWnd) {
 	Tir.hitem = hrootPropellant;
 	TreeItem[Tir.hitem] = Tir;
 
+	insertstruct.item.pszText = (LPSTR)TEXT("Exhaust Textures\0");
+	insertstruct.item.cchTextMax = 18;
+	hrootExTex = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+	Tir.hitem = hrootExTex;
+	TreeItem[Tir.hitem] = Tir;
+
 	insertstruct.item.pszText = (LPSTR)TEXT("Thrusters\0");
 	insertstruct.item.cchTextMax = 10;
 	hrootThrusters = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
@@ -511,6 +567,7 @@ void DialogControl::InitTree(HWND hWnd) {
 	UpdateTree(hWnd, ATTACHMENT, 0);
 	UpdateTree(hWnd, ANIMATIONS,0);
 	UpdateTree(hWnd, PROPELLANT, 0);
+	UpdateTree(hWnd, EXTEX, 0);
 	UpdateTree(hWnd, THRUSTERS, 0);
 	return;
 }
@@ -539,6 +596,9 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 	}
 	if (type != PROPELLANT) {
 		ShowWindow(hWnd_Prp, SW_HIDE);
+	}
+	if (type != EXTEX) {
+		ShowWindow(hWnd_ExTex, SW_HIDE);
 	}
 	if (type != THRUSTERS) {
 		ShowWindow(hWnd_Thr, SW_HIDE);
@@ -574,6 +634,11 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 	case PROPELLANT:
 	{
 		ShowWindow(hWnd_Prp, SW_SHOW);
+		break;
+	}
+	case EXTEX:
+	{
+		ShowWindow(hWnd_ExTex, SW_SHOW);
 		break;
 	}
 	case THRUSTERS:
@@ -620,6 +685,10 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 			else if (CurrentSelection.hitem == hrootPropellant) {
 				PrpMng->AddTankDef();				
 				UpdateTree(hWnd, PROPELLANT, 0);
+			}
+			else if (CurrentSelection.hitem == hrootExTex) {
+				SB1->AddExTexDef();
+				UpdateTree(hWnd, EXTEX, 0);
 			}
 			else if (CurrentSelection.hitem == hrootThrusters) {
 				ThrMng->AddThrDef();
@@ -678,6 +747,10 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD PROPELLANT TANK");
 					}
+					else if (CurrentSelection.hitem == hrootExTex) {
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
+						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD EXHAUST TEXTURE");
+					}
 					else if (CurrentSelection.hitem == hrootThrusters) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD THRUSTER");
@@ -727,10 +800,14 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 							UpdatePrpDialog(hWnd_Prp);
 							break;
 						}
+						case EXTEX:
+						{
+							UpdateExTexDialog(hWnd_ExTex);
+							break;
+						}
 						case THRUSTERS:
 						{
 							UpdateThrDialog(hWnd_Thr);
-							//TO DO
 							break;
 						}
 					}
