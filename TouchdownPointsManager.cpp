@@ -8,7 +8,7 @@ TouchdownPointsManager::TouchdownPointsManager(VesselBuilder1 *_VB1) {
 	set2.clear();
 	change_anim_idx = (UINT)-1;
 	Set2Enabled = false;
-	
+	CurrentSet = 0;
 	return;
 }
 TouchdownPointsManager::~TouchdownPointsManager() {
@@ -16,9 +16,83 @@ TouchdownPointsManager::~TouchdownPointsManager() {
 	return;
 }
 void TouchdownPointsManager::ParseCfgFile(FILEHANDLE fh) {
+
+	
+	
+	for (UINT set = 1; set < 3; set++) {
+		char cbuf[256] = { '\0' };
+		UINT point_counter = 0;
+		VECTOR3 pos;
+		sprintf(cbuf, "TDP_%i_%i_POS", set, point_counter);
+		while (oapiReadItem_vec(fh, cbuf, pos)) {
+			double damping, stiffness, mu, mu_lng;
+			sprintf(cbuf, "TDP_%i_%i_DAMPING", set, point_counter);
+			oapiReadItem_float(fh, cbuf, damping);
+			sprintf(cbuf, "TDP_%i_%i_STIFFNESS", set, point_counter);
+			oapiReadItem_float(fh, cbuf, stiffness);
+			sprintf(cbuf, "TDP_%i_%i_MU", set, point_counter);
+			oapiReadItem_float(fh, cbuf, mu);
+			sprintf(cbuf, "TDP_%i_%i_MULNG", set, point_counter);
+			oapiReadItem_float(fh, cbuf, mu_lng);
+			TOUCHDOWNVTX tdvtx;
+			tdvtx.pos = pos;
+			tdvtx.damping = damping;
+			tdvtx.stiffness = stiffness;
+			tdvtx.mu = mu;
+			tdvtx.mu_lng = mu_lng;
+			AddPoint(set, tdvtx);
+
+			point_counter++;
+			sprintf(cbuf, "TDP_%i_%i_POS", set, point_counter);
+		}
+		
+	}
+	bool SecondSetEnabled;
+	int changeoveranim;
+	char cbuf[256] = { '\0' };
+	sprintf(cbuf, "TDP_SECONDSET_ENABLED");
+	oapiReadItem_bool(fh, cbuf, SecondSetEnabled);
+	sprintf(cbuf, "TDP_CHANGEOVER_ANIM");
+	oapiReadItem_int(fh, cbuf, changeoveranim);
+	EnableSecondSet(SecondSetEnabled);
+	if (changeoveranim >= 0) {
+		SetChangeOverAnimation(changeoveranim);
+	}
+	if (GetPointsCount(1) >= 3) {
+		SetCurrentSet(1);
+	}
 	return;
 }
 void TouchdownPointsManager::WriteCfg(FILEHANDLE fh) {
+	oapiWriteLine(fh, " ");
+	oapiWriteLine(fh, ";<-------------------------TOUCHDOWNPOINTS DEFINITIONS------------------------->");
+	oapiWriteLine(fh, " ");
+	for (UINT set = 1; set < 3; set++) {
+		if (set == 2) {
+			char cbuf[256] = { '\0' };
+			sprintf(cbuf, "TDP_SECONDSET_ENABLED");
+			oapiWriteItem_bool(fh, cbuf, IsSecondSetEnabled());
+			sprintf(cbuf, "TDP_CHANGEOVER_ANIM");
+			oapiWriteItem_int(fh, cbuf, GetChangeOverAnimation());
+		}
+		for (UINT i = 0; i < GetPointsCount(set); i++) {
+			char cbuf[256] = { '\0' };
+			sprintf(cbuf, "TDP_%i_%i_POS", set, i);
+			oapiWriteItem_vec(fh, cbuf, GetPointPos(set, i));
+			sprintf(cbuf, "TDP_%i_%i_DAMPING",set,i);
+			oapiWriteItem_float(fh, cbuf, GetPointDamping(set, i));
+			sprintf(cbuf, "TDP_%i_%i_STIFFNESS",set,i);
+			oapiWriteItem_float(fh, cbuf, GetPointStiffnes(set, i));
+			sprintf(cbuf, "TDP_%i_%i_MU",set,i);
+			oapiWriteItem_float(fh, cbuf, GetPointMu(set, i));
+			sprintf(cbuf, "TDP_%i_%i_MULNG",set,i);
+			oapiWriteItem_float(fh, cbuf, GetPointMuLng(set, i));
+			oapiWriteLine(fh, " ");
+		}
+		
+		
+	}
+	
 	return;
 }
 
@@ -132,4 +206,26 @@ void TouchdownPointsManager::ClearSet(UINT set) {
 		set2.clear();
 	}
 	return;
+}
+
+void TouchdownPointsManager::SetCurrentSet(UINT set) {
+	if (set == 1) {
+		CurrentSet = 1;
+		ApplySet(1);
+	}
+	else {
+		CurrentSet = 2;
+		ApplySet(2);
+	}
+}
+UINT TouchdownPointsManager::GetCurrentSet() {
+	return CurrentSet;
+}
+UINT TouchdownPointsManager::GetPointsCount(UINT set) {
+	if (set == 1) {
+		return set1.size();
+	}
+	else {
+		return set2.size();
+	}
 }

@@ -688,7 +688,7 @@ void VesselBuilder1::ParseCfgFile(FILEHANDLE fh) {
 	PartMng->ParseCfgFile(fh);
 	ThrMng->ParseCfgFile(fh);
 	ThrGrpMng->ParseCfgFile(fh);
-
+	TdpMng->ParseCfgFile(fh);
 	if (!oapiReadItem_bool(fh, "NOEDITOR", NoEditor)) { NoEditor = false; }
 	SBLog("Parsing Completed");
 	return;
@@ -742,7 +742,7 @@ void VesselBuilder1::WriteCfgFile(string filename) {
 	PartMng->WriteCfg(fh);
 	ThrMng->WriteCfg(fh);
 	ThrGrpMng->WriteCfg(fh);
-
+	TdpMng->WriteCfg(fh);
 	oapiCloseFile(fh, FILE_OUT);
 	return;
 }

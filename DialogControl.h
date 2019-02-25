@@ -110,6 +110,7 @@ public:
 	bool AnimTesting;
 	double GetDlgItemDouble(HWND hWnd, int control_id);
 	void SetDlgItemDouble(HWND hWnd, int control_id, double val, UINT precision);
+	bool IsCheckBoxChecked(HWND hWnd, int control_id);
 //	HTREEITEM ItemToSelect;
 protected:
 	VesselBuilder1 *VB1;

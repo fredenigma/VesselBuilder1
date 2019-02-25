@@ -1,6 +1,7 @@
 #include "VesselBuilder1.h"
 #include "resource.h"
 #include "DialogControl.h"
+#include "AnimationManager.h"
 #include "TouchdownPointsManager.h"
 #pragma comment(lib, "comctl32.lib")
 
@@ -14,6 +15,12 @@ void DialogControl::UpdateTdpDialog(HWND hWnd) {
 		ShowWindow(GetDlgItem(hWnd, IDC_CHECK_TDPENABLESET2), SW_HIDE);
 		ShowWindow(GetDlgItem(hWnd, IDC_STATIC_TDPCHANGE), SW_HIDE);
 		ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_TDPJ3P), SW_SHOW);
+		ShowWindow(GetDlgItem(hWnd, IDC_EDIT_TDPHFG), SW_SHOW);
+		ShowWindow(GetDlgItem(hWnd, IDC_EDIT_TDPRAD), SW_SHOW);
+		ShowWindow(GetDlgItem(hWnd, IDC_CHECK_TDPTAILSITTER), SW_SHOW);
+		ShowWindow(GetDlgItem(hWnd, IDC_STATIC_TDPDEFGRP), SW_SHOW);
+		ShowWindow(GetDlgItem(hWnd, IDC_STATIC_TDPDEFHFG), SW_SHOW);
+		ShowWindow(GetDlgItem(hWnd, IDC_STATIC_TDPDEFRAD), SW_SHOW);
 		ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_TDPAPPLY), SW_SHOW);
 		SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_TDPAPPLY), "APPLY");
 		SetDlgItemText(hWnd, IDC_EDIT_TDPCURSET, "SET 1");
@@ -41,6 +48,12 @@ void DialogControl::UpdateTdpDialog(HWND hWnd) {
 		ShowWindow(GetDlgItem(hWnd, IDC_CHECK_TDPENABLESET2), SW_SHOW);
 		ShowWindow(GetDlgItem(hWnd, IDC_STATIC_TDPCHANGE), SW_SHOW);
 		ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_TDPJ3P), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_EDIT_TDPHFG), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_EDIT_TDPRAD), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_CHECK_TDPTAILSITTER), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_STATIC_TDPDEFGRP), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_STATIC_TDPDEFHFG), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_STATIC_TDPDEFRAD), SW_HIDE);
 		ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_TDPAPPLY), SW_HIDE);
 		SetDlgItemText(hWnd, IDC_EDIT_TDPCURSET, "SET 2");
 		if (TdpMng->IsSecondSetEnabled()) {
@@ -62,6 +75,17 @@ void DialogControl::UpdateTdpDialog(HWND hWnd) {
 			SendDlgItemMessage(hWnd, IDC_EDIT_TDPSTIFF, EM_SETREADONLY, false, 0);
 			SendDlgItemMessage(hWnd, IDC_EDIT_TDPMU, EM_SETREADONLY, false, 0);
 			SendDlgItemMessage(hWnd, IDC_EDIT_TDPMULNG, EM_SETREADONLY, false, 0);
+			SendDlgItemMessage(hWnd, IDC_COMBO_TDPCHANGEOVERANIM, CB_RESETCONTENT, 0, 0);
+			for (UINT i = 0; i < AnimMng->GetAnimDefCount(); i++) {
+				char cbuf[256] = { '\0' };
+				sprintf(cbuf, "%s", AnimMng->GetAnimName(i).c_str());
+				SendDlgItemMessage(hWnd, IDC_COMBO_TDPCHANGEOVERANIM, CB_INSERTSTRING, i, (LPARAM)cbuf);
+				SendDlgItemMessage(hWnd, IDC_COMBO_TDPCHANGEOVERANIM, CB_SETITEMDATA, i, i);
+			}
+			UINT changeoveranim = TdpMng->GetChangeOverAnimation();
+			if (changeoveranim != (UINT)-1) {
+				SendDlgItemMessage(hWnd, IDC_COMBO_TDPCHANGEOVERANIM, CB_SETCURSEL, changeoveranim, 0);
+			}
 		}
 		else {
 			SendDlgItemMessage(hWnd, IDC_CHECK_TDPENABLESET2, BM_SETCHECK, BST_UNCHECKED, 0);
@@ -173,13 +197,15 @@ BOOL DialogControl::TdpDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 		}
 		case IDC_BUTTON_TDPJ3P:
 		{
+			TdpMng->ClearSet(1);
 			double Mass = VB1->GetMass();
-			double ro = 15;
-			double HeightFromGround = 0.5;
+			double ro = GetDlgItemDouble(hWnd, IDC_EDIT_TDPRAD);
+			double HeightFromGround = GetDlgItemDouble(hWnd,IDC_EDIT_TDPHFG);
+			bool tailsitter = IsCheckBoxChecked(hWnd, IDC_CHECK_TDPTAILSITTER);
 			TOUCHDOWNVTX td[4];
 
 			double x_target = -0.5;
-			double stiffness = (-1)*(Mass*9.80655) / (3 * x_target);
+			double stiffness = (-1)*(Mass*9.81) / (3 * x_target);
 			double damping = 0.9*(2 * sqrt(Mass*stiffness));
 			
 			for (int i = 0; i<4; i++)
@@ -187,22 +213,39 @@ BOOL DialogControl::TdpDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 
 				td[i].damping = damping;
 				td[i].mu = 3;
-				td[i].mu_lng = 3;
+				td[i].mu_lng = 0.5;
 				td[i].stiffness = stiffness;
 			}
-			td[0].pos.x = -cos(30 * RAD)*ro;
-			td[0].pos.y = -HeightFromGround;
-			td[0].pos.z = -sin(30 * RAD)*ro;
-			td[1].pos.x = 0;
-			td[1].pos.y = -HeightFromGround;
-			td[1].pos.z = 1 * ro;
-			td[2].pos.x = cos(30 * RAD)*ro;
-			td[2].pos.y = -HeightFromGround;
-			td[2].pos.z = -sin(30 * RAD)*ro;
-			td[3].pos.x = 0;
-			td[3].pos.y = 1 * ro; 
-			td[3].pos.z = 0;
-
+			
+			if (tailsitter) {
+				td[0].pos.x = -cos(30 * RAD)*ro;
+				td[0].pos.y = -sin(30 * RAD)*ro; 
+				td[0].pos.z = -HeightFromGround;
+				td[1].pos.x = 0;
+				td[1].pos.y = 1 * ro;
+				td[1].pos.z = -HeightFromGround;
+				td[2].pos.x = cos(30 * RAD)*ro;
+				td[2].pos.y = -sin(30 * RAD)*ro;
+				td[2].pos.z = -HeightFromGround;
+				td[3].pos.x = 0;
+				td[3].pos.z = 1 * ro;
+				td[3].pos.y = 0;
+			}
+			else {
+				td[0].pos.x = -cos(30 * RAD)*ro;
+				td[0].pos.y = -HeightFromGround;
+				td[0].pos.z = -sin(30 * RAD)*ro;
+				td[2].pos.x = 0;
+				td[2].pos.y = -HeightFromGround;
+				td[2].pos.z = 1 * ro;
+				td[1].pos.y = -HeightFromGround;
+				td[1].pos.z = -sin(30 * RAD)*ro;
+				td[1].pos.x = cos(30 * RAD)*ro;
+				td[3].pos.x = 0;
+				td[3].pos.y = 1 * ro;
+				td[3].pos.z = 0;
+			}
+			
 			for (int i = 0; i < 4; i++) {
 				TdpMng->AddPoint(1, td[i]);
 			}
@@ -212,16 +255,45 @@ BOOL DialogControl::TdpDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 		}
 		case IDC_BUTTON_TDPAPPLY:
 		{
-			vector<TOUCHDOWNVTX>set = TdpMng->GetSet(1);
-			DWORD ntdvtx = set.size();
-			if (ntdvtx < 3) { break; }
-			TOUCHDOWNVTX *td = new TOUCHDOWNVTX[ntdvtx];
-			for (UINT i = 0; i < ntdvtx; i++) {
-				td[i] = set[i];
+			TdpMng->SetCurrentSet(1);
+			break;
+		}
+		case IDC_CHECK_TDPENABLESET2:
+		{
+			if (IsCheckBoxChecked(hWnd, IDC_CHECK_TDPENABLESET2)) {
+				TdpMng->EnableSecondSet(true);
+				char cbuf[256] = { '\0' };
+				sprintf(cbuf, "SET 2");
+				TVITEM tvi;
+				tvi.mask = TVIF_TEXT;
+				tvi.pszText = (LPSTR)cbuf;
+				tvi.cchTextMax = strlen(cbuf);
+				tvi.hItem = CurrentSelection.hitem;
+				SendDlgItemMessage(hDlg, IDC_TREE1, TVM_SETITEM, 0, (LPARAM)&tvi);
+				UpdateTdpDialog(hWnd);
 			}
-			VB1->SetTouchdownPoints(td, ntdvtx);
-			delete[] td;
-
+			else {
+				TdpMng->EnableSecondSet(false);
+				char cbuf[256] = { '\0' };
+				sprintf(cbuf, "*SET 2");
+				TVITEM tvi;
+				tvi.mask = TVIF_TEXT;
+				tvi.pszText = (LPSTR)cbuf;
+				tvi.cchTextMax = strlen(cbuf);
+				tvi.hItem = CurrentSelection.hitem;
+				SendDlgItemMessage(hDlg, IDC_TREE1, TVM_SETITEM, 0, (LPARAM)&tvi);
+				UpdateTdpDialog(hWnd);
+			}
+			break;
+		}
+		case IDC_COMBO_TDPCHANGEOVERANIM:
+		{
+			if (HIWORD(wParam) == CBN_SELCHANGE) {
+				int index = SendDlgItemMessage(hWnd, IDC_COMBO_TDPCHANGEOVERANIM, CB_GETCURSEL, 0, 0);
+				if (index >= 0) {
+					TdpMng->SetChangeOverAnimation(index);
+				}
+			}
 			break;
 		}
 		}

@@ -4,6 +4,7 @@
 #include "AnimDef.h"
 #include "AnimCompDef.h"
 #include "AttachmentManager.h"
+#include "TouchdownPointsManager.h"
 #include "AnimationManager.h"
 
 AnimationManager::AnimationManager(VesselBuilder1 *_VB1) {
@@ -459,7 +460,21 @@ void AnimationManager::AnimationPreStep(double simt, double simdt, double mjd) {
 				}
 			}
 			SetAnimationState(i,state);
+			//Touchdownpoints check for swap
+			if (i == VB1->TdpMng->GetChangeOverAnimation()) {
+				if (state > 0.999) {
+					if (VB1->TdpMng->GetCurrentSet() == 1) {
+						VB1->TdpMng->SetCurrentSet(2);
+					}
+				}
+				else {
+					if (VB1->TdpMng->GetCurrentSet() == 2) {
+						VB1->TdpMng->SetCurrentSet(1);
+					}
+				}
+			}
 		}
+		
 	}
 	for (UINT i = 0; i < animcomp_defs.size(); i++) {
 		if (animcomp_defs[i]->IsArmTip()) {

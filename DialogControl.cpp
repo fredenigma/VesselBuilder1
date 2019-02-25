@@ -1370,3 +1370,12 @@ VECTOR3 DialogControl::GetDlgItemsVector3(HWND hWnd, int id1, int id2, int id3) 
 	return _V(val1, val2, val3);
 }
 
+bool DialogControl::IsCheckBoxChecked(HWND hWnd, int control_id) {
+	LRESULT getcheck = SendDlgItemMessage(hWnd, control_id, BM_GETCHECK, 0, 0);
+	if (getcheck == BST_CHECKED) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}

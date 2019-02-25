@@ -26,4 +26,8 @@ public:
 	void ParseCfgFile(FILEHANDLE fh);
 	void WriteCfg(FILEHANDLE fh);
 	bool Set2Enabled;
+	UINT CurrentSet;
+	void SetCurrentSet(UINT set);
+	UINT GetCurrentSet();
+	UINT GetPointsCount(UINT set);
 };

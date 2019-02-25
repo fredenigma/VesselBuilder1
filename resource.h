@@ -288,6 +288,13 @@
 #define IDC_BUTTON_TDPCLEARSET          1256
 #define IDC_CHECK_TDPSHOW2              1257
 #define IDC_CHECK_TDPSHOWSET            1257
+#define IDC_EDIT_TDPHFG                 1258
+#define IDC_EDIT_TDPRAD                 1259
+#define IDC_CHECK1                      1260
+#define IDC_CHECK_TDPTAILSITTER         1260
+#define IDC_STATIC_TDPDEFGRP            1261
+#define IDC_STATIC_TDPDEFHFG            1262
+#define IDC_STATIC_TDPDEFRAD            1263
 
 // Next default values for new objects
 // 
@@ -295,7 +302,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1257
+#define _APS_NEXT_CONTROL_VALUE         1264
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
