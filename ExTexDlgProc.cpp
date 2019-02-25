@@ -1,19 +1,19 @@
-#include "StationBuilder1.h"
+#include "VesselBuilder1.h"
 #include "resource.h"
 #include "DialogControl.h"
 #pragma comment(lib, "comctl32.lib")
 
 void DialogControl::UpdateExTexDialog(HWND hWnd) {
 	UINT idx = CurrentSelection.idx;
-	if (idx >= SB1->GetExTexCount()) { return; }
-	if (SB1->IsExTexCreated(idx)) {
-		SetDlgItemText(hWnd, IDC_EDIT_EXTEXNAME, SB1->GetExTexName(idx).c_str());
+	if (idx >= VB1->GetExTexCount()) { return; }
+	if (VB1->IsExTexCreated(idx)) {
+		SetDlgItemText(hWnd, IDC_EDIT_EXTEXNAME, VB1->GetExTexName(idx).c_str());
 		SendDlgItemMessage(hWnd, IDC_EDIT_EXTEXNAME, EM_SETREADONLY, true, 0);
 		EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_EXTEXLOAD), false);
 		SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_DELETEEXTEX), "DELETE THIS EXHAUST TEXTURE");
 	}
 	else {
-		SetDlgItemText(hWnd, IDC_EDIT_EXTEXNAME, SB1->GetExTexName(idx).c_str());
+		SetDlgItemText(hWnd, IDC_EDIT_EXTEXNAME, VB1->GetExTexName(idx).c_str());
 		SendDlgItemMessage(hWnd, IDC_EDIT_EXTEXNAME, EM_SETREADONLY, false, 0);
 		EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_EXTEXLOAD), true);
 		SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_DELETEEXTEX), "SAVE THIS EXHAUST TEXTURE");
@@ -29,15 +29,15 @@ BOOL DialogControl::ExTexDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		switch (LOWORD(wParam)) {
 		case IDC_BUTTON_DELETEEXTEX:
 		{
-			if (SB1->IsExTexCreated(idx)) {
-				SB1->DelExTedDef(idx);
+			if (VB1->IsExTexCreated(idx)) {
+				VB1->DelExTedDef(idx);
 				UpdateTree(hDlg, EXTEX, 0);
 			}
 			else {
 				char cbuf[256] = { '\0' };
 				GetDlgItemText(hWnd, IDC_EDIT_EXTEXNAME, cbuf, 256);
 				string name(cbuf);
-				SB1->StoreExTexDef(name, idx);
+				VB1->StoreExTexDef(name, idx);
 				UpdateTree(hDlg, EXTEX, 0);
 			}
 			break;
@@ -45,7 +45,7 @@ BOOL DialogControl::ExTexDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		case IDC_BUTTON_EXTEXLOAD:
 		{
 			//string texdir = SB1->OrbiterRoot;
-			string texdir = SB1->texturedir;
+			string texdir = VB1->texturedir;
 			
 			char abstexdir_c[MAX_PATH];
 			char currentdir1[MAX_PATH];

@@ -4,9 +4,9 @@
 
 class AnimationManager {
 public:
-	AnimationManager(StationBuilder1 *_SB1);
+	AnimationManager(VesselBuilder1 *_VB1);
 	~AnimationManager();
-	StationBuilder1 *SB1;
+	VesselBuilder1 *VB1;
 	vector<AnimDef*> anim_defs;
 	//vector<ANIMCOMP_DEF> animcomp_defs;
 	vector<AnimCompDef*> animcomp_defs;

@@ -1,4 +1,4 @@
-#include "StationBuilder1.h"
+#include "VesselBuilder1.h"
 #include "resource.h"
 #include "DialogControl.h"
 #include "FollowMeDlg.h"
@@ -11,13 +11,13 @@ BOOL CALLBACK FollowMeDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 	return FollowMeDLG->DlgProc(hWnd, uMsg, wParam, lParam);
 }
 
-FollowMeDlg::FollowMeDlg(StationBuilder1 *_SB1) {
-	SB1 = _SB1;
+FollowMeDlg::FollowMeDlg(VesselBuilder1 *_VB1) {
+	VB1 = _VB1;
 	open = false;
 	hDlg = NULL;
 }
 FollowMeDlg::~FollowMeDlg() {
-	SB1 = NULL;
+	VB1 = NULL;
 	hDlg = NULL;
 	open = false;
 }
@@ -36,11 +36,11 @@ bool FollowMeDlg::IsOpen() {
 
 void FollowMeDlg::UpdatePosDirRot() {
 	char cbuf[256] = { '\0' };
-	sprintf(cbuf, "%.3f %.3f %.3f", SB1->follow_me_pos.x, SB1->follow_me_pos.y, SB1->follow_me_pos.z);
+	sprintf(cbuf, "%.3f %.3f %.3f", VB1->follow_me_pos.x, VB1->follow_me_pos.y, VB1->follow_me_pos.z);
 	SetDlgItemText(hDlg, IDC_EDIT_FMPOS, (LPCSTR)cbuf);
-	sprintf(cbuf, "%.3f %.3f %.3f", SB1->follow_me_dir.x, SB1->follow_me_dir.y, SB1->follow_me_dir.z);
+	sprintf(cbuf, "%.3f %.3f %.3f", VB1->follow_me_dir.x, VB1->follow_me_dir.y, VB1->follow_me_dir.z);
 	SetDlgItemText(hDlg, IDC_EDIT_FMDIR, (LPCSTR)cbuf);
-	sprintf(cbuf, "%.3f %.3f %.3f", SB1->follow_me_rot.x, SB1->follow_me_rot.y, SB1->follow_me_rot.z);
+	sprintf(cbuf, "%.3f %.3f %.3f", VB1->follow_me_rot.x, VB1->follow_me_rot.y, VB1->follow_me_rot.z);
 	SetDlgItemText(hDlg, IDC_EDIT_FMROT, (LPCSTR)cbuf);
 	return;
 }
@@ -68,20 +68,20 @@ BOOL FollowMeDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		switch (LOWORD(wParam)) {
 		case ID_EXIT:
 		{
-			SB1->DeleteFollowMe();
+			VB1->DeleteFollowMe();
 			break;
 		}
 		case IDC_FMRESET:
 		{
-			SB1->ResetFollowMe();
+			VB1->ResetFollowMe();
 			break;
 		}
 		case ID_COPYVS:
 		{
-			SB1->vclip.pos = SB1->follow_me_pos;
-			SB1->vclip.dir = SB1->follow_me_dir;
-			SB1->vclip.rot = SB1->follow_me_rot;
-			SB1->vclip.valid = true;
+			VB1->vclip.pos = VB1->follow_me_pos;
+			VB1->vclip.dir = VB1->follow_me_dir;
+			VB1->vclip.rot = VB1->follow_me_rot;
+			VB1->vclip.valid = true;
 			break;
 		}
 		
@@ -99,10 +99,10 @@ BOOL FollowMeDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 			{
 				LPNMUPDOWN lpd = (LPNMUPDOWN)lParam;
 				if (lpd->iDelta > 0) {
-					SB1->MoveFollowMe(_V(1, 0, 0));
+					VB1->MoveFollowMe(_V(1, 0, 0));
 				}
 				else if (lpd->iDelta < 0) {
-					SB1->MoveFollowMe(_V(-1, 0, 0));
+					VB1->MoveFollowMe(_V(-1, 0, 0));
 				}
 
 				UpdatePosDirRot();
@@ -116,10 +116,10 @@ BOOL FollowMeDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 			{
 				LPNMUPDOWN lpd = (LPNMUPDOWN)lParam;
 				if (lpd->iDelta > 0) {
-					SB1->MoveFollowMe(_V(0, 1, 0));
+					VB1->MoveFollowMe(_V(0, 1, 0));
 				}
 				else if (lpd->iDelta < 0) {
-					SB1->MoveFollowMe(_V(0, -1, 0));
+					VB1->MoveFollowMe(_V(0, -1, 0));
 				}
 
 				UpdatePosDirRot();
@@ -133,10 +133,10 @@ BOOL FollowMeDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 			{
 				LPNMUPDOWN lpd = (LPNMUPDOWN)lParam;
 				if (lpd->iDelta > 0) {
-					SB1->MoveFollowMe(_V(0, 0, 1));
+					VB1->MoveFollowMe(_V(0, 0, 1));
 				}
 				else if (lpd->iDelta < 0) {
-					SB1->MoveFollowMe(_V(0, 0, -1));
+					VB1->MoveFollowMe(_V(0, 0, -1));
 				}
 
 				UpdatePosDirRot();
@@ -150,10 +150,10 @@ BOOL FollowMeDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 			{
 				LPNMUPDOWN lpd = (LPNMUPDOWN)lParam;
 				if (lpd->iDelta > 0) {
-					SB1->RotateFollowMe(_V(-1, 0, 0));
+					VB1->RotateFollowMe(_V(-1, 0, 0));
 				}
 				else if (lpd->iDelta < 0) {
-					SB1->RotateFollowMe(_V(1, 0, 0));
+					VB1->RotateFollowMe(_V(1, 0, 0));
 				}
 
 				UpdatePosDirRot();
@@ -167,10 +167,10 @@ BOOL FollowMeDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 			{
 				LPNMUPDOWN lpd = (LPNMUPDOWN)lParam;
 				if (lpd->iDelta > 0) {
-					SB1->RotateFollowMe(_V(0, 1, 0));
+					VB1->RotateFollowMe(_V(0, 1, 0));
 				}
 				else if (lpd->iDelta < 0) {
-					SB1->RotateFollowMe(_V(0, -1, 0));
+					VB1->RotateFollowMe(_V(0, -1, 0));
 				}
 
 				UpdatePosDirRot();
@@ -184,10 +184,10 @@ BOOL FollowMeDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 			{
 				LPNMUPDOWN lpd = (LPNMUPDOWN)lParam;
 				if (lpd->iDelta > 0) {
-					SB1->RotateFollowMe(_V(0, 0, -1));
+					VB1->RotateFollowMe(_V(0, 0, -1));
 				}
 				else if (lpd->iDelta < 0) {
-					SB1->RotateFollowMe(_V(0, 0, 1));
+					VB1->RotateFollowMe(_V(0, 0, 1));
 				}
 
 				UpdatePosDirRot();
@@ -215,8 +215,8 @@ BOOL FollowMeDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	{
 		if (lParam == (LPARAM)GetDlgItem(hWnd, IDC_SLIDER_FMSPEED)) {
 			LRESULT result = SendDlgItemMessage(hWnd, IDC_SLIDER_FMSPEED, TBM_GETPOS, 0, 0);
-			SB1->follow_me_translation_speed = (double)result*50;
-			SB1->follow_me_rotation_speed = (double)result*RAD*50;
+			VB1->follow_me_translation_speed = (double)result*50;
+			VB1->follow_me_rotation_speed = (double)result*RAD*50;
 			break;
 		}
 	}

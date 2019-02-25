@@ -10,9 +10,9 @@ struct PRP_DEF {
 
 class PropellantManager {
 public:
-	PropellantManager(StationBuilder1 *_SB1);
+	PropellantManager(VesselBuilder1 *_VB1);
 	~PropellantManager();
-	StationBuilder1 *SB1;
+	VesselBuilder1 *VB1;
 	vector<PRP_DEF> tanks;
 	void AddTankDef();
 	void AddTankDef(string name, double MaxMass, double efficiency, double currentMass);

@@ -13,6 +13,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{1DA48BDD-D3DB-421C-A742-E0F2FB4CDC9E}</ProjectGuid>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <ProjectName>VesselBuilder1</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -140,10 +141,12 @@
     <ClInclude Include="FollowMeDlg.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="MeshManager.h" />
+    <ClInclude Include="ParticleManager.h" />
     <ClInclude Include="PropellantManager.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="StationBuilder1.h" />
+    <ClInclude Include="VesselBuilder1.h" />
     <ClInclude Include="ThrusterManager.h" />
+    <ClInclude Include="TouchdownPointsManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AnimationManager.cpp" />
@@ -160,24 +163,30 @@
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="MeshDialogProc.cpp" />
     <ClCompile Include="MeshManager.cpp" />
+    <ClCompile Include="ParticleManager.cpp" />
+    <ClCompile Include="ParticlesDlgProc.cpp" />
     <ClCompile Include="PropellantManager.cpp" />
     <ClCompile Include="PrpDlgProc.cpp" />
-    <ClCompile Include="StationBuilder1.cpp">
+    <ClCompile Include="VesselBuilder1.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <ClCompile Include="TdpDlgProc.cpp" />
+    <ClCompile Include="ThrGrpDlgProc.cpp" />
     <ClCompile Include="ThrusterManager.cpp" />
     <ClCompile Include="ThrustersDlgProc.cpp" />
+    <ClCompile Include="TouchdownPointsManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\lib\DlgCtrl.lib" />
+    <Library Include="..\..\lib\gcAPI.lib" />
     <Library Include="..\..\Orbitersdk\lib\orbiter.lib" />
     <Library Include="..\..\Orbitersdk\lib\Orbitersdk.lib" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="StationBuilder1.rc" />
+    <ResourceCompile Include="VesselBuilder1.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

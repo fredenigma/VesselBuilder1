@@ -88,11 +88,14 @@ class AttachmentManager;
 class AnimationManager;
 class PropellantManager;
 class ThrusterManager;
+class ThrusterGroupManager;
+class ParticleManager;
+class TouchdownPointsManager;
 
-class StationBuilder1 :public VESSEL4{
+class VesselBuilder1 :public VESSEL4{
 public:
-StationBuilder1(OBJHANDLE hObj,int fmodel);
- ~StationBuilder1();
+ VesselBuilder1(OBJHANDLE hObj,int fmodel);
+ ~VesselBuilder1();
  void clbkSetClassCaps(FILEHANDLE cfg);
  void clbkLoadStateEx(FILEHANDLE scn,void *vs);
  void clbkSaveState(FILEHANDLE scn);
@@ -112,6 +115,11 @@ StationBuilder1(OBJHANDLE hObj,int fmodel);
  AnimationManager* AnimMng;
  PropellantManager* PrpMng;
  ThrusterManager* ThrMng;
+ ThrusterGroupManager *ThrGrpMng;
+ ParticleManager *PartMng;
+ TouchdownPointsManager *TdpMng;
+
+
  VISHANDLE visual;
  
  vector <DCK_DEF> dock_definitions;
@@ -124,9 +132,8 @@ StationBuilder1(OBJHANDLE hObj,int fmodel);
  string GetExTexName(def_idx d_idx);
  UINT GetExTexCount();
  bool IsExTexCreated(def_idx d_idx);
- UINT GetExTexIdx(SURFHANDLE tex);
-// vector <ATT_DEF> att_definitions;
- //void WriteUniqueMeshFile(string filename);
+ int GetExTexIdx(SURFHANDLE tex);
+
  void WriteCfgFile(string filename);
  void WriteBackupFile();
  
@@ -159,7 +166,7 @@ StationBuilder1(OBJHANDLE hObj,int fmodel);
  string cfgfilename;
  void ConsumeFollowMeKey(char *kstate);
 
- //HWND hDlg;
+ 
 
  DialogControl *Dlg;
  FollowMeDlg *FMDlg;
@@ -176,20 +183,7 @@ StationBuilder1(OBJHANDLE hObj,int fmodel);
  void AddDockDef();
  void AddDockDef(DCK_DEF dd);
  bool DeleteDockDef(int idx);
- //void AddAttDef();
- //void AddAttDef(ATT_DEF ad);
- //bool DeleteAttDef(int idx);
-
  
-// BEACONSPOTS *dockbcn;
-// void CreateDockBeacons();
-// void DeleteDockBeacons();
-// void UpdateDockBeaconsPos();
-// bool DockBeaconsActive;
-// VECTOR3 colwhite;
-// VECTOR3 colblue;
-// VECTOR3 colgreen;
-// VECTOR3 colred;
  bool DockExhaustsActive;
  vector<UINT> DockExhaustsID;
  SURFHANDLE greenL, redL, blueL, whiteL;
@@ -203,7 +197,20 @@ StationBuilder1(OBJHANDLE hObj,int fmodel);
  vector<UINT>ThExaustsID;
  void CreateThExhausts();
  void DeleteThExhausts();
+ vector<UINT>ThGrpExhaustsID;
+ void CreateThrGrpLaserExhausts(THGROUP_TYPE thgt);
+ void CreateThrusterLaserExhaust(THRUSTER_HANDLE th);
+ void DeleteThrGrpLaserExhausts();
+ void CreateTDPExhausts(bool Current, vector<TOUCHDOWNVTX> &tdvtx);
+ void DeleteTDPExhausts(bool Current);
+ vector<UINT> TDPCurExhaustsID;
+ vector<UINT> TDPSetExhaustsID;
+ bool TdpCurExhaustsActive;
+ bool TdpSetExhaustsActive;
  
+ string WriteVectorUINT(vector<UINT> v);
+ vector<UINT> readVectorUINT(string s);
+
  bool UsingD3D9();
  bool wD3D9;
  MATRIX3 Inverse(MATRIX3 m);
@@ -213,17 +220,9 @@ StationBuilder1(OBJHANDLE hObj,int fmodel);
  bool ToggleGrapple();
  bool NoEditor;
  
+ double level1;
  
- /*
- vector<ANIM_COMPDEF> animcomps_definitions;
- vector<ANIM_DEF> animations_definitions;
- vector<MGROUP_ROTATE*> mgr;
- void DefineAnimations();
- void ClearDelete(vector<MGROUP_ROTATE*>vmgr);
- */
-
  
-
 };
 
 

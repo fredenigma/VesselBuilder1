@@ -1,9 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClInclude Include="StationBuilder1.h">
-      <Filter>Vessel</Filter>
-    </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Generals</Filter>
     </ClInclude>
@@ -40,6 +37,15 @@
     <ClInclude Include="ThrusterManager.h">
       <Filter>Vessel</Filter>
     </ClInclude>
+    <ClInclude Include="ParticleManager.h">
+      <Filter>Vessel</Filter>
+    </ClInclude>
+    <ClInclude Include="TouchdownPointsManager.h">
+      <Filter>Vessel</Filter>
+    </ClInclude>
+    <ClInclude Include="VesselBuilder1.h">
+      <Filter>Vessel</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\Orbitersdk\lib\orbiter.lib">
@@ -49,6 +55,9 @@
       <Filter>Generals</Filter>
     </Library>
     <Library Include="..\..\lib\DlgCtrl.lib">
+      <Filter>Generals</Filter>
+    </Library>
+    <Library Include="..\..\lib\gcAPI.lib">
       <Filter>Generals</Filter>
     </Library>
   </ItemGroup>
@@ -67,9 +76,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="StationBuilder1.cpp">
-      <Filter>Vessel</Filter>
-    </ClCompile>
     <ClCompile Include="DialogControl.cpp">
       <Filter>Dialog</Filter>
     </ClCompile>
@@ -124,9 +130,27 @@
     <ClCompile Include="ExTexDlgProc.cpp">
       <Filter>Dialog</Filter>
     </ClCompile>
+    <ClCompile Include="ThrGrpDlgProc.cpp">
+      <Filter>Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="ParticleManager.cpp">
+      <Filter>Vessel</Filter>
+    </ClCompile>
+    <ClCompile Include="ParticlesDlgProc.cpp">
+      <Filter>Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="TouchdownPointsManager.cpp">
+      <Filter>Vessel</Filter>
+    </ClCompile>
+    <ClCompile Include="TdpDlgProc.cpp">
+      <Filter>Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="VesselBuilder1.cpp">
+      <Filter>Vessel</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="StationBuilder1.rc">
+    <ResourceCompile Include="VesselBuilder1.rc">
       <Filter>Generals</Filter>
     </ResourceCompile>
   </ItemGroup>

@@ -1,4 +1,4 @@
-#include "StationBuilder1.h"
+#include "VesselBuilder1.h"
 #include "DialogControl.h"
 #include "MeshManager.h"
 #include "gcAPI.h"
@@ -128,8 +128,8 @@ void LoadMeshClbk(MESHHANDLE msh_h, bool firstload) {
 
 
 
-MeshManager::MeshManager(StationBuilder1 *_SB1) {
-	SB1 = _SB1;
+MeshManager::MeshManager(VesselBuilder1 *_VB1) {
+	VB1 = _VB1;
 	msh_defs.clear();
 	//loading_msh_counter = 0;
 	//MM = this;
@@ -147,7 +147,7 @@ MeshManager::~MeshManager(){
 			msh_defs[i].HighlightedGrps = NULL;
 		}
 	}
-	SB1 = NULL;
+	VB1 = NULL;
 //	MM = NULL;
 	
 }
@@ -156,7 +156,7 @@ void MeshManager::AddMeshDef() {
 	return AddMeshDef(md);
 }
 void MeshManager::AddMeshDef(MSH_DEF md) {
-	md.rm = SB1->FindRM(md.dir, md.rot);
+	md.rm = VB1->FindRM(md.dir, md.rot);
 	msh_defs.push_back(md);
 	nMeshes = msh_defs.size();
 	return;
@@ -187,8 +187,8 @@ void MeshManager::LoadMeshes() {
 		g_RM = msh_defs[i].rm;
 		msh_defs[i].msh_h = oapiLoadMeshGlobal(msh_defs[i].meshname.c_str(), LoadMeshClbk);
 		msh_defs[i].ngrps = oapiMeshGroupCount(msh_defs[i].msh_h);
-		msh_defs[i].msh_idx = SB1->AddMesh(msh_defs[i].msh_h, &msh_defs[i].ofs);
-		msh_defs[i].template_msh_h = SB1->CopyMeshFromTemplate(msh_defs[i].msh_idx);
+		msh_defs[i].msh_idx = VB1->AddMesh(msh_defs[i].msh_h, &msh_defs[i].ofs);
+		msh_defs[i].template_msh_h = VB1->CopyMeshFromTemplate(msh_defs[i].msh_idx);
 		if (msh_defs[i].ngrps > 0) {
 			msh_defs[i].HighlightedGrps = new bool[msh_defs[i].ngrps];
 			for (int j = 0; j < msh_defs[i].ngrps; j++) {
@@ -210,8 +210,8 @@ void MeshManager::LoadMeshes() {
 
 void MeshManager::RotateMeshFromTemplate(msh_idx msh_idx, MATRIX3 rm) { //CORRETTO MA CON IL CLBKLOADFUNCTION IL TEMPLATE E RUOTATO E NON SI PUO USARE
 
-	MESHHANDLE msh_h = SB1->GetMeshTemplate(msh_idx);
-	DEVMESHHANDLE devmsh_h = SB1->GetDevMesh(SB1->visual, msh_idx);
+	MESHHANDLE msh_h = VB1->GetMeshTemplate(msh_idx);
+	DEVMESHHANDLE devmsh_h = VB1->GetDevMesh(VB1->visual, msh_idx);
 	UINT group_count = oapiMeshGroupCount(msh_h);
 	if (group_count == 0) { return; }
 
@@ -244,8 +244,8 @@ void MeshManager::RotateMeshFromTemplate(msh_idx msh_idx, MATRIX3 rm) { //CORRET
 }
 
 void MeshManager::RotateMesh(msh_idx msh_idx, MATRIX3 rm) {
-	MESHHANDLE msh_h = SB1->GetMeshTemplate(msh_idx);
-	DEVMESHHANDLE devmsh_h = SB1->GetDevMesh(SB1->visual, msh_idx);
+	MESHHANDLE msh_h = VB1->GetMeshTemplate(msh_idx);
+	DEVMESHHANDLE devmsh_h = VB1->GetDevMesh(VB1->visual, msh_idx);
 	return RotateMesh(msh_h, devmsh_h, rm);
 }
 void MeshManager::RotateMesh(MESHHANDLE mesh, DEVMESHHANDLE devmesh, MATRIX3 rm) {
@@ -301,8 +301,8 @@ bool MeshManager::HighlightMesh(msh_idx msh_idx, bool Highlight) {
 	if (mdidx == (UINT)-1) { return false; }
 
 	
-	DEVMESHHANDLE devmsh_h = SB1->GetDevMesh(SB1->visual, msh_idx);
-	MESHHANDLE msh_h = SB1->GetMeshTemplate(msh_idx);
+	DEVMESHHANDLE devmsh_h = VB1->GetDevMesh(VB1->visual, msh_idx);
+	MESHHANDLE msh_h = VB1->GetMeshTemplate(msh_idx);
 	if (msh_h == NULL) { return false; }
 	UINT matcount = oapiMeshMaterialCount(msh_h);
 	for (DWORD i = 0; i < matcount; i++) {
@@ -373,7 +373,7 @@ bool MeshManager::DeleteMeshDef(def_idx idx) {
 		SBLog("WARNING: Called a Delete Mesh Definition with out of range index");
 		return false;
 	}
-	SB1->DelMesh(msh_defs[idx].msh_idx, false);
+	VB1->DelMesh(msh_defs[idx].msh_idx, false);
 	if (msh_defs[idx].HighlightedGrps) {
 		delete[] msh_defs[idx].HighlightedGrps;
 		msh_defs[idx].HighlightedGrps = NULL;
@@ -385,7 +385,7 @@ bool MeshManager::DeleteMeshDef(def_idx idx) {
 bool MeshManager::ChangeMeshFile(def_idx idx, string newmeshname) {
 	SBLog("Substituting mesh definitions for index: %i old meshname:%s new meshname:%s", idx, msh_defs[idx].meshname.c_str(), newmeshname.c_str());
 	if (msh_defs[idx].msh_idx != -1) {
-		SB1->DelMesh(msh_defs[idx].msh_idx, false);
+		VB1->DelMesh(msh_defs[idx].msh_idx, false);
 	}
 
 	msh_defs[idx].meshname = newmeshname;
@@ -414,16 +414,16 @@ bool MeshManager::ChangeMeshFile(def_idx idx, string newmeshname) {
 		SBLog("WARNING! Mesh File Not Valid!");
 		return false;
 	}
-	msh_defs[idx].msh_idx = SB1->AddMesh(msh_defs[idx].msh_h, &msh_defs[idx].ofs);
-	msh_defs[idx].devmsh_h = SB1->GetDevMesh(SB1->visual, msh_defs[idx].msh_idx);
+	msh_defs[idx].msh_idx = VB1->AddMesh(msh_defs[idx].msh_h, &msh_defs[idx].ofs);
+	msh_defs[idx].devmsh_h = VB1->GetDevMesh(VB1->visual, msh_defs[idx].msh_idx);
 	SBLog("Substitution complete: mesh added with mesh index:%i", msh_defs[idx].msh_idx);
 	return true;
 
 }
 bool MeshManager::HighlightMeshGroup(msh_idx msh_idx, UINT grp_idx, bool Highlight) {
 
-	DEVMESHHANDLE devmsh_h = SB1->GetDevMesh(SB1->visual, msh_idx);		//let's get the devmesh from the vessel
-	MESHHANDLE temp_msh_h = SB1->GetMeshTemplate(msh_idx);				//let's get the template mesh from the vessel to have the original values
+	DEVMESHHANDLE devmsh_h = VB1->GetDevMesh(VB1->visual, msh_idx);		//let's get the devmesh from the vessel
+	MESHHANDLE temp_msh_h = VB1->GetMeshTemplate(msh_idx);				//let's get the template mesh from the vessel to have the original values
 	if (temp_msh_h == NULL) { return false; }// you'll never know...
 
 	MESHGROUP *mg = oapiMeshGroup(temp_msh_h, grp_idx);		//Get the original mesh group 
@@ -457,7 +457,7 @@ bool MeshManager::HighlightMeshGroup(msh_idx msh_idx, UINT grp_idx, bool Highlig
 		delete mat2;									//cleanup
 	}
 	else {												//if Inline client
-		MESHHANDLE msh_h = SB1->GetMesh(SB1->visual, msh_idx);		//Get the Live mesh from the sim
+		MESHHANDLE msh_h = VB1->GetMesh(VB1->visual, msh_idx);		//Get the Live mesh from the sim
 		if (msh_h == NULL) { return false; }// you'll never know...
 		DWORD mat_count = oapiMeshMaterialCount(msh_h);				//Get the material count to know the know the index
 		MESHGROUP *mg_inline = oapiMeshGroup(msh_h, grp_idx);		//Get the meshgroup from the live sim
@@ -485,7 +485,7 @@ bool MeshManager::HighlightMeshGroup(msh_idx msh_idx, UINT grp_idx, bool Highlig
 
 void MeshManager::VisualCreated(VISHANDLE vis, int refcount) {
 	for (UINT i = 0; i < msh_defs.size(); i++) {
-		msh_defs[i].devmsh_h = SB1->GetDevMesh(vis, msh_defs[i].msh_idx);
+		msh_defs[i].devmsh_h = VB1->GetDevMesh(vis, msh_defs[i].msh_idx);
 	}
 }
 void MeshManager::VisualDestroyed(VISHANDLE vis, int refcount) {
@@ -535,8 +535,8 @@ MATRIX3 MeshManager::GetMeshDefRM(def_idx def_idx) {
 }
 
 void MeshManager::SetMeshDefRM(def_idx def_idx, MATRIX3 rm) {
-	MATRIX3 offset = mul(rm, SB1->Inverse(msh_defs[def_idx].rm));
-	SB1->FindDirRot(rm, msh_defs[def_idx].dir, msh_defs[def_idx].rot);
+	MATRIX3 offset = mul(rm, VB1->Inverse(msh_defs[def_idx].rm));
+	VB1->FindDirRot(rm, msh_defs[def_idx].dir, msh_defs[def_idx].rot);
 	RotateMesh(msh_defs[def_idx].msh_idx, offset);
 	msh_defs[def_idx].rm = rm;
 	//RotateMeshFromTemplate(msh_defs[def_idx].msh_idx, rm);
@@ -562,18 +562,18 @@ VECTOR3 MeshManager::GetMEshDefRot(def_idx def_idx) {
 }
 void MeshManager::MoveMeshDef(def_idx def_idx, VECTOR3 delta_pos) {
 	msh_defs[def_idx].ofs += delta_pos;
-	SB1->ShiftMesh(IdxDef2Msh(def_idx), delta_pos);
+	VB1->ShiftMesh(IdxDef2Msh(def_idx), delta_pos);
 	return;
 }
 void MeshManager::SetMeshDefDirRot(def_idx def_idx, VECTOR3 dir, VECTOR3 rot) {
-	MATRIX3 rm = SB1->FindRM(dir, rot);
+	MATRIX3 rm = VB1->FindRM(dir, rot);
 	return SetMeshDefRM(def_idx, rm);
 }
 UINT MeshManager::GetMeshDefNGrps(def_idx def_idx) {
 	return msh_defs[def_idx].ngrps;
 }
 bool MeshManager::UsingD3D9() {
-	return SB1->UsingD3D9();
+	return VB1->UsingD3D9();
 }
 bool MeshManager::MeshGroupIsHighlighted(msh_idx msh_idx, UINT grp_idx) {
 	def_idx idx = IdxMsh2Def(msh_idx);

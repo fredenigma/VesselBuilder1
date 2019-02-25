@@ -1,4 +1,4 @@
-#include "StationBuilder1.h"
+#include "VesselBuilder1.h"
 #include "resource.h"
 #include "DialogControl.h"
 #include "AttachmentManager.h"
@@ -79,7 +79,7 @@ void DialogControl::UpdateAttDialog(HWND hWnd) {
 	SetDlgItemsTextVector3(hWnd, IDC_EDIT_ATTDIRX, IDC_EDIT_ATTDIRY, IDC_EDIT_ATTDIRZ, dir);
 	SetDlgItemsTextVector3(hWnd, IDC_EDIT_ATTROTX, IDC_EDIT_ATTROTY, IDC_EDIT_ATTROTZ, rot);
 
-	if (SB1->AttExhaustsActive) {
+	if (VB1->AttExhaustsActive) {
 		SendDlgItemMessage(hWnd, IDC_CHECK_ATTHIGHLIGHT, BM_SETCHECK, BST_CHECKED, 0);
 	}
 
@@ -139,10 +139,10 @@ BOOL DialogControl::AttDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 		}
 		case IDC_BTN_ATTPASTEV:
 		{
-			if (SB1->vclip.valid) {
-				SetDlgItemsTextVector3(hWnd, IDC_EDIT_ATTPOSX, IDC_EDIT_ATTPOSY, IDC_EDIT_ATTPOSZ, SB1->vclip.pos);
-				SetDlgItemsTextVector3(hWnd, IDC_EDIT_ATTDIRX, IDC_EDIT_ATTDIRY, IDC_EDIT_ATTDIRZ, SB1->vclip.dir);
-				SetDlgItemsTextVector3(hWnd, IDC_EDIT_ATTROTX, IDC_EDIT_ATTROTY, IDC_EDIT_ATTROTZ, SB1->vclip.rot);
+			if (VB1->vclip.valid) {
+				SetDlgItemsTextVector3(hWnd, IDC_EDIT_ATTPOSX, IDC_EDIT_ATTPOSY, IDC_EDIT_ATTPOSZ, VB1->vclip.pos);
+				SetDlgItemsTextVector3(hWnd, IDC_EDIT_ATTDIRX, IDC_EDIT_ATTDIRY, IDC_EDIT_ATTDIRZ, VB1->vclip.dir);
+				SetDlgItemsTextVector3(hWnd, IDC_EDIT_ATTROTX, IDC_EDIT_ATTROTY, IDC_EDIT_ATTROTZ, VB1->vclip.rot);
 			}
 			break;
 		}
@@ -180,10 +180,10 @@ BOOL DialogControl::AttDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 			if (HIWORD(wParam) == BN_CLICKED) {
 				LRESULT getcheck = SendDlgItemMessage(hWnd, IDC_CHECK_ATTHIGHLIGHT, BM_GETCHECK, 0, 0);
 				if (getcheck == BST_CHECKED) {
-					SB1->CreateAttExhausts();
+					VB1->CreateAttExhausts();
 				}
 				else {
-					SB1->DeleteAttExhausts();
+					VB1->DeleteAttExhausts();
 				}
 			}
 			break;
@@ -212,10 +212,10 @@ BOOL DialogControl::AttDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 				double angle = spd*(double)lpd->iDelta;
 				VECTOR3 pos, dir, rot;
 				AttMng->GetAttDefPosDirRot(idx, pos, dir, rot);
-				MATRIX3 oldrm = SB1->FindRM(dir, rot);
+				MATRIX3 oldrm = VB1->FindRM(dir, rot);
 				MATRIX3 rotrm = rotm(axis, angle);
 				MATRIX3 newrm = mul(rotrm, oldrm);
-				SB1->FindDirRot(newrm, dir, rot);
+				VB1->FindDirRot(newrm, dir, rot);
 				AttMng->ModifyAttDef(idx, pos, dir, rot);
 				UpdateAttDialog(hWnd);
 				SendDlgItemMessage(hWnd, IDC_SPIN_ATTPITCH, UDM_SETPOS, 0, 0);
@@ -232,10 +232,10 @@ BOOL DialogControl::AttDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 				double angle = spd*(double)lpd->iDelta;
 				VECTOR3 pos, dir, rot;
 				AttMng->GetAttDefPosDirRot(idx, pos, dir, rot);
-				MATRIX3 oldrm = SB1->FindRM(dir, rot);
+				MATRIX3 oldrm = VB1->FindRM(dir, rot);
 				MATRIX3 rotrm = rotm(axis, angle);
 				MATRIX3 newrm = mul(rotrm, oldrm);
-				SB1->FindDirRot(newrm, dir, rot);
+				VB1->FindDirRot(newrm, dir, rot);
 				AttMng->ModifyAttDef(idx, pos, dir, rot);
 				UpdateAttDialog(hWnd);
 				SendDlgItemMessage(hWnd, IDC_SPIN_ATTPITCH, UDM_SETPOS, 0, 0);
@@ -252,10 +252,10 @@ BOOL DialogControl::AttDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 				double angle = spd*(double)lpd->iDelta;
 				VECTOR3 pos, dir, rot;
 				AttMng->GetAttDefPosDirRot(idx, pos, dir, rot);
-				MATRIX3 oldrm = SB1->FindRM(dir, rot);
+				MATRIX3 oldrm = VB1->FindRM(dir, rot);
 				MATRIX3 rotrm = rotm(axis, angle);
 				MATRIX3 newrm = mul(rotrm, oldrm);
-				SB1->FindDirRot(newrm, dir, rot);
+				VB1->FindDirRot(newrm, dir, rot);
 				AttMng->ModifyAttDef(idx, pos, dir, rot);
 				UpdateAttDialog(hWnd);
 				SendDlgItemMessage(hWnd, IDC_SPIN_ATTPITCH, UDM_SETPOS, 0, 0);

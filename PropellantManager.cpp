@@ -1,9 +1,9 @@
-#include "StationBuilder1.h"
+#include "VesselBuilder1.h"
 #include "DialogControl.h"
 #include "PropellantManager.h"
 
-PropellantManager::PropellantManager(StationBuilder1 *_SB1) {
-	SB1 = _SB1;
+PropellantManager::PropellantManager(VesselBuilder1 *_VB1) {
+	VB1 = _VB1;
 	tanks.clear();
 	return;
 }
@@ -19,12 +19,12 @@ void PropellantManager::AddTankDef() {
 void PropellantManager::AddTankDef(string name, double MaxMass, double efficiency, double currentMass) {
 	PRP_DEF tank = PRP_DEF();
 	tank.name = name;
-	tank.ph = SB1->CreatePropellantResource(MaxMass, currentMass, efficiency);
+	tank.ph = VB1->CreatePropellantResource(MaxMass, currentMass, efficiency);
 	tanks.push_back(tank);
 	return;
 }
 void PropellantManager::DelTankDef(def_idx d_idx) {
-	SB1->DelPropellantResource(tanks[d_idx].ph);
+	VB1->DelPropellantResource(tanks[d_idx].ph);
 	tanks.erase(tanks.begin() + d_idx);
 	return;
 }
@@ -32,39 +32,39 @@ string PropellantManager::GetTankName(def_idx d_idx) {
 	return tanks[d_idx].name;
 }
 double PropellantManager::GetTankMaxMass(def_idx d_idx) {
-	return SB1->GetPropellantMaxMass(tanks[d_idx].ph);
+	return VB1->GetPropellantMaxMass(tanks[d_idx].ph);
 }
 double PropellantManager::GetTankCurrentMass(def_idx d_idx) {
-	return SB1->GetPropellantMass(tanks[d_idx].ph);
+	return VB1->GetPropellantMass(tanks[d_idx].ph);
 }
 double PropellantManager::GetTankEfficiency(def_idx d_idx) {
-	return SB1->GetPropellantEfficiency(tanks[d_idx].ph);
+	return VB1->GetPropellantEfficiency(tanks[d_idx].ph);
 }
 void PropellantManager::SetTankName(def_idx d_idx, string newname) {
 	tanks[d_idx].name = newname;
 	return;
 }
 void PropellantManager::SetTankMaxMass(def_idx d_idx, double newmaxmass) {
-	SB1->SetPropellantMaxMass(tanks[d_idx].ph, newmaxmass);
+	VB1->SetPropellantMaxMass(tanks[d_idx].ph, newmaxmass);
 	return;
 }
 void PropellantManager::SetTankCurrentMass(def_idx d_idx, double newcurrentmass) {
-	SB1->SetPropellantMass(tanks[d_idx].ph, newcurrentmass);
+	VB1->SetPropellantMass(tanks[d_idx].ph, newcurrentmass);
 	return;
 }
 void PropellantManager::SetTankEfficiency(def_idx d_idx, double newefficiency) {
-	SB1->SetPropellantEfficiency(tanks[d_idx].ph, newefficiency);
+	VB1->SetPropellantEfficiency(tanks[d_idx].ph, newefficiency);
 	return;
 }
 DWORD PropellantManager::GetPropCount() {
-	return SB1->GetPropellantCount();
+	return VB1->GetPropellantCount();
 }
 void PropellantManager::MakePrimary(def_idx d_idx) {
-	SB1->SetDefaultPropellantResource(tanks[d_idx].ph);
+	VB1->SetDefaultPropellantResource(tanks[d_idx].ph);
 	return;
 }
 bool PropellantManager::IsPrimary(def_idx d_idx) {
-	if (SB1->GetDefaultPropellantResource() == tanks[d_idx].ph) {
+	if (VB1->GetDefaultPropellantResource() == tanks[d_idx].ph) {
 		return true;
 	}
 	else {

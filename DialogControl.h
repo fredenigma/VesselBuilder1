@@ -1,7 +1,7 @@
 #pragma once
 #include <CommCtrl.h>
 
-enum ItemType { MESH, DOCK, ATTACHMENT, LIGHT, CAMERA, SPECIAL, SETTINGS,ROOTS,NONE,ANIMATIONS,ANIM_COMP,PROPELLANT,EXTEX,THRUSTERS };
+enum ItemType { MESH, DOCK, ATTACHMENT, LIGHT, CAMERA, SPECIAL, SETTINGS,ROOTS,NONE,ANIMATIONS,ANIM_COMP,PROPELLANT,EXTEX,THRUSTERS,THRUSTERGROUPS,PARTICLES,TOUCHDOWNPOINTS };
 struct TREE_ITEM_REF {
 	ItemType Type;
 	UINT idx;
@@ -16,7 +16,7 @@ struct TREE_ITEM_REF {
 
 class DialogControl {
 public:
-	DialogControl(StationBuilder1 *_SB1);
+	DialogControl(VesselBuilder1 *_VB1);
 	~DialogControl();
 	BOOL CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL MeshDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -27,7 +27,9 @@ public:
 	BOOL PrpDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL ThrDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL ExTexDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
+	BOOL ThrGrpDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	BOOL PartDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	BOOL TdpDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	map<HTREEITEM, TREE_ITEM_REF> TreeItem;
 	TREE_ITEM_REF CurrentSelection;
@@ -52,6 +54,9 @@ public:
 	HTREEITEM hrootPropellant;
 	HTREEITEM hrootThrusters;
 	HTREEITEM hrootExTex;
+	HTREEITEM hrootThrusterGroups;
+	HTREEITEM hrootParticles;
+	HTREEITEM hrootTouchdownPoints;
 
 	void SetDlgItemsTextVector3(HWND hWnd, int id1, int id2, int id3, VECTOR3 v3);
 	VECTOR3 GetDlgItemsVector3(HWND hWnd, int id1, int id2, int id3);
@@ -66,6 +71,10 @@ public:
 	void UpdatePrpDialog(HWND hWnd);
 	void UpdateExTexDialog(HWND hWnd);
 	void UpdateThrDialog(HWND hWnd);
+	void UpdateThrGrpDialog(HWND hWnd);
+	void UpdatePartDialog(HWND hWnd);
+	void UpdateTdpDialog(HWND hWnd);
+
 	HTREEITEM FindHtreeItem(ItemType type, UINT idx);
 	void InitAnimKeyCombo(HWND hWnd);
 	void UpdateTree(HWND hWnd,ItemType type,HTREEITEM select);
@@ -83,6 +92,9 @@ public:
 	HWND hWnd_Prp;
 	HWND hWnd_ExTex;
 	HWND hWnd_Thr;
+	HWND hWnd_ThrGrp;
+	HWND hWnd_Part;
+	HWND hWnd_Tdp;
 
 	HWND GetDlg() { return hDlg; }
 	map<DWORD, string> oapi_keys;
@@ -90,11 +102,17 @@ public:
 	AttachmentManager *AttMng;
 	PropellantManager *PrpMng;
 	ThrusterManager *ThrMng;
+	ThrusterGroupManager *ThrGrpMng;
+	ParticleManager *PartMng;
+	TouchdownPointsManager *TdpMng;
+
+	bool ShowingThrGrp;
 	bool AnimTesting;
 	double GetDlgItemDouble(HWND hWnd, int control_id);
+	void SetDlgItemDouble(HWND hWnd, int control_id, double val, UINT precision);
 //	HTREEITEM ItemToSelect;
 protected:
-	StationBuilder1 *SB1;
+	VesselBuilder1 *VB1;
 	bool open;
 	
 //	vector<MSH_DEF> md_restore;

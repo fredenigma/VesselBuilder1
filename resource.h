@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
 // File di inclusione generato con Microsoft Visual C++.
-// Utilizzato da StationBuilder1.rc
+// Utilizzato da VesselBuilder1.rc
 //
 #define IDD_DIALOG1                     101
 #define IDD_DIALOG_MESH                 103
@@ -12,6 +12,9 @@
 #define IDD_DIALOG_PROPELLANT           110
 #define IDD_DIALOG_THRUSTERS            111
 #define IDD_DIALOG_EXTEX                112
+#define IDD_DIALOG_THRGRP               113
+#define IDD_DIALOG_PARTICLES            114
+#define IDD_DIALOG_TDPOINTS             115
 #define IDC_TREE1                       1001
 #define IDC_SPIN_POSZ_S                 1005
 #define IDC_SPIN_POSZ_L                 1006
@@ -66,26 +69,39 @@
 #define IDC_STATIC_MSH14                1052
 #define IDC_STATIC_MSH15                1053
 #define IDC_BUTTON_DELETEMESHDEF        1054
+#define IDC_STATIC_MSH23                1054
 #define IDC_STATIC_MSH16                1055
+#define IDC_STATIC_MSH24                1055
 #define IDC_SPIN_ROLL                   1056
 #define IDC_STATIC_MSH17                1056
+#define IDC_STATIC_MSH25                1056
 #define IDC_SPIN_PITCH                  1057
 #define IDC_BUTTON_ADD                  1057
 #define IDC_STATIC_MSH18                1057
+#define IDC_STATIC_MSH26                1057
 #define IDC_SPIN_YAW                    1058
 #define IDC_EDIT_FMPOS                  1058
 #define IDC_STATIC_MSH19                1058
+#define IDC_STATIC_MSH27                1058
 #define IDC_EDIT_FMDIR                  1059
 #define IDC_STATIC_MSH20                1059
 #define IDC_EDIT_ROT                    1060
 #define IDC_EDIT_FMROT                  1060
 #define IDC_STATIC_MSH21                1060
+#define IDC_STATIC_MSH28                1060
 #define IDC_SLIDER_FMSPEED              1061
 #define IDC_STATIC_MSH22                1061
+#define IDC_STATIC_MSH29                1061
 #define IDC_SPIN_FMX                    1062
+#define IDC_STATIC_MSH30                1062
 #define IDC_SPIN_FMY                    1063
+#define IDC_STATIC_MSH31                1063
+#define IDC_STATIC_MSH32                1064
 #define IDC_SPIN_FMZ                    1065
+#define IDC_STATIC_MSH33                1065
 #define IDC_SPIN_FMYAW                  1066
+#define IDC_STATIC_MSH34                1066
+#define IDC_STATIC_MSH35                1067
 #define ID_COPY                         1068
 #define ID_COPYVS                       1068
 #define ID_EXIT                         1069
@@ -223,10 +239,55 @@
 #define IDC_BUTTON_THEXLSET             1206
 #define IDC_EDIT_THEXL                  1207
 #define IDC_BUTTON_THTEST               1208
-#define IDC_EDIT1                       1209
 #define IDC_EDIT_EXTEXNAME              1209
+#define IDC_BUTTON_THPARTSET            1209
 #define IDC_BUTTON_EXTEXLOAD            1210
 #define IDC_BUTTON_DELETEEXTEX          1212
+#define IDC_LIST_THGRP                  1213
+#define IDC_BUTTON_THRGRPDEFUNDEF       1215
+#define IDC_EDIT_THGRP                  1216
+#define IDC_CHECK_THGRPSHOW             1217
+#define IDC_EDIT_PARTNAME               1218
+#define IDC_BUTTON_PARTNAMESET          1219
+#define IDC_EDIT_PARTSIZE               1220
+#define IDC_EDIT_PARTRATE               1222
+#define IDC_EDIT_PARTV0                 1223
+#define IDC_EDIT_PARTSPREAD             1224
+#define IDC_EDIT_PARTLIFETIME           1225
+#define IDC_EDIT_PARTGROWTH             1226
+#define IDC_EDIT_PARTATMSLOW            1227
+#define IDC_COMBO_PARTLTYPE             1228
+#define IDC_COMBO_PARTLVLMAP            1229
+#define IDC_EDIT_PARTLMIN               1230
+#define IDC_EDIT_PARTLMAX               1231
+#define IDC_COMBO_PARTATMMAP            1232
+#define IDC_EDIT_PARTAMIN               1233
+#define IDC_EDIT_PARTAMAX               1234
+#define IDC_COMBO_PARTTEX               1235
+#define IDC_BUTTON_PARTSTORE            1236
+#define IDC_BUTTON_DELETEPART           1237
+#define IDC_BUTTON_PARTTEST             1238
+#define IDC_EDIT_TDPPOSX                1238
+#define IDC_EDIT_TDPPOSY                1239
+#define IDC_EDIT_TDPPOSZ                1240
+#define IDC_EDIT_TDPDAMP                1241
+#define IDC_EDIT_TDPMU                  1242
+#define IDC_EDIT_TDPMULNG               1243
+#define IDC_EDIT_TDPSTIFF               1244
+#define IDC_CHECK_TDPSHOWCUR            1245
+#define IDC_EDIT_TDPCURSET              1246
+#define IDC_COMBO_TDPCHANGEOVERANIM     1247
+#define IDC_LIST_TDP                    1248
+#define IDC_BUTTON_TDPADD               1249
+#define IDC_BUTTON_TDPREMOVE            1250
+#define IDC_BUTTON_TDPPASTEV            1251
+#define IDC_BUTTON_TDPAPPLY             1252
+#define IDC_CHECK_TDPENABLESET2         1253
+#define IDC_BUTTON_TDPJ3P               1254
+#define IDC_STATIC_TDPCHANGE            1255
+#define IDC_BUTTON_TDPCLEARSET          1256
+#define IDC_CHECK_TDPSHOW2              1257
+#define IDC_CHECK_TDPSHOWSET            1257
 
 // Next default values for new objects
 // 
@@ -234,7 +295,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1213
+#define _APS_NEXT_CONTROL_VALUE         1257
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

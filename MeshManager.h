@@ -35,10 +35,10 @@ struct MSH_DEF {
 
 class MeshManager {
 public:
-	MeshManager(StationBuilder1 *_SB1);
+	MeshManager(VesselBuilder1 *_VB1);
 	~MeshManager();
 	vector<MSH_DEF> msh_defs;
-	StationBuilder1 *SB1;
+	VesselBuilder1 *VB1;
 	void LoadMeshes();
 	//UINT loading_msh_counter;
 	//void RotateMeshLoading(MESHHANDLE mesh, MATRIX3 rm);

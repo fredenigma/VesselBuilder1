@@ -3,7 +3,7 @@
 
 class FollowMeDlg {
 public:
-	FollowMeDlg(StationBuilder1 *_SB1);
+	FollowMeDlg(VesselBuilder1 *_VB1);
 	~FollowMeDlg();
 	BOOL CALLBACK DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	HWND hDlg;
@@ -12,7 +12,7 @@ public:
 	bool IsOpen();
 	void UpdatePosDirRot();
 protected:
-	StationBuilder1 *SB1;
+	VesselBuilder1 *VB1;
 	bool open;
 	double test;
 };

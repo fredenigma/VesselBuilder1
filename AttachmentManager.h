@@ -29,9 +29,9 @@ struct ATT_DEF {
 
 class AttachmentManager {
 public:
-	AttachmentManager(StationBuilder1 *_SB1);
+	AttachmentManager(VesselBuilder1 *_VB1);
 	~AttachmentManager();
-	StationBuilder1 *SB1;
+	VesselBuilder1 *VB1;
 	vector<ATT_DEF> att_defs;
 	void CreateAttDef();
 	void AddAttDefNoCreate();

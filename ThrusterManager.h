@@ -9,6 +9,8 @@ struct THR_DEF {
 	UINT ExhaustID;
 	bool HasExhaust;
 	bool testing;
+	vector<UINT>particles_id;
+	vector<PSTREAM_HANDLE>particles_h;
 	THR_DEF() {
 		th = NULL;
 		name.clear();
@@ -19,15 +21,17 @@ struct THR_DEF {
 		ExhaustID = (UINT)-1;
 		HasExhaust = false;
 		testing = false;
+		particles_id.clear();
+		particles_h.clear();
 	}
 };
 
 
 class ThrusterManager {
 public:
-	ThrusterManager(StationBuilder1 *_SB1);
+	ThrusterManager(VesselBuilder1 *_VB1);
 	~ThrusterManager();
-	StationBuilder1 *SB1;
+	VesselBuilder1 *VB1;
 	vector<THR_DEF> thr_defs;
 	void AddThrDef();
 	UINT AddThrDef(string name, VECTOR3 pos, VECTOR3 dir, double maxth, PROPELLANT_HANDLE ph, double isp0, double isp_ref, double p_ref);
@@ -64,15 +68,26 @@ public:
 	void ToggleThrusterTest(def_idx d_idx);
 	bool ThrIsTesting(def_idx d_idx);
 	UINT GetThrIdx(THRUSTER_HANDLE th);
+	UINT GetThrParticlesCount(def_idx d_idx);
+	vector<UINT> GetThrParticlesIDs(def_idx d_idx);
+	vector<PSTREAM_HANDLE> GetThrParticlesH(def_idx d_idx);
+	void SetThrParticles(def_idx d_idx, vector<UINT> _ids);
+	void AddThrParticles(def_idx d_idx, def_idx particle_idx);
+	void ClearThrParticles(def_idx d_idx);
 };
 
 class ThrusterGroupManager {
 public:
-	ThrusterGroupManager(StationBuilder1 *_SB1);
+	ThrusterGroupManager(VesselBuilder1 *_VB1);
 	~ThrusterGroupManager();
-	StationBuilder1 *SB1;
+	VesselBuilder1 *VB1;
 	map<THGROUP_TYPE , bool> Defined;
 	map<THGROUP_TYPE , vector<THRUSTER_HANDLE> > Thrusters;
 	void DefineGroup(THGROUP_TYPE thgt, vector<THRUSTER_HANDLE>thrusters);
 	void UndefineGroup(THGROUP_TYPE thgt);
+	bool IsGroupDefined(THGROUP_TYPE thgt);
+	vector<THRUSTER_HANDLE> GetThrusters(THGROUP_TYPE thgt);
+	vector<THRUSTER_HANDLE> GetThrustersfromIdx(vector<UINT> idx);
+	void ParseCfgFile(FILEHANDLE fh);
+	void WriteCfg(FILEHANDLE fh);
 };

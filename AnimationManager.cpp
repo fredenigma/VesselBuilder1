@@ -1,4 +1,4 @@
-#include "StationBuilder1.h"
+#include "VesselBuilder1.h"
 #include "DialogControl.h"
 #include "MeshManager.h"
 #include "AnimDef.h"
@@ -6,8 +6,8 @@
 #include "AttachmentManager.h"
 #include "AnimationManager.h"
 
-AnimationManager::AnimationManager(StationBuilder1 *_SB1) {
-	SB1 = _SB1;
+AnimationManager::AnimationManager(VesselBuilder1 *_VB1) {
+	VB1 = _VB1;
 	animcomp_defs.clear();
 	anim_defs.clear();
 	animcomp_defs.clear();
@@ -29,6 +29,7 @@ AnimationManager::~AnimationManager() {
 			delete anim_defs[i];
 		}
 	}
+	VB1 = NULL;
 }
 
 UINT AnimationManager::NextAnimSeq() {
@@ -60,7 +61,7 @@ void AnimationManager::AddAnimDef() {
 	return AddAnimDef(ad);
 }
 void AnimationManager::AddAnimDef(AnimDef *ad) {
-	ad->SetAnimIdx(SB1->CreateAnimation(ad->GetDefState()));
+	ad->SetAnimIdx(VB1->CreateAnimation(ad->GetDefState()));
 	ad->SetSeqIdx(anim_defs.size());
 	anim_defs.push_back(ad);
 	
@@ -84,7 +85,7 @@ void AnimationManager::SetAnimDefState(def_idx d_idx, double defstate) {
 	//def_idx idx = IdxAni2Def(an_idx);
 	anim_idx idx = anim_defs[d_idx]->GetAnimIdx();
 	ANIMATION* anim;
-	SB1->GetAnimPtr(&anim);
+	VB1->GetAnimPtr(&anim);
 	anim[idx].state = defstate;
 	anim[idx].defstate = defstate;
 	
@@ -95,12 +96,12 @@ void AnimationManager::SetAnimDefState(def_idx d_idx, double defstate) {
 }
 void AnimationManager::ResetAnimation(def_idx d_idx) {
 	anim_idx idx = IdxDef2Ani(d_idx);
-	SB1->SetAnimation(idx, anim_defs[d_idx]->GetDefState());
+	VB1->SetAnimation(idx, anim_defs[d_idx]->GetDefState());
 	return;
 }
 void AnimationManager::SetAnimationState(def_idx d_idx,double state) {
 	anim_idx idx = IdxDef2Ani(d_idx);
-	SB1->SetAnimation(idx, state);
+	VB1->SetAnimation(idx, state);
 	anim_defs[d_idx]->SetState(state);
 	//UpdateTip(d_idx);
 	return;
@@ -120,9 +121,9 @@ void AnimationManager::UpdateTip(def_idx d_idx) {
 	if (!hastip) { return; }
 	//sprintf(oapiDebugString(), "Att Tip:%i", anim_defs[d_idx]->Comps[CompIdx]->GetAttTip());
 	def_idx attidx = anim_defs[d_idx]->Comps[CompIdx]->GetAttTip();
-	ATTACHMENTHANDLE ah = SB1->AttMng->GetAttDefAH(attidx);
+	ATTACHMENTHANDLE ah = VB1->AttMng->GetAttDefAH(attidx);
 	//SB1->AttMng->ModifyAttDef(anim_defs[d_idx]->Comps[CompIdx]->GetAttTip(), anim_defs[d_idx]->Comps[CompIdx]->Tip[0], anim_defs[d_idx]->Comps[CompIdx]->Tip[1] - anim_defs[d_idx]->Comps[CompIdx]->Tip[0], anim_defs[d_idx]->Comps[CompIdx]->Tip[2] - anim_defs[d_idx]->Comps[CompIdx]->Tip[0]);
-	SB1->SetAttachmentParams(ah, anim_defs[d_idx]->Comps[CompIdx]->Tip[0], anim_defs[d_idx]->Comps[CompIdx]->Tip[1] - anim_defs[d_idx]->Comps[CompIdx]->Tip[0], anim_defs[d_idx]->Comps[CompIdx]->Tip[2] - anim_defs[d_idx]->Comps[CompIdx]->Tip[0]);
+	VB1->SetAttachmentParams(ah, anim_defs[d_idx]->Comps[CompIdx]->Tip[0], anim_defs[d_idx]->Comps[CompIdx]->Tip[1] - anim_defs[d_idx]->Comps[CompIdx]->Tip[0], anim_defs[d_idx]->Comps[CompIdx]->Tip[2] - anim_defs[d_idx]->Comps[CompIdx]->Tip[0]);
 	return;
 }
 void AnimationManager::SetAnimDuration(def_idx d_idx, double duration) {
@@ -196,7 +197,7 @@ void AnimationManager::DeleteAnimDef(def_idx d_idx) {
 
 	CompsCleanUp();
 	anim_idx idx = IdxDef2Ani(d_idx);
-	SB1->DelAnimation(idx);
+	VB1->DelAnimation(idx);
 	anim_defs.erase(anim_defs.begin() + d_idx);
 	return;
 }
@@ -385,7 +386,7 @@ void AnimationManager::AddAnimCompDef(def_idx animdef_idx, AnimCompDef* acd) {
 		acd->SetParent(NULL);
 	}*/
 
-	acd->AssignToAnimation(anim_defs[animdef_idx]->GetAnimIdx(), SB1);
+	acd->AssignToAnimation(anim_defs[animdef_idx]->GetAnimIdx(), VB1);
 	
 //	acd->SetPrefix(prefix);
 	animcomp_defs.push_back(acd);
@@ -462,13 +463,13 @@ void AnimationManager::AnimationPreStep(double simt, double simdt, double mjd) {
 	}
 	for (UINT i = 0; i < animcomp_defs.size(); i++) {
 		if (animcomp_defs[i]->IsArmTip()) {
-			if ((!SB1->AreVector3Equal(animcomp_defs[i]->Tip[0], animcomp_defs[i]->oldTip[0]))||(!SB1->AreVector3Equal(animcomp_defs[i]->Tip[1], animcomp_defs[i]->oldTip[1]))||(!SB1->AreVector3Equal(animcomp_defs[i]->Tip[2], animcomp_defs[i]->oldTip[2]))) {
+			if ((!VB1->AreVector3Equal(animcomp_defs[i]->Tip[0], animcomp_defs[i]->oldTip[0]))||(!VB1->AreVector3Equal(animcomp_defs[i]->Tip[1], animcomp_defs[i]->oldTip[1]))||(!VB1->AreVector3Equal(animcomp_defs[i]->Tip[2], animcomp_defs[i]->oldTip[2]))) {
 				animcomp_defs[i]->oldTip[0] = animcomp_defs[i]->Tip[0];
 				animcomp_defs[i]->oldTip[1] = animcomp_defs[i]->Tip[1];
 				animcomp_defs[i]->oldTip[2] = animcomp_defs[i]->Tip[2];
 				def_idx attidx = animcomp_defs[i]->GetAttTip();
-				ATTACHMENTHANDLE ah = SB1->AttMng->GetAttDefAH(attidx);
-				SB1->SetAttachmentParams(ah, animcomp_defs[i]->Tip[0], animcomp_defs[i]->Tip[1]- animcomp_defs[i]->Tip[0], animcomp_defs[i]->Tip[2]- animcomp_defs[i]->Tip[0]);
+				ATTACHMENTHANDLE ah = VB1->AttMng->GetAttDefAH(attidx);
+				VB1->SetAttachmentParams(ah, animcomp_defs[i]->Tip[0], animcomp_defs[i]->Tip[1]- animcomp_defs[i]->Tip[0], animcomp_defs[i]->Tip[2]- animcomp_defs[i]->Tip[0]);
 			}
 		}
 	}
@@ -524,7 +525,7 @@ void AnimationManager::DeleteAnimCompDef(def_idx d_idx) {
 			
 		}
 	}
-	SB1->DelAnimationComponent(anim_index2, GetAnimCompDefACH(d_idx));
+	VB1->DelAnimationComponent(anim_index2, GetAnimCompDefACH(d_idx));
 	animcomp_defs[d_idx]->Invalidate();
 	CompsCleanUp();
 	return;
@@ -1063,7 +1064,7 @@ void AnimationManager::SetAnimCompDefArmTip(def_idx d_idx, def_idx AttIdx) {
 	SetAnimCompDefMesh(d_idx, LOCALVERTEXLIST);
 	AnimCompDefResetGroups(d_idx);
 	VECTOR3 pos, dir, rot;
-	SB1->AttMng->GetAttDefPosDirRot(AttIdx, pos, dir, rot);
+	VB1->AttMng->GetAttDefPosDirRot(AttIdx, pos, dir, rot);
 	animcomp_defs[d_idx]->SetTips(pos, pos + dir, pos + rot);
 	((ANIMATIONCOMP*)animcomp_defs[d_idx]->ach)->trans->grp = MAKEGROUPARRAY(animcomp_defs[d_idx]->Tip);
 	((ANIMATIONCOMP*)animcomp_defs[d_idx]->ach)->trans->ngrp = 3;

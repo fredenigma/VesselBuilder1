@@ -1,15 +1,12 @@
-
-#define STRICT 
 #define ORBITER_MODULE
+
+
 
 #include <math.h>
 #include <stdio.h>
-
-#include "StationBuilder1.h"
-
+#include "VesselBuilder1.h"
 #include "DialogControl.h"
 #include "FollowMeDlg.h"
-//#include "Common.h"
 #include "resource.h"
 #include "DlgCtrl.h"
 #include "gcAPI.h"
@@ -20,38 +17,35 @@
 #include "AnimationManager.h"
 #include "PropellantManager.h"
 #include "ThrusterManager.h"
-//#define _CRT_SECURE_NO_WARNINGS
-//#define _CRT_NONSTDC_NO_DEPRECATE
+#include "ParticleManager.h"
+#include "TouchdownPointsManager.h"
+#define _CRT_SECURE_NO_WARNINGS
+#define _CRT_NONSTDC_NO_DEPRECATE
 
-
-
-//StationBuilder1 *SB1;
 HINSTANCE hDLL;
-
 //Creation
-StationBuilder1::StationBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
+VesselBuilder1::VesselBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
 	gcInitialize();
-
 	OrbiterRoot.clear();
 	char root[MAX_PATH] = { '\0' };
 	GetCurrentDirectory(MAX_PATH, root);
 	OrbiterRoot.assign(root);
 	wD3D9 = false;
 	GetOrbiterDirs();
-
-	//mesh_definitions.clear();
+	
 	MshMng = new MeshManager(this);
 	AttMng = new AttachmentManager(this);
 	AnimMng = new AnimationManager(this);
 	PrpMng = new PropellantManager(this);
 	ThrMng = new ThrusterManager(this);
+	ThrGrpMng = new ThrusterGroupManager(this);
+	PartMng = new ParticleManager(this);
+	TdpMng = new TouchdownPointsManager(this);
+	
 	dock_definitions.clear();
 	extex_defs.clear();
-	//att_definitions.clear();
 	
 	cfgfilename.clear();
-//	SB1 = this;
-	//loading_msh_idx = 0;
 	follow_me_pos = _V(0, 0, 0);
 	follow_me_dir = _V(0, 0, 1);
 	follow_me_rot = _V(0, 1, 0);
@@ -62,35 +56,32 @@ StationBuilder1::StationBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel)
 	follow_me_translation_speed = 6;
 	ResetSBLog();
 	follow_me_noteh = oapiCreateAnnotation(false, 1, _V(1, 1, 1));
-	//Dlg = NULL;
 	Dlg = new DialogControl(this);
 	FMDlg = new FollowMeDlg(this);
-	//HighLightColor = HIGHLIGHTCOLORRED;
 	
 	vclip = V_CLIPBOARD();
-	//colwhite = _V(1, 1, 1);
-	//colblue = _V(0, 0, 1);
-	//colgreen = _V(0, 1, 0);
-	//colred = _V(1, 0, 0);
-	//dockbcn = NULL;
-	//DockBeaconsActive = false;
 	DockExhaustsActive = false;
 	DockExhaustsID.clear();
 	AttExhaustsActive = false;
 	AttExhaustsID.clear();
+	ThGrpExhaustsID.clear();
 	thExhaustsActive = false;
 	ThExaustsID.clear();
+	
+	TDPCurExhaustsID.clear();
+	TDPSetExhaustsID.clear();
+	TdpCurExhaustsActive = false;
+	TdpSetExhaustsActive = false;
+
 	GrabMode = false;
 	currentGrabAtt = 0;
 	NoEditor = false;
-	
-	//animcomps_definanitions.clear();
-	//animations_definitions.clear();
+	level1 = 1.0;
 	SBLog("Class Initialize");
+	return;
 }
 
-
-StationBuilder1::~StationBuilder1(){
+VesselBuilder1::~VesselBuilder1(){
 	delete Dlg;
 	Dlg = NULL;
 	delete FMDlg;
@@ -105,6 +96,13 @@ StationBuilder1::~StationBuilder1(){
 	PrpMng = NULL;
 	delete ThrMng;
 	ThrMng = NULL;
+	delete ThrGrpMng;
+	ThrGrpMng = NULL;
+	delete PartMng;
+	PartMng = NULL;
+	delete TdpMng;
+	TdpMng = NULL;
+
 	CloseSBLog();
 	
 	//ClearDelete(mgr);
@@ -112,12 +110,12 @@ StationBuilder1::~StationBuilder1(){
 }
 
 
-void StationBuilder1::GetOrbiterDirs() {
+void VesselBuilder1::GetOrbiterDirs() {
 	string cfgname("Orbiter.cfg");
 	if (gcEnabled()) { 
 		cfgname.assign("Orbiter_NG.cfg"); 
 		wD3D9 = true;
-//		oapiWriteLogV("wD3D9:%i", wD3D9);
+
 	}
 	meshdir.assign(".\\Meshes\\");
 	configdir.assign(".\\Config\\");
@@ -150,39 +148,16 @@ void StationBuilder1::GetOrbiterDirs() {
 	return;
 }
 
-void StationBuilder1::CreateDocks() {
+void VesselBuilder1::CreateDocks() {
 	SBLog("Creating Docks...");
 	for (UINT i = 0; i < dock_definitions.size(); i++) {
 		dock_definitions[i].dh = CreateDock(dock_definitions[i].pos, dock_definitions[i].dir, dock_definitions[i].rot);
 	}
 	SBLog("Creation of %i Docking ports completed", dock_definitions.size());
-	/*
-	CreateDock(_V(0.010, -3.733, 4.419), _V(0.000, 0.000, 1.000), _V(0.000, 1.000, 0.000));
-	CreateDock(_V(-0.018, -3.738, -32.247), _V(0.000, 0.000, -1.000), _V(-0.707, 0.707, 0.000));
-	CreateDock(_V(-0.013, -9.028, -19.769), _V(0.000, -1.000, 0.000), _V(0.000, 0.000, -1.000));
-	CreateDock(_V(-0.013, 1.531, -19.769), _V(0.000, 1.000, 0.000), _V(-0.000, 0.000, -1.000));
-	CreateDock(_V(0.017, -8.861, 0.734), _V(0.000, -1.000, 0.000), _V(0.000, 0.000, 1.000));
-	CreateDock(_V(0.010, -5.192, 13.396), _V(0.000, 0.000, 1.000), _V(0.000, -1.000, 0.000));
-	CreateDock(_V(20.370, 0.166, 4.980), _V(-0.000, -0.000, -1.000), _V(1.000, 0.000, -0.000));
-	CreateDock(_V(-20.347, -0.016, 4.980), _V(-0.000, -0.000, -1.000), _V(-1.000, -0.029, 0.000));
-	CreateDock(_V(0.000, -5.138, 20.998), _V(0.000, 0.000, 1.000), _V(-0.000, 1.000, 0.000));
-	CreateDock(_V(0.010, -6.516, 15.808), _V(0.000, -1.000, 0.000), _V(0.000, 0.000, 1.000));
-	CreateDock(_V(-0.000, -2.436, 15.808), _V(-0.000, 1.000, 0.000), _V(0.000, 0.000, 1.000));
-	CreateDock(_V(-0.000, -0.137, 16.537), _V(-0.000, 1.000, 0.000), _V(0.000, 0.000, 1.000));
-	CreateDock(_V(-2.490, -4.566, 15.808), _V(1.000, 0.000, -0.000), _V(0.000, 0.000, 1.000));
-	CreateDock(_V(-10.750, -2.166, 15.808), _V(-0.000, 1.000, 0.000), _V(-1.000, -0.000, 0.000));
-	CreateDock(_V(2.260, -4.416, 15.768), _V(1.000, 0.000, -0.000), _V(0.000, 0.000, 1.000));
-	CreateDock(_V(0.000, -5.184, 20.296), _V(0.000, -0.000, -1.000), _V(0.000, -1.000, 0.000));
-	CreateDock(_V(-0.002, -8.793, 0.714), _V(0.000, -1.000, 0.000), _V(0.000, 0.000, 1.000));
-	CreateDock(_V(-2.060, -4.453, -0.011), _V(-1.000, 0.000, 0.000), _V(0.000, -1.000, 0.000));
-	CreateDock(_V(0.010, -4.413, -1.791), _V(-1.000, 0.000, 0.000), _V(0.000, -1.000, 0.000));
-	CreateDock(_V(0.001, -6.468, -0.010), _V(0.000, -1.000, 0.000), _V(0.000, 0.000, 1.000));
-	CreateDock(_V(-2.260, -4.453, -0.011), _V(-1.000, 0.000, 0.000), _V(0.000, -1.000, 0.000));
-	CreateDock(_V(-7.040, -6.557, -0.011), _V(0.000, 0.000, 1.000), _V(0.000, -1.000, 0.000));
-	CreateDock(_V(-7.040, -4.403, -2.111), _V(0.000, 0.000, 1.000), _V(0.000, 1.000, 0.000));*/
+
 	return;
 }
-void StationBuilder1::clbkSetClassCaps(FILEHANDLE cfg){
+void VesselBuilder1::clbkSetClassCaps(FILEHANDLE cfg){
 	SetEmptyMass(1000);
 	SetSize(10);
 	redL = oapiRegisterExhaustTexture("red_L");
@@ -201,7 +176,7 @@ void StationBuilder1::clbkSetClassCaps(FILEHANDLE cfg){
 	
 	return;
 }
-void StationBuilder1::clbkLoadStateEx(FILEHANDLE scn,void *vs)
+void VesselBuilder1::clbkLoadStateEx(FILEHANDLE scn,void *vs)
 {
 	SBLog("Loading State...");
 	char *line;
@@ -236,7 +211,7 @@ void StationBuilder1::clbkLoadStateEx(FILEHANDLE scn,void *vs)
 
 	SBLog("Loading State Finished");
 }
-void StationBuilder1::clbkSaveState(FILEHANDLE scn)
+void VesselBuilder1::clbkSaveState(FILEHANDLE scn)
 {
 	SBLog("Saving State...");
 
@@ -268,11 +243,11 @@ void StationBuilder1::clbkSaveState(FILEHANDLE scn)
 	
 	SBLog("Save State Finished");
 }
-void StationBuilder1::clbkPostCreation() {
+void VesselBuilder1::clbkPostCreation() {
 	
 }
 
-bool StationBuilder1::ToggleGrapple() {
+bool VesselBuilder1::ToggleGrapple() {
 	def_idx AttIdx = AttMng->IdxAtt2Def(currentGrabAtt);
 	
 	
@@ -317,18 +292,18 @@ bool StationBuilder1::ToggleGrapple() {
 	
 }
 
-void StationBuilder1::MoveFollowMe(VECTOR3 axis) {
+void VesselBuilder1::MoveFollowMe(VECTOR3 axis) {
 	follow_me_pos += axis*follow_me_translation_speed*oapiGetSimStep();
 	return;
 }
-void StationBuilder1::RotateFollowMe(VECTOR3 axis) {
+void VesselBuilder1::RotateFollowMe(VECTOR3 axis) {
 	double angle = follow_me_rotation_speed*oapiGetSimStep();
 	MATRIX3 rot_m = rotm(axis, angle);
 	MATRIX3 early_rm = follow_me_rm;
 	follow_me_rm = mul(early_rm, rot_m);
 	return;
 }
-void StationBuilder1::ConsumeFollowMeKey(char *kstate) {
+void VesselBuilder1::ConsumeFollowMeKey(char *kstate) {
 	if (KEYDOWN(kstate, OAPI_KEY_UP)) {
 		if (KEYMOD_SHIFT(kstate)) {
 			double angle = 60*RAD*oapiGetSimStep();
@@ -418,7 +393,7 @@ void StationBuilder1::ConsumeFollowMeKey(char *kstate) {
 
 	return;
 }
-int StationBuilder1::clbkConsumeDirectKey(char *kstate) {
+int VesselBuilder1::clbkConsumeDirectKey(char *kstate) {
 	if (follow_me) {
 		ConsumeFollowMeKey(kstate);
 	}
@@ -430,7 +405,7 @@ int StationBuilder1::clbkConsumeDirectKey(char *kstate) {
 }
 
 
-int StationBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
+int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 {
 	if (!down) return 0; 
 	if (Playback()) return 0; //
@@ -474,57 +449,26 @@ int StationBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 		return 1;
 	}
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == OAPI_KEY_K) {
-	//	CreateAttachment(false, _V(0, 0, 0), _V(0, 0, 1), _V(0, 1, 0), "test", false);
-	//	sprintf(oapiDebugString(), "Att count:%i %i", AttachmentCount(true), AttachmentCount(false));
-	//	((MGROUP_ROTATE*)((ANIMATIONCOMP*)(anim_defs[0].animcomps[0].ach))->trans)->axis = _V(1, 0, 0);
-		
-	/*	anim_defs[0].animcomps[0].grps.clear();
-		anim_defs[0].animcomps[0].grps.push_back(96);
-		anim_defs[0].animcomps[0].grps.push_back(78);
-		delete anim_defs[0].animcomps[0].pgrps;
-		anim_defs[0].animcomps[0].pgrps = new UINT[2];
-		anim_defs[0].animcomps[0].pgrps[0] = 96;
-		anim_defs[0].animcomps[0].pgrps[1] = 78;
-		((MGROUP_ROTATE*)((ANIMATIONCOMP*)(anim_defs[0].animcomps[0].ach))->trans)->grp = anim_defs[0].animcomps[0].pgrps;
-		((MGROUP_ROTATE*)((ANIMATIONCOMP*)(anim_defs[0].animcomps[0].ach))->trans)->ngrp = 2;*/
-	/*	if (anim_defs[0].running) {//to add the check also on backwards so it will stop on movimenti concordi and will reverse on movimenti discordi
-			anim_defs[0].running = false;
-			anim_defs[0].backward = false;
+		DWORD td_count = this->GetTouchdownPointCount();
+		for (UINT i = 0; i < td_count; i++) {
+			oapiWriteLogV("td:%i", i);
+			TOUCHDOWNVTX tdvtx;
+			this->GetTouchdownPoint(tdvtx, i);
+			oapiWriteLogV("pos:%.3f %.3f %.3f", tdvtx.pos.x, tdvtx.pos.y, tdvtx.pos.z);
+			oapiWriteLogV("stiffness: %.6f damping:%.6f", tdvtx.stiffness, tdvtx.damping);
+			oapiWriteLogV("Mu:%.3f Mu_lng:%.3f", tdvtx.mu, tdvtx.mu_lng);
 		}
-		else {
-			anim_defs[0].running = true;
-			anim_defs[0].backward = false;
-		}
-		*/
-		//MGROUP_TRANSFORM *mgt;
-		//mgt = new MGROUP_TRANSFORM;
-		//oapiWriteLogV("MGT: %i", mgt);
-		//MGROUP_ROTATE *mgr = new MGROUP_ROTATE(0, NULL, 0, _V(0, 0, 0), _V(0, 1, 0), 90 * RAD);
-		//delete mgt;
-		//mgt = new MGROUP_ROTATE(0, NULL, 0, _V(0, 0, 0), _V(0, 1, 0), 90 * RAD);// dynamic_cast<MGROUP_ROTATE*>(mgt);
 
-//		oapiWriteLogV("MGT: %i", mgt);
-		
-		//HighlightMeshGroup(0, 36, true);
-		
-		//MshMng->HighlightMeshGroup(0, 36, true);
+
+
+
+
+	
 		return 1;
 	}
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && KEYMOD_CONTROL(kstate) && key == OAPI_KEY_K) {
 		
-		//HighlightMeshGroup(0, 36, false);
-	//	SetAnimation(0, 0);
-		/*if (anim_defs[0].running) {
-			anim_defs[0].running = false;
-			anim_defs[0].backward = true;
-		}
-		else {
-			anim_defs[0].running = true;
-			anim_defs[0].backward = true;
-		}
-		
-		*/
-	//	MshMng->HighlightMeshGroup(0, 36, false);
+	
 		
 		return 1;
 	}
@@ -532,20 +476,7 @@ int StationBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 		if (GrabMode) {
 			ToggleGrapple();
 		}
-	/*	ANIM_COMPDEF acd;
-		acd.state0 = 0;
-		acd.state1 = 1;
-		acd.msgt.nmesh = 0;
-		acd.msgt.transform = MESHGROUP_TRANSFORM::ROTATE;
-		acd.msgt.P.rotparam.ref = _V(0, 0, -10);
-		acd.msgt.P.rotparam.axis = _V(0, 1, 0);
-		acd.msgt.P.rotparam.angle = 135 * RAD;
-		acd.grps.push_back(36);
-		acd.msgt.nmesh = 0;
-		
-		//acd.msgt.transform = MESHGROUP_TRANSFORM::TRANSLATE;
-		//acd.msgt.P.transparam.shift = _V(10, 10, 10);
-		AddAnimCompDef(0, acd);*/
+
 		
 		return 1;
 	}
@@ -586,7 +517,7 @@ int StationBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 
 
 
-void StationBuilder1::clbkPreStep(double simt, double simdt, double mjd) {
+void VesselBuilder1::clbkPreStep(double simt, double simdt, double mjd) {
 	if (GrabMode) {
 		def_idx attidx = AttMng->IdxAtt2Def(currentGrabAtt);
 		sprintf(oapiDebugString(), "Attachment ready for Grab: %i %s", currentGrabAtt, AttMng->GetAttDefId(attidx).c_str());
@@ -599,36 +530,36 @@ void StationBuilder1::clbkPreStep(double simt, double simdt, double mjd) {
 	
 	return;
 }
-void StationBuilder1::clbkPostStep(double simt, double simdt, double mjd) {
+void VesselBuilder1::clbkPostStep(double simt, double simdt, double mjd) {
 	return;
 }
-void StationBuilder1::clbkVisualCreated(VISHANDLE vis, int refcount) {
+void VesselBuilder1::clbkVisualCreated(VISHANDLE vis, int refcount) {
 	visual = vis;
 	MshMng->VisualCreated(vis, refcount);
 
 	return;
 }
-void StationBuilder1::clbkVisualDestroyed(VISHANDLE vis, int refcount) {
+void VesselBuilder1::clbkVisualDestroyed(VISHANDLE vis, int refcount) {
 	visual = NULL;
 	MshMng->VisualDestroyed(vis, refcount);
 
 	return;
 }
-bool StationBuilder1::clbkLoadVC(int id) {
+bool VesselBuilder1::clbkLoadVC(int id) {
 	return true;
 }
 
-void StationBuilder1::VehicleSetup() {
+void VesselBuilder1::VehicleSetup() {
 	SBLog("Vehicle Setup Started...");
 //	ResetVehicle();
 	MshMng->LoadMeshes();
 	CreateDocks();
 	SBLog("Vehicle Setup Finished...");
 }
-MATRIX3 StationBuilder1::FindRM(VECTOR3 dir2, VECTOR3 rot2) {
+MATRIX3 VesselBuilder1::FindRM(VECTOR3 dir2, VECTOR3 rot2) {
 	return FindRM(_V(0, 0, 1), _V(0, 1, 0), dir2, rot2);
 }
-MATRIX3 StationBuilder1::FindRM(VECTOR3 dir1, VECTOR3 rot1, VECTOR3 dir2, VECTOR3 rot2) {
+MATRIX3 VesselBuilder1::FindRM(VECTOR3 dir1, VECTOR3 rot1, VECTOR3 dir2, VECTOR3 rot2) {
 	VECTOR3 x_axis = _V(1, 0, 0);
 	VECTOR3 y_axis = _V(0, 1, 0);
 
@@ -666,7 +597,7 @@ MATRIX3 StationBuilder1::FindRM(VECTOR3 dir1, VECTOR3 rot1, VECTOR3 dir2, VECTOR
 	return m_rot_def;
 }
 
-void StationBuilder1::FindDirRot(MATRIX3 rm, VECTOR3 &dir, VECTOR3 &rot) {
+void VesselBuilder1::FindDirRot(MATRIX3 rm, VECTOR3 &dir, VECTOR3 &rot) {
 	VECTOR3 zz = _V(0, 0, 1);
 	VECTOR3 yy = _V(0, 1, 0);
 	dir = tmul(rm, zz);
@@ -676,7 +607,7 @@ void StationBuilder1::FindDirRot(MATRIX3 rm, VECTOR3 &dir, VECTOR3 &rot) {
 
 	return;
 }
-void StationBuilder1::ResetVehicle() {
+void VesselBuilder1::ResetVehicle() {
 	SBLog("Resetting Vehicle...");
 	ClearMeshes();
 	ClearAttachments();
@@ -686,7 +617,7 @@ void StationBuilder1::ResetVehicle() {
 	SBLog("Reset Complete");
 }
 
-void StationBuilder1::ParseCfgFile(FILEHANDLE fh) {
+void VesselBuilder1::ParseCfgFile(FILEHANDLE fh) {
 	SBLog("Parsing Configuration File");
 	if (fh == NULL) { SBLog("WARNING: cfg file handle NULL!"); }
 	//FILEHANDLE fh = oapiOpenFile(filename.c_str(), FILE_IN_ZEROONFAIL, CONFIG);
@@ -754,17 +685,19 @@ void StationBuilder1::ParseCfgFile(FILEHANDLE fh) {
 
 	
 
-
+	PartMng->ParseCfgFile(fh);
 	ThrMng->ParseCfgFile(fh);
+	ThrGrpMng->ParseCfgFile(fh);
+
 	if (!oapiReadItem_bool(fh, "NOEDITOR", NoEditor)) { NoEditor = false; }
 	SBLog("Parsing Completed");
 	return;
 }
-void StationBuilder1::WriteCfgFile(string filename) {
+void VesselBuilder1::WriteCfgFile(string filename) {
 	FILEHANDLE fh=oapiOpenFile(filename.c_str(), FILE_OUT, CONFIG);
 	char cbuf[256] = { '\0' };
-	oapiWriteLine(fh, "ClassName = StationBuilder1");
-	oapiWriteLine(fh, "Module = StationBuilder1");
+	oapiWriteLine(fh, "ClassName = VesselBuilder1");
+	oapiWriteLine(fh, "Module = VesselBuilder1");
 	oapiWriteLine(fh, " ");
 	sprintf_s(cbuf, ";CONFIGURATION FILE FOR %s",GetName());
 	oapiWriteLine(fh, cbuf);
@@ -789,6 +722,7 @@ void StationBuilder1::WriteCfgFile(string filename) {
 	AttMng->WriteCfg(fh);
 	AnimMng->WriteCfg(fh);
 	PrpMng->WriteCfg(fh);
+	
 	oapiWriteLine(fh, " ");
 	oapiWriteLine(fh, ";<-------------------------EXHAUST TEXTURES DEFINITIONS------------------------->");
 	oapiWriteLine(fh, " ");
@@ -805,14 +739,14 @@ void StationBuilder1::WriteCfgFile(string filename) {
 			oapiWriteLine(fh, " ");
 		}
 	}
-
+	PartMng->WriteCfg(fh);
 	ThrMng->WriteCfg(fh);
-
+	ThrGrpMng->WriteCfg(fh);
 
 	oapiCloseFile(fh, FILE_OUT);
 	return;
 }
-void StationBuilder1::WriteBackupFile() {
+void VesselBuilder1::WriteBackupFile() {
 	
 	string fn = OrbiterRoot;
 	fn += configdir;
@@ -834,11 +768,11 @@ void StationBuilder1::WriteBackupFile() {
 	cfgbackup.close();
 }
 
-void StationBuilder1::CreateFollowMe(VECTOR3 initpos) {
+void VesselBuilder1::CreateFollowMe(VECTOR3 initpos) {
 	follow_me_pos = initpos;
 	return CreateFollowMe();
 }
-void StationBuilder1::CreateFollowMe() {
+void VesselBuilder1::CreateFollowMe() {
 	VESSELSTATUS2 vs2;
 	memset(&vs2, 0, sizeof(vs2));
 	vs2.version = 2;
@@ -851,7 +785,7 @@ void StationBuilder1::CreateFollowMe() {
 	
 	return;
 }
-void StationBuilder1::DeleteFollowMe(bool reset) {
+void VesselBuilder1::DeleteFollowMe(bool reset) {
 	oapiAnnotationSetText(follow_me_noteh, "");
 	if (oapiIsVessel(h_follow_me)) {
 		oapiDeleteVessel(h_follow_me, GetHandle());
@@ -864,7 +798,7 @@ void StationBuilder1::DeleteFollowMe(bool reset) {
 	FMDlg->Close();
 	//sprintf(oapiDebugString(), "");
 }
-void StationBuilder1::UpdateFollowMe() {
+void VesselBuilder1::UpdateFollowMe() {
 	if (!oapiIsVessel(h_follow_me)) { return; }
 	if (oapiCameraTarget() != h_follow_me) {
 		oapiCameraAttach(h_follow_me, 1);
@@ -898,7 +832,7 @@ void StationBuilder1::UpdateFollowMe() {
 		FMDlg->UpdatePosDirRot();
 	}
 }
-void StationBuilder1::ResetFollowMe() {
+void VesselBuilder1::ResetFollowMe() {
 	follow_me_pos = _V(0, 0, 0);
 	follow_me_rm = _M(1, 0, 0, 0, 1, 0, 0, 0, 1);
 	return;
@@ -910,19 +844,19 @@ void StationBuilder1::ResetFollowMe() {
 
 
 
-void StationBuilder1::AddDockDef() {
+void VesselBuilder1::AddDockDef() {
 	DCK_DEF dd = DCK_DEF();
 	
 	dd.dh=CreateDock(dd.pos, dd.dir, dd.rot);
 	dock_definitions.push_back(dd);
 	return;
 }
-void StationBuilder1::AddDockDef(DCK_DEF dd) {
+void VesselBuilder1::AddDockDef(DCK_DEF dd) {
 	dd.dh = CreateDock(dd.pos, dd.dir, dd.rot);
 	dock_definitions.push_back(dd);
 	return;
 }
-bool StationBuilder1::DeleteDockDef(int idx) {
+bool VesselBuilder1::DeleteDockDef(int idx) {
 	if ((dock_definitions.size() - 1 < idx) || (idx<0)) {
 		SBLog("WARNING: Called a Delete Dock Definition with out of range index");
 		return false;
@@ -931,12 +865,12 @@ bool StationBuilder1::DeleteDockDef(int idx) {
 	dock_definitions.erase(dock_definitions.begin() + idx);
 	return true;
 }
-void StationBuilder1::AddExTexDef() {
+void VesselBuilder1::AddExTexDef() {
 	EXTEX_DEF ex = EXTEX_DEF();
 	extex_defs.push_back(ex);
 	return;
 }
-void StationBuilder1::AddExTexDef(string texname) {
+void VesselBuilder1::AddExTexDef(string texname) {
 	EXTEX_DEF ex = EXTEX_DEF();
 	ex.TexName = texname;
 	char cbuf[256] = { '\0' };
@@ -946,7 +880,7 @@ void StationBuilder1::AddExTexDef(string texname) {
 	extex_defs.push_back(ex);
 	return;
 }
-bool StationBuilder1::StoreExTexDef(string texname,def_idx d_idx) {
+bool VesselBuilder1::StoreExTexDef(string texname,def_idx d_idx) {
 	extex_defs[d_idx].TexName = texname;
 	char cbuf[256] = { '\0' };
 	sprintf(cbuf, "%s", texname.c_str());
@@ -959,34 +893,35 @@ bool StationBuilder1::StoreExTexDef(string texname,def_idx d_idx) {
 		return false;
 	}
 }
-void StationBuilder1::DelExTedDef(def_idx d_idx) {
+void VesselBuilder1::DelExTedDef(def_idx d_idx) {
 	extex_defs.erase(extex_defs.begin() + d_idx);
 	return;
 }
-SURFHANDLE StationBuilder1::GetExTexSurf(def_idx d_idx) {
+SURFHANDLE VesselBuilder1::GetExTexSurf(def_idx d_idx) {
 	return extex_defs[d_idx].tex;
 }
-string StationBuilder1::GetExTexName(def_idx d_idx) {
+string VesselBuilder1::GetExTexName(def_idx d_idx) {
 	return extex_defs[d_idx].TexName;
 }
-UINT StationBuilder1::GetExTexCount() {
+UINT VesselBuilder1::GetExTexCount() {
 	return extex_defs.size();
 }
-bool StationBuilder1::IsExTexCreated(def_idx d_idx) {
+bool VesselBuilder1::IsExTexCreated(def_idx d_idx) {
 	return extex_defs[d_idx].created;
 }
-UINT StationBuilder1::GetExTexIdx(SURFHANDLE tex) {
-	for (UINT i = 0; i < extex_defs.size(); i++) {
+int VesselBuilder1::GetExTexIdx(SURFHANDLE tex) {
+	if(tex==NULL){return -1; }
+	for (int i = 0; i < extex_defs.size(); i++) {
 		if (extex_defs[i].tex == tex) {
 			return i;
 		}
 	}
-	return (UINT)-1;
+	return -1;
 }
 
 
 
-void StationBuilder1::CreateDockExhausts() {
+void VesselBuilder1::CreateDockExhausts() {
 	EXHAUSTSPEC es;
 	double level = 1;
 	for (UINT i = 0; i < dock_definitions.size(); i++) {
@@ -1010,14 +945,15 @@ void StationBuilder1::CreateDockExhausts() {
 	DockExhaustsActive = true;
 	return;
 }
-void StationBuilder1::DeleteDockExhausts() {
+void VesselBuilder1::DeleteDockExhausts() {
 	for (UINT i = 0; i < DockExhaustsID.size(); i++) {
 		DelExhaust(DockExhaustsID[i]);
 	}
+	DockExhaustsID.clear();
 	DockExhaustsActive = false;
 	return;
 }
-void StationBuilder1::CreateAttExhausts() {
+void VesselBuilder1::CreateAttExhausts() {
 	EXHAUSTSPEC es;
 	double level = 1;
 	for (UINT i = 0; i < AttMng->GetAttCount(); i++) {
@@ -1041,132 +977,214 @@ void StationBuilder1::CreateAttExhausts() {
 	AttExhaustsActive = true;
 	return;
 }
-void StationBuilder1::DeleteAttExhausts() {
+void VesselBuilder1::DeleteAttExhausts() {
 	for (UINT i = 0; i < AttExhaustsID.size(); i++) {
 		DelExhaust(AttExhaustsID[i]);
 	}
+	AttExhaustsID.clear();
 	AttExhaustsActive = false;
 	return;
 }
 
 
-void StationBuilder1::CreateThExhausts() {
+void VesselBuilder1::CreateThExhausts() {
 	EXHAUSTSPEC es;
 	double level = 1;
 	for (UINT i = 0; i < ThrMng->GetThrCount(); i++) {
 		es.flags = EXHAUST_CONSTANTLEVEL;
-		es.th = NULL;
+		es.th = ThrMng->GetThrTH(i);//NULL;
 		es.tex = greenL;
 		es.lsize = 100;
 		es.wsize = 0.005;
 		es.modulate = 0;
 		es.lofs = 0;
 		es.level = &level;
-		es.lpos = &ThrMng->thr_defs[i].pos;
-		es.ldir = &ThrMng->thr_defs[i].antidir;
+		es.lpos = NULL;//&ThrMng->thr_defs[i].pos;
+		es.ldir = NULL;//&ThrMng->thr_defs[i].antidir;
 		UINT idx = AddExhaust(&es);
 		ThExaustsID.push_back(idx);	
 	}
 	thExhaustsActive = true;
 }
-void StationBuilder1::DeleteThExhausts() {
+void VesselBuilder1::DeleteThExhausts() {
 	for (UINT i = 0; i < ThExaustsID.size(); i++) {
 		DelExhaust(ThExaustsID[i]);
 	}
+	ThExaustsID.clear();
 	thExhaustsActive = false;
 	return;
 }
-
-
-
-
-
-/*
-void StationBuilder1::CreateDockBeacons() {
-	UINT ndocks = dock_definitions.size();
-	dockbcn = new BEACONSPOTS[ndocks * 5];
-	for (UINT i = 0; i < dock_definitions.size(); i++) {
-		
-		dockbcn[i*5].pos = dock_definitions[i].pos;
-		dockbcn[i*5].bls.pos = &dockbcn[i*5].pos;
-		dockbcn[i*5].bls.shape = BEACONSHAPE_COMPACT;
-		dockbcn[i*5].bls.col = &colwhite;
-		dockbcn[i*5].bls.active = true;
-		dockbcn[i*5].bls.size = 0.075;
-		dockbcn[i*5].bls.period = 0;
-		dockbcn[i*5].bls.falloff = 0.99;
-		AddBeacon(&dockbcn[i*5].bls);
-
-		dockbcn[5*i+1].pos = (dock_definitions[i].pos+dock_definitions[i].dir);
-		dockbcn[5*i+1].bls.pos = &dockbcn[5*i + 1].pos;
-		dockbcn[5*i+1].bls.shape = BEACONSHAPE_COMPACT;
-		dockbcn[5*i+1].bls.col = &colgreen;
-		dockbcn[5*i+1].bls.active = true;
-		dockbcn[5*i+1].bls.size = 0.075;
-		dockbcn[5*i+1].bls.period = 0;
-		dockbcn[5*i+1].bls.falloff = 0.99;
-		AddBeacon(&dockbcn[5*i+1].bls);
-
-		dockbcn[5 * i + 2].pos = (dock_definitions[i].pos + (dock_definitions[i].dir*2));
-		dockbcn[5 * i + 2].bls.pos = &dockbcn[5*i + 2].pos;
-		dockbcn[5 * i + 2].bls.shape = BEACONSHAPE_COMPACT;
-		dockbcn[5 * i + 2].bls.col = &colgreen;
-		dockbcn[5 * i + 2].bls.active = true;
-		dockbcn[5 * i + 2].bls.size = 0.075;
-		dockbcn[5 * i + 2].bls.period = 0;
-		dockbcn[5 * i + 2].bls.falloff = 0.99;
-		AddBeacon(&dockbcn[5 * i + 2].bls);
-
-		dockbcn[5 * i + 3].pos = (dock_definitions[i].pos + (dock_definitions[i].rot));
-		dockbcn[5 * i + 3].bls.pos = &dockbcn[5 * i + 3].pos;
-		dockbcn[5 * i + 3].bls.shape = BEACONSHAPE_COMPACT;
-		dockbcn[5 * i + 3].bls.col = &colblue;
-		dockbcn[5 * i + 3].bls.active = true;
-		dockbcn[5 * i + 3].bls.size = 0.075;
-		dockbcn[5 * i + 3].bls.period = 0;
-		dockbcn[5 * i + 3].bls.falloff = 0.99;
-		AddBeacon(&dockbcn[5 * i + 3].bls);
-
-		dockbcn[5 * i + 4].pos = (dock_definitions[i].pos + (dock_definitions[i].rot*2));
-		dockbcn[5 * i + 4].bls.pos = &dockbcn[5 * i + 4].pos;
-		dockbcn[5 * i + 4].bls.shape = BEACONSHAPE_COMPACT;
-		dockbcn[5 * i + 4].bls.col = &colblue;
-		dockbcn[5 * i + 4].bls.active = true;
-		dockbcn[5 * i + 4].bls.size = 0.075;
-		dockbcn[5 * i + 4].bls.period = 0;
-		dockbcn[5 * i + 4].bls.falloff = 0.99;
-		AddBeacon(&dockbcn[5 * i + 4].bls);
-
-		
-	}
-	DockBeaconsActive = true;
-}
-void StationBuilder1::DeleteDockBeacons() {
-	DockBeaconsActive = false;
-	ClearBeacons();
-	if (dockbcn) {
-		delete[] dockbcn;
+void VesselBuilder1::CreateThrGrpLaserExhausts(THGROUP_TYPE thgt) {
+	EXHAUSTSPEC es;
+	double level = 1;
+	es.flags = EXHAUST_CONSTANTLEVEL;
+	es.tex = greenL;
+	es.lsize = 100;
+	es.wsize = 0.005;
+	es.modulate = 0;
+	es.lofs = 0;
+	es.level = &level;
+	es.lpos = NULL;//&ThrMng->thr_defs[i].pos;
+	es.ldir = NULL;//&ThrMng->t
+	vector<THRUSTER_HANDLE>thrusters = ThrGrpMng->GetThrusters(thgt);
+	for (UINT i = 0; i < thrusters.size(); i++) {
+		es.th = thrusters[i];
+		UINT idx = AddExhaust(&es);
+		ThGrpExhaustsID.push_back(idx);
 	}
 	return;
 }
-
-void StationBuilder1::UpdateDockBeaconsPos() {
-	for (UINT i = 0; i < dock_definitions.size(); i++) {
-		dockbcn[i * 5].pos = dock_definitions[i].pos;
-		dockbcn[5 * i + 1].pos = (dock_definitions[i].pos + dock_definitions[i].dir);
-		dockbcn[5 * i + 2].pos = (dock_definitions[i].pos + (dock_definitions[i].dir * 2));
-		dockbcn[5 * i + 3].pos = (dock_definitions[i].pos + (dock_definitions[i].rot));
-		dockbcn[5 * i + 4].pos = (dock_definitions[i].pos + (dock_definitions[i].rot * 2));
-	}
+void VesselBuilder1::CreateThrusterLaserExhaust(THRUSTER_HANDLE th) {
+	EXHAUSTSPEC es;
+	double level = 1;
+	es.flags = EXHAUST_CONSTANTLEVEL;
+	es.tex = greenL;
+	es.lsize = 100;
+	es.wsize = 0.005;
+	es.modulate = 0;
+	es.lofs = 0;
+	es.level = &level;
+	es.lpos = NULL;//&ThrMng->thr_defs[i].pos;
+	es.ldir = NULL;//&ThrMng->t
+	es.th = th;
+	UINT idx = AddExhaust(&es);
+	ThGrpExhaustsID.push_back(idx);
+	
 	return;
 }
-*/
+void VesselBuilder1::DeleteThrGrpLaserExhausts() {
+	for (UINT i = 0; i < ThGrpExhaustsID.size(); i++) {
+		DelExhaust(ThGrpExhaustsID[i]);
+	}
+	ThGrpExhaustsID.clear();
+	return;
+}
 
-bool StationBuilder1::UsingD3D9() {
+void VesselBuilder1::CreateTDPExhausts(bool Current, vector<TOUCHDOWNVTX> &tdvtx) {
+	EXHAUSTSPEC es;
+	double level = 1;
+	VECTOR3 zplus = _V(0, 0, 1);
+	VECTOR3 zminus = _V(0, 0, -1);
+	VECTOR3 xplus = _V(1, 0, 0);
+	VECTOR3 xminus = _V(-1, 0, 0);
+	VECTOR3 yplus = _V(0, 1, 0);
+	VECTOR3 yminus = _V(0, -1, 0);
+	es.flags = EXHAUST_CONSTANTLEVEL|EXHAUST_CONSTANTPOS|EXHAUST_CONSTANTDIR;
+	es.lsize = 1.5;
+	es.wsize = 0.005;
+	es.modulate = 0;
+	es.lofs = 0;
+	es.level = &level;
+	es.th = NULL;
+	if (Current) {
+		es.tex = greenL;
+		DWORD tdpcount = GetTouchdownPointCount();
+		tdvtx.clear();
+		for (DWORD i = 0; i < tdpcount; i++) {
+			TOUCHDOWNVTX td;
+			GetTouchdownPoint(td, i);
+			tdvtx.push_back(td);
+		}
+	}
+	else {
+		es.tex = redL;
+	}
+	for (UINT i = 0; i < tdvtx.size(); i++) {
+		es.lpos = &tdvtx[i].pos;
+		es.ldir = &zplus;
+		UINT idx = AddExhaust(&es);
+		if (Current) {
+			TDPCurExhaustsID.push_back(idx);
+		}
+		else {
+			TDPSetExhaustsID.push_back(idx);
+		}
+		
+		es.ldir = &zminus;
+		 idx = AddExhaust(&es);
+		 if (Current) {
+			 TDPCurExhaustsID.push_back(idx);
+		 }
+		 else {
+			 TDPSetExhaustsID.push_back(idx);
+		 }
+		es.ldir = &xplus;
+		 idx = AddExhaust(&es);
+		 if (Current) {
+			 TDPCurExhaustsID.push_back(idx);
+		 }
+		 else {
+			 TDPSetExhaustsID.push_back(idx);
+		 }
+		es.ldir = &xminus;
+		 idx = AddExhaust(&es);
+		 if (Current) {
+			 TDPCurExhaustsID.push_back(idx);
+		 }
+		 else {
+			 TDPSetExhaustsID.push_back(idx);
+		 }
+		es.ldir = &yplus;
+		 idx = AddExhaust(&es);
+		 if (Current) {
+			 TDPCurExhaustsID.push_back(idx);
+		 }
+		 else {
+			 TDPSetExhaustsID.push_back(idx);
+		 }
+		es.ldir = &yminus;
+		 idx = AddExhaust(&es);
+		 if (Current) {
+			 TDPCurExhaustsID.push_back(idx);
+		 }
+		 else {
+			 TDPSetExhaustsID.push_back(idx);
+		 }
+
+
+
+
+
+	}
+	if (Current) {
+		TdpCurExhaustsActive = true;
+	}
+	else {
+		TdpSetExhaustsActive = true;
+	}
+	
+	return;
+}
+void VesselBuilder1::DeleteTDPExhausts(bool Current) {
+	vector<UINT> IDs;
+	IDs.clear();
+	if (Current) {
+		IDs = TDPCurExhaustsID;
+		TDPCurExhaustsID.clear();
+		TdpCurExhaustsActive = false;
+	}
+	else {
+		IDs = TDPSetExhaustsID;
+		TDPSetExhaustsID.clear();
+		TdpSetExhaustsActive = false;
+	}
+	for (UINT i = 0; i < IDs.size(); i++) {
+		DelExhaust(IDs[i]);
+	}
+	
+	return;
+}
+
+
+
+
+
+
+bool VesselBuilder1::UsingD3D9() {
 //	oapiWriteLogV("SB1::UsingD3D9:%i", wD3D9);
 	return wD3D9;
 }
-MATRIX3 StationBuilder1::Inverse(MATRIX3 m) {
+MATRIX3 VesselBuilder1::Inverse(MATRIX3 m) {
 	MATRIX3 r;
 	MATRIX3 adjugate;
 	adjugate.m11 = m.m22*m.m33 - m.m23 * m.m32;
@@ -1183,7 +1201,7 @@ MATRIX3 StationBuilder1::Inverse(MATRIX3 m) {
 
 	return r;
 }
-bool StationBuilder1::AreVector3Equal(VECTOR3 v1, VECTOR3 v2) {
+bool VesselBuilder1::AreVector3Equal(VECTOR3 v1, VECTOR3 v2) {
 	if ((v1.x == v2.x) && (v1.y == v2.y) && (v1.z == v2.z)) {
 		return true;
 	}
@@ -1192,10 +1210,64 @@ bool StationBuilder1::AreVector3Equal(VECTOR3 v1, VECTOR3 v2) {
 	}
 
 }
+string VesselBuilder1::WriteVectorUINT(vector<UINT> v) {
+	string line;
+	line.clear();
+	if (v.size() > 0) {
+		for (UINT i = 0; i < v.size(); i++) {
+			char add[128] = { '\0' };
+			if (i == v.size() - 1) {
+				sprintf(add, "%i", v[i]);
+			}
+			else {
+				sprintf(add, "%i, ", v[i]);
+			}
+			string add_s(add);
+			line += add_s;
+		}
+	}
+	else {
+		char add[128] = { '\0' };
+		sprintf(add, "%i", -1);
+		line.assign(add);
+	}
+	
+	return line;
+}
+vector<UINT> VesselBuilder1::readVectorUINT(string s) {
+	vector<UINT>r;
+	r.clear();
+	if (s.size() <= 0) { return r; }
+	string delimiter = ",";
+	size_t pos0 = 0;
+	size_t pos1 = 0;
+	while (pos1 != string::npos) {
+		pos1 = s.find(delimiter, pos0);
+		string token = s.substr(pos0, pos1 - pos0);
+		r.push_back(stoi(token));
+		pos0 = pos1 + delimiter.length();
+	}
+	return r;
+}
 
+/*if (ngrps > 0) {
+			char grpsbuf[512] = { '\0' };
+			sprintf(cbuf, "ANIMCOMP_%i_GRPS", animcomp_counter);
+			oapiReadItem_string(fh, cbuf, grpsbuf);
+			string grpsbuf_s(grpsbuf);
+			
+			string delimiter = ",";
+			size_t pos0 = 0;
+			size_t pos1 = 0;
+			while (pos1 != string::npos) {
+				pos1 = grpsbuf_s.find(delimiter, pos0);
+				string token = grpsbuf_s.substr(pos0, pos1 - pos0);
+				grps.push_back(stoi(token));
+				pos0 = pos1 + delimiter.length();
+			}
+		}*/
 
-
-vector <string> StationBuilder1::ReadMeshTextures(string filename) {
+vector <string> VesselBuilder1::ReadMeshTextures(string filename) {
 	string folder("//Meshes//");
 	string ext(".msh");
 	//string fn = folder + filename;
@@ -1394,14 +1466,13 @@ void StationBuilder1::ClearDelete(vector<MGROUP_ROTATE*>vmgr) {
 DLLCLBK void InitModule(HINSTANCE hModule) {
 	hDLL = hModule;
 	oapiRegisterCustomControls(hModule);
-	
+	return;
 }
 DLLCLBK void ExitModule(HINSTANCE hModule) {
 	oapiUnregisterCustomControls(hModule);
-	
-	//g_Param.hDLL = NULL;
+	return;
 }
-DLLCLBK VESSEL *ovcInit(OBJHANDLE hvessel,int flightmodel){return new StationBuilder1(hvessel,flightmodel);}
-DLLCLBK void ovcExit(VESSEL *vessel){if(vessel)delete(StationBuilder1*)vessel;}
+DLLCLBK VESSEL *ovcInit(OBJHANDLE hvessel,int flightmodel){return new VesselBuilder1(hvessel,flightmodel);}
+DLLCLBK void ovcExit(VESSEL *vessel){if(vessel)delete(VesselBuilder1*)vessel;}
 
 

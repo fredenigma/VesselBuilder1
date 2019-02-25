@@ -1,4 +1,4 @@
-#include "StationBuilder1.h"
+#include "VesselBuilder1.h"
 #include "resource.h"
 #include "DialogControl.h"
 #include "MeshManager.h"
@@ -7,7 +7,9 @@
 #include "AttachmentManager.h"
 #include "AnimationManager.h"
 #include "PropellantManager.h"
+#include "ParticleManager.h"
 #include "ThrusterManager.h"
+#include "TouchdownPointsManager.h"
 #pragma comment(lib, "comctl32.lib")
 
 
@@ -70,6 +72,13 @@ BOOL CALLBACK ExTexDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
 	return DlgCtrl->ExTexDlgProc(hWnd, uMsg, wParam, lParam);
 }
+BOOL CALLBACK PartDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	if (uMsg == WM_INITDIALOG) {
+		SetWindowLong(hWnd, GWL_USERDATA, (LONG)lParam);
+	}
+	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
+	return DlgCtrl->PartDlgProc(hWnd, uMsg, wParam, lParam);
+}
 BOOL CALLBACK ThrDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	if (uMsg == WM_INITDIALOG) {
 		SetWindowLong(hWnd, GWL_USERDATA, (LONG)lParam);
@@ -77,14 +86,31 @@ BOOL CALLBACK ThrDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
 	return DlgCtrl->ThrDlgProc(hWnd, uMsg, wParam, lParam);
 }
+BOOL CALLBACK ThrGrpDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	if (uMsg == WM_INITDIALOG) {
+		SetWindowLong(hWnd, GWL_USERDATA, (LONG)lParam);
+	}
+	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
+	return DlgCtrl->ThrGrpDlgProc(hWnd, uMsg, wParam, lParam);
+}
+BOOL CALLBACK TdpDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	if (uMsg == WM_INITDIALOG) {
+		SetWindowLong(hWnd, GWL_USERDATA, (LONG)lParam);
+	}
+	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
+	return DlgCtrl->TdpDlgProc(hWnd, uMsg, wParam, lParam);
+}
 
 
-DialogControl::DialogControl(StationBuilder1 *_SB1) {
-	SB1 = _SB1;
-	AnimMng = SB1->AnimMng;
-	AttMng = SB1->AttMng;
-	PrpMng = SB1->PrpMng;
-	ThrMng = SB1->ThrMng;
+DialogControl::DialogControl(VesselBuilder1 *_VB1) {
+	VB1 = _VB1;
+	AnimMng = VB1->AnimMng;
+	AttMng = VB1->AttMng;
+	PrpMng = VB1->PrpMng;
+	ThrMng = VB1->ThrMng;
+	ThrGrpMng = VB1->ThrGrpMng;
+	PartMng = VB1->PartMng;
+	TdpMng = VB1->TdpMng;
 	open = false;
 	hDlg = NULL;
 	TreeItem.clear();
@@ -93,15 +119,19 @@ DialogControl::DialogControl(StationBuilder1 *_SB1) {
 	test = 0;
 	InitOapiKeys();
 	AnimTesting = false;
+	ShowingThrGrp = false;
 //	ItemToSelect = NULL;
 
 }
 DialogControl::~DialogControl() {
-	SB1 = NULL;
+	VB1 = NULL;
 	AnimMng = NULL;
 	AttMng = NULL;
 	PrpMng = NULL;
 	ThrMng = NULL;
+	ThrGrpMng = NULL;
+	PartMng = NULL;
+	TdpMng = NULL;
 	hDlg = NULL;
 	open = false;
 }
@@ -111,19 +141,23 @@ void DialogControl::Open(HINSTANCE hDLL) {
 }
 void DialogControl::Close() {
 	open = false;
-	SB1->MshMng->ResetHighlights();
-	if (SB1->DockExhaustsActive) {
-		SB1->DeleteDockExhausts();
+	VB1->MshMng->ResetHighlights();
+	if (VB1->DockExhaustsActive) {
+		VB1->DeleteDockExhausts();
 	}
-	if (SB1->AttExhaustsActive) {
-		SB1->DeleteAttExhausts();
+	if (VB1->AttExhaustsActive) {
+		VB1->DeleteAttExhausts();
 	}
-	if (SB1->thExhaustsActive) {
-		SB1->DeleteThExhausts();
+	if (VB1->thExhaustsActive) {
+		VB1->DeleteThExhausts();
 	}
-//	if (SB1->DockBeaconsActive) {
-//		SB1->DeleteDockBeacons();
-//	}
+	if (VB1->TdpCurExhaustsActive) {
+		VB1->DeleteTDPExhausts(true);
+	}
+	if (VB1->TdpSetExhaustsActive) {
+		VB1->DeleteTDPExhausts(false);
+	}
+
 	oapiCloseDialog(hDlg);
 	hDlg = NULL;
 }
@@ -134,7 +168,7 @@ bool DialogControl::IsOpen() {
 void DialogControl::InitDialog(HWND hWnd) {
 	InitTree(hWnd);
 	ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_HIDE);
-	SB1->MshMng->md_restore = SB1->MshMng->GetAllDefs();
+	VB1->MshMng->md_restore = VB1->MshMng->GetAllDefs();
 	hwnd_Mesh = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_MESH), hWnd, MeshDlgProcHook, (LPARAM)this);
 	hWnd_Dock = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_DOCK), hWnd, DockDlgProcHook, (LPARAM)this);
 	hWnd_Anim = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_ANIM), hWnd, AnimDlgProcHook, (LPARAM)this);
@@ -142,7 +176,10 @@ void DialogControl::InitDialog(HWND hWnd) {
 	hWnd_Atts = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_ATT), hWnd, AttDlgProcHook, (LPARAM)this);
 	hWnd_Prp = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_PROPELLANT), hWnd, PrpDlgProcHook, (LPARAM)this);
 	hWnd_ExTex = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_EXTEX), hWnd, ExTexDlgProcHook, (LPARAM)this);
+	hWnd_Part = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_PARTICLES), hWnd, PartDlgProcHook, (LPARAM)this);
 	hWnd_Thr = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_THRUSTERS), hWnd, ThrDlgProcHook, (LPARAM)this);
+	hWnd_ThrGrp = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_THRGRP), hWnd, ThrGrpDlgProcHook, (LPARAM)this);
+	hWnd_Tdp = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_TDPOINTS), hWnd, TdpDlgProcHook, (LPARAM)this);
 	SetWindowPos(hwnd_Mesh, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hwnd_Mesh, SW_HIDE);
 	SetWindowPos(hWnd_Dock, NULL, 255, 10, 0, 0, SWP_NOSIZE);
@@ -157,33 +194,15 @@ void DialogControl::InitDialog(HWND hWnd) {
 	ShowWindow(hWnd_Prp, SW_HIDE);
 	SetWindowPos(hWnd_ExTex, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hWnd_ExTex, SW_HIDE);
+	SetWindowPos(hWnd_Part, NULL, 255, 10, 0, 0, SWP_NOSIZE);
+	ShowWindow(hWnd_Part, SW_HIDE);
 	SetWindowPos(hWnd_Thr, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hWnd_Thr, SW_HIDE);
+	SetWindowPos(hWnd_ThrGrp, NULL, 255, 10, 0, 0, SWP_NOSIZE);
+	ShowWindow(hWnd_ThrGrp, SW_HIDE);
+	SetWindowPos(hWnd_Tdp, NULL, 255, 10, 0, 0, SWP_NOSIZE);
+	ShowWindow(hWnd_Tdp, SW_HIDE);
 	return;
-}
-
-void DialogControl::SetDlgItemsTextVector3(HWND hWnd, int id1, int id2, int id3, VECTOR3 v3) {
-	char cbuf[256] = { '\0' };
-	sprintf(cbuf, "%.3f", v3.x);
-	SetDlgItemText(hWnd, id1, cbuf);
-	sprintf(cbuf, "%.3f", v3.y);
-	SetDlgItemText(hWnd, id2, cbuf);
-	sprintf(cbuf, "%.3f", v3.z);
-	SetDlgItemText(hWnd, id3, cbuf);
-	return;
-}
-VECTOR3 DialogControl::GetDlgItemsVector3(HWND hWnd, int id1, int id2, int id3) {
-	char cbuf[256] = { '\0' };
-	double val1 = 0;
-	double val2 = 0;
-	double val3 = 0;
-	GetDlgItemText(hWnd, id1, (LPSTR)cbuf, 256);
-	val1 = atof(cbuf);
-	GetDlgItemText(hWnd, id2, (LPSTR)cbuf, 256);
-	val2 = atof(cbuf);
-	GetDlgItemText(hWnd, id3, (LPSTR)cbuf, 256);
-	val3 = atof(cbuf);
-	return _V(val1, val2, val3);
 }
 
 HTREEITEM DialogControl::FindHtreeItem(ItemType type, UINT idx) {
@@ -215,11 +234,11 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		insertstruct.item.mask = TVIF_TEXT;
 		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
 
-		for (UINT i = 0; i < SB1->MshMng->GetMeshCount(); i++) {
+		for (UINT i = 0; i < VB1->MshMng->GetMeshCount(); i++) {
 			insertstruct.hParent = hrootMeshes;
-			if (SB1->MshMng->GetMeshName(i).size() > 0) {
+			if (VB1->MshMng->GetMeshName(i).size() > 0) {
 				char cbuf[256] = { '\0' };
-				sprintf(cbuf, SB1->MshMng->GetMeshName(i).c_str());
+				sprintf(cbuf, VB1->MshMng->GetMeshName(i).c_str());
 				insertstruct.item.pszText = (LPSTR)cbuf;
 				insertstruct.item.cchTextMax = ARRAYSIZE(cbuf);
 				//insertstruct.item.pszText = (LPSTR)SB1->MshMng->GetMeshName(i).c_str();
@@ -256,7 +275,7 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		insertstruct.item.mask = TVIF_TEXT;
 		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
 		insertstruct.hParent = hrootDocks;
-		for (UINT i = 0; i < SB1->dock_definitions.size(); i++) {
+		for (UINT i = 0; i < VB1->dock_definitions.size(); i++) {
 			char cbuf[256] = { '\0' };
 			sprintf(cbuf, "Dock_%i", i);
 			insertstruct.item.pszText = (LPSTR)cbuf;
@@ -408,14 +427,14 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		insertstruct.item.mask = TVIF_TEXT;
 		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
 		insertstruct.hParent = hrootExTex;
-		for (UINT i = 0; i < SB1->GetExTexCount(); i++) {
+		for (UINT i = 0; i < VB1->GetExTexCount(); i++) {
 			char cbuf[256] = { '\0' };
-			if (SB1->GetExTexName(i).size()> 0) {
-				if (SB1->IsExTexCreated(i)) {
-					sprintf(cbuf, "%s", SB1->GetExTexName(i).c_str());
+			if (VB1->GetExTexName(i).size()> 0) {
+				if (VB1->IsExTexCreated(i)) {
+					sprintf(cbuf, "%s", VB1->GetExTexName(i).c_str());
 				}
 				else {
-					sprintf(cbuf, "*%s", SB1->GetExTexName(i).c_str());
+					sprintf(cbuf, "*%s", VB1->GetExTexName(i).c_str());
 				}
 				
 			}
@@ -433,6 +452,37 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		}
 		break;
 	}
+
+	case PARTICLES:
+	{
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootParticles);
+		while (ht != NULL) {
+			TreeItem.erase(ht);
+			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootParticles);
+		}
+		TVINSERTSTRUCT insertstruct = { 0 };
+
+		insertstruct.hInsertAfter = TVI_ROOT;
+		insertstruct.item.mask = TVIF_TEXT;
+		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
+		insertstruct.hParent = hrootParticles;
+		for (UINT i = 0; i < PartMng->GetParticleDefCount(); i++) {
+			char cbuf[256] = { '\0' };
+			sprintf(cbuf, "%s", PartMng->GetParticleDefName(i).c_str());
+			insertstruct.item.pszText = (LPSTR)cbuf;
+			insertstruct.item.cchTextMax = strlen(cbuf);
+			TREE_ITEM_REF Tir = TREE_ITEM_REF();
+			Tir.Type = PARTICLES;
+			Tir.idx = i;
+			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			TreeItem[Tir.hitem] = Tir;
+			TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootParticles, TVE_EXPAND);
+		}
+		break;
+	}
+	
+
 
 	case THRUSTERS:
 	{
@@ -467,7 +517,291 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		}
 		break;
 	}
+	case THRUSTERGROUPS:
+	{
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootThrusterGroups);
+		while (ht != NULL) {
+			TreeItem.erase(ht);
+			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootThrusterGroups);
+		}
+		TVINSERTSTRUCT insertstruct = { 0 };
 
+		insertstruct.hInsertAfter = TVI_ROOT;
+		insertstruct.item.mask = TVIF_TEXT;
+		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
+		insertstruct.hParent = hrootThrusterGroups;
+		char cbuf[256] = { '\0' };
+		if (ThrGrpMng->Defined[THGROUP_MAIN]) {
+			sprintf(cbuf, "MAIN");
+		}
+		else {
+			sprintf(cbuf, "*MAIN");
+		}
+		insertstruct.item.pszText = (LPSTR)cbuf;
+		insertstruct.item.cchTextMax = strlen(cbuf);
+		TREE_ITEM_REF Tir = TREE_ITEM_REF();
+		Tir.Type = THRUSTERGROUPS;
+		Tir.idx = (int)THGROUP_MAIN;
+		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		TreeItem[Tir.hitem] = Tir;
+		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
+		
+		if (ThrGrpMng->Defined[THGROUP_RETRO]) {
+			sprintf(cbuf, "RETRO");
+		}
+		else {
+			sprintf(cbuf, "*RETRO");
+		}
+		insertstruct.item.pszText = (LPSTR)cbuf;
+		insertstruct.item.cchTextMax = strlen(cbuf);
+		Tir = TREE_ITEM_REF();
+		Tir.Type = THRUSTERGROUPS;
+		Tir.idx = (int)THGROUP_RETRO;
+		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		TreeItem[Tir.hitem] = Tir;
+		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
+
+		if (ThrGrpMng->Defined[THGROUP_HOVER]) {
+			sprintf(cbuf, "HOVER");
+		}
+		else {
+			sprintf(cbuf, "*HOVER");
+		}
+		insertstruct.item.pszText = (LPSTR)cbuf;
+		insertstruct.item.cchTextMax = strlen(cbuf);
+		Tir = TREE_ITEM_REF();
+		Tir.Type = THRUSTERGROUPS;
+		Tir.idx = (int)THGROUP_HOVER;
+		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		TreeItem[Tir.hitem] = Tir;
+		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
+
+		if (ThrGrpMng->Defined[THGROUP_ATT_PITCHUP]) {
+			sprintf(cbuf, "PITCH UP");
+		}
+		else {
+			sprintf(cbuf, "*PITCH UP");
+		}
+		insertstruct.item.pszText = (LPSTR)cbuf;
+		insertstruct.item.cchTextMax = strlen(cbuf);
+		Tir = TREE_ITEM_REF();
+		Tir.Type = THRUSTERGROUPS;
+		Tir.idx = (int)THGROUP_ATT_PITCHUP;
+		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		TreeItem[Tir.hitem] = Tir;
+		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
+
+		if (ThrGrpMng->Defined[THGROUP_ATT_PITCHDOWN]) {
+			sprintf(cbuf, "PITCH DOWN");
+		}
+		else {
+			sprintf(cbuf, "*PITCH DOWN");
+		}
+		insertstruct.item.pszText = (LPSTR)cbuf;
+		insertstruct.item.cchTextMax = strlen(cbuf);
+		Tir = TREE_ITEM_REF();
+		Tir.Type = THRUSTERGROUPS;
+		Tir.idx = (int)THGROUP_ATT_PITCHDOWN;
+		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		TreeItem[Tir.hitem] = Tir;
+		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
+
+		if (ThrGrpMng->Defined[THGROUP_ATT_YAWLEFT]) {
+			sprintf(cbuf, "YAW LEFT");
+		}
+		else {
+			sprintf(cbuf, "*YAW LEFT");
+		}
+		insertstruct.item.pszText = (LPSTR)cbuf;
+		insertstruct.item.cchTextMax = strlen(cbuf);
+		Tir = TREE_ITEM_REF();
+		Tir.Type = THRUSTERGROUPS;
+		Tir.idx = (int)THGROUP_ATT_YAWLEFT;
+		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		TreeItem[Tir.hitem] = Tir;
+		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
+
+		if (ThrGrpMng->Defined[THGROUP_ATT_YAWRIGHT]) {
+			sprintf(cbuf, "YAW RIGHT");
+		}
+		else {
+			sprintf(cbuf, "*YAW RIGHT");
+		}
+		insertstruct.item.pszText = (LPSTR)cbuf;
+		insertstruct.item.cchTextMax = strlen(cbuf);
+		Tir = TREE_ITEM_REF();
+		Tir.Type = THRUSTERGROUPS;
+		Tir.idx = (int)THGROUP_ATT_YAWRIGHT;
+		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		TreeItem[Tir.hitem] = Tir;
+		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
+
+		if (ThrGrpMng->Defined[THGROUP_ATT_BANKLEFT]) {
+			sprintf(cbuf, "BANK LEFT");
+		}
+		else {
+			sprintf(cbuf, "*BANK LEFT");
+		}
+		insertstruct.item.pszText = (LPSTR)cbuf;
+		insertstruct.item.cchTextMax = strlen(cbuf);
+		Tir = TREE_ITEM_REF();
+		Tir.Type = THRUSTERGROUPS;
+		Tir.idx = (int)THGROUP_ATT_BANKLEFT;
+		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		TreeItem[Tir.hitem] = Tir;
+		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
+
+		if (ThrGrpMng->Defined[THGROUP_ATT_BANKRIGHT]) {
+			sprintf(cbuf, "BANK RIGHT");
+		}
+		else {
+			sprintf(cbuf, "*BANK RIGHT");
+		}
+		insertstruct.item.pszText = (LPSTR)cbuf;
+		insertstruct.item.cchTextMax = strlen(cbuf);
+		Tir = TREE_ITEM_REF();
+		Tir.Type = THRUSTERGROUPS;
+		Tir.idx = (int)THGROUP_ATT_BANKRIGHT;
+		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		TreeItem[Tir.hitem] = Tir;
+		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
+
+		if (ThrGrpMng->Defined[THGROUP_ATT_RIGHT]) {
+			sprintf(cbuf, "TRANSLATE RIGHT");
+		}
+		else {
+			sprintf(cbuf, "*TRANSLATE RIGHT");
+		}
+		insertstruct.item.pszText = (LPSTR)cbuf;
+		insertstruct.item.cchTextMax = strlen(cbuf);
+		Tir = TREE_ITEM_REF();
+		Tir.Type = THRUSTERGROUPS;
+		Tir.idx = (int)THGROUP_ATT_RIGHT;
+		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		TreeItem[Tir.hitem] = Tir;
+		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
+
+		if (ThrGrpMng->Defined[THGROUP_ATT_LEFT]) {
+			sprintf(cbuf, "TRANSLATE LEFT");
+		}
+		else {
+			sprintf(cbuf, "*TRANSLATE LEFT");
+		}
+		insertstruct.item.pszText = (LPSTR)cbuf;
+		insertstruct.item.cchTextMax = strlen(cbuf);
+		Tir = TREE_ITEM_REF();
+		Tir.Type = THRUSTERGROUPS;
+		Tir.idx = (int)THGROUP_ATT_LEFT;
+		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		TreeItem[Tir.hitem] = Tir;
+		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
+
+		if (ThrGrpMng->Defined[THGROUP_ATT_UP]) {
+			sprintf(cbuf, "TRANSLATE UP");
+		}
+		else {
+			sprintf(cbuf, "*TRANSLATE UP");
+		}
+		insertstruct.item.pszText = (LPSTR)cbuf;
+		insertstruct.item.cchTextMax = strlen(cbuf);
+		Tir = TREE_ITEM_REF();
+		Tir.Type = THRUSTERGROUPS;
+		Tir.idx = (int)THGROUP_ATT_UP;
+		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		TreeItem[Tir.hitem] = Tir;
+		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
+
+		if (ThrGrpMng->Defined[THGROUP_ATT_DOWN]) {
+			sprintf(cbuf, "TRANSLATE DOWN");
+		}
+		else {
+			sprintf(cbuf, "*TRANSLATE DOWN");
+		}
+		insertstruct.item.pszText = (LPSTR)cbuf;
+		insertstruct.item.cchTextMax = strlen(cbuf);
+		Tir = TREE_ITEM_REF();
+		Tir.Type = THRUSTERGROUPS;
+		Tir.idx = (int)THGROUP_ATT_DOWN;
+		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		TreeItem[Tir.hitem] = Tir;
+		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
+
+		if (ThrGrpMng->Defined[THGROUP_ATT_FORWARD]) {
+			sprintf(cbuf, "TRANSLATE FORWARD");
+		}
+		else {
+			sprintf(cbuf, "*TRANSLATE FORWARD");
+		}
+		insertstruct.item.pszText = (LPSTR)cbuf;
+		insertstruct.item.cchTextMax = strlen(cbuf);
+		Tir = TREE_ITEM_REF();
+		Tir.Type = THRUSTERGROUPS;
+		Tir.idx = (int)THGROUP_ATT_FORWARD;
+		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		TreeItem[Tir.hitem] = Tir;
+		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
+
+		if (ThrGrpMng->Defined[THGROUP_ATT_BACK]) {
+			sprintf(cbuf, "TRANSLATE BACK");
+		}
+		else {
+			sprintf(cbuf, "*TRANSLATE BACK");
+		}
+		insertstruct.item.pszText = (LPSTR)cbuf;
+		insertstruct.item.cchTextMax = strlen(cbuf);
+		Tir = TREE_ITEM_REF();
+		Tir.Type = THRUSTERGROUPS;
+		Tir.idx = (int)THGROUP_ATT_BACK;
+		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		TreeItem[Tir.hitem] = Tir;
+		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
+
+		break;
+	}
+	case TOUCHDOWNPOINTS:
+	{
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootTouchdownPoints);
+		while (ht != NULL) {
+			TreeItem.erase(ht);
+			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootTouchdownPoints);
+		}
+		TVINSERTSTRUCT insertstruct = { 0 };
+
+		insertstruct.hInsertAfter = TVI_ROOT;
+		insertstruct.item.mask = TVIF_TEXT;
+		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
+		insertstruct.hParent = hrootTouchdownPoints;
+		char cbuf[256] = { '\0' };
+		sprintf(cbuf, "SET 1");
+		insertstruct.item.pszText = (LPSTR)cbuf;
+		insertstruct.item.cchTextMax = strlen(cbuf);
+		TREE_ITEM_REF Tir = TREE_ITEM_REF();
+		Tir.Type = TOUCHDOWNPOINTS;
+		Tir.idx = 1;
+		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		TreeItem[Tir.hitem] = Tir;
+		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
+		if (TdpMng->IsSecondSetEnabled()) {
+			sprintf(cbuf, "SET 2");
+		}
+		else {
+			sprintf(cbuf, "*SET 2");
+		}
+		
+		insertstruct.item.pszText = (LPSTR)cbuf;
+		insertstruct.item.cchTextMax = strlen(cbuf);
+		Tir = TREE_ITEM_REF();
+		Tir.Type = TOUCHDOWNPOINTS;
+		Tir.idx = 2;
+		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		TreeItem[Tir.hitem] = Tir;
+		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootTouchdownPoints, TVE_EXPAND);
+
+		break;
+	}
 
 
 
@@ -493,7 +827,7 @@ void DialogControl::InitTree(HWND hWnd) {
 	insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
 
 	char vname[256] = { '\0' };
-	sprintf(vname, "%s", SB1->GetName());
+	sprintf(vname, "%s", VB1->GetName());
 	string sname(vname);
 	insertstruct.item.pszText = (LPSTR)sname.c_str();
 	insertstruct.item.cchTextMax = sname.size();
@@ -540,12 +874,29 @@ void DialogControl::InitTree(HWND hWnd) {
 	Tir.hitem = hrootExTex;
 	TreeItem[Tir.hitem] = Tir;
 
+	insertstruct.item.pszText = (LPSTR)TEXT("Particle Streams\0");
+	insertstruct.item.cchTextMax = 18;
+	hrootParticles = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+	Tir.hitem = hrootParticles;
+	TreeItem[Tir.hitem] = Tir;
+
 	insertstruct.item.pszText = (LPSTR)TEXT("Thrusters\0");
 	insertstruct.item.cchTextMax = 10;
 	hrootThrusters = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 	Tir.hitem = hrootThrusters;
 	TreeItem[Tir.hitem] = Tir;
 
+	insertstruct.item.pszText = (LPSTR)TEXT("Thruster Groups\0");
+	insertstruct.item.cchTextMax = 18;
+	hrootThrusterGroups = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+	Tir.hitem = hrootThrusterGroups;
+	TreeItem[Tir.hitem] = Tir;
+
+	insertstruct.item.pszText = (LPSTR)TEXT("Touchdown Points\0");
+	insertstruct.item.cchTextMax = 18;
+	hrootTouchdownPoints = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+	Tir.hitem = hrootTouchdownPoints;
+	TreeItem[Tir.hitem] = Tir;
 
 	insertstruct.item.pszText = (LPSTR)TEXT("Lights\0");
 	insertstruct.item.cchTextMax = 7;
@@ -568,7 +919,10 @@ void DialogControl::InitTree(HWND hWnd) {
 	UpdateTree(hWnd, ANIMATIONS,0);
 	UpdateTree(hWnd, PROPELLANT, 0);
 	UpdateTree(hWnd, EXTEX, 0);
+	UpdateTree(hWnd, PARTICLES, 0);
 	UpdateTree(hWnd, THRUSTERS, 0);
+	UpdateTree(hWnd, THRUSTERGROUPS, 0);
+	UpdateTree(hWnd, TOUCHDOWNPOINTS, 0);
 	return;
 }
 
@@ -576,12 +930,12 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 	//SB1->AnimEditingMode = false;
 	if (type != MESH) {
 		ShowWindow(hwnd_Mesh, SW_HIDE);
-		SB1->MshMng->ResetHighlights();
+		VB1->MshMng->ResetHighlights();
 	}
 	if (type != DOCK) {
 		ShowWindow(hWnd_Dock, SW_HIDE);
-		if (SB1->DockExhaustsActive) {
-			SB1->DeleteDockExhausts();
+		if (VB1->DockExhaustsActive) {
+			VB1->DeleteDockExhausts();
 			SendDlgItemMessage(hWnd_Dock, IDC_CHECK_HIGHLIGHT_DOCK, BM_SETCHECK, BST_UNCHECKED, 0);
 		}
 	}
@@ -600,8 +954,21 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 	if (type != EXTEX) {
 		ShowWindow(hWnd_ExTex, SW_HIDE);
 	}
+	if (type != PARTICLES) {
+		ShowWindow(hWnd_Part, SW_HIDE);
+	}
 	if (type != THRUSTERS) {
 		ShowWindow(hWnd_Thr, SW_HIDE);
+	}
+	if (type != THRUSTERGROUPS) {
+		ShowWindow(hWnd_ThrGrp, SW_HIDE);
+		if (ShowingThrGrp) {
+			ShowingThrGrp = false;
+			VB1->DeleteThrGrpLaserExhausts();
+		}
+	}
+	if (type != TOUCHDOWNPOINTS) {
+		ShowWindow(hWnd_Tdp, SW_HIDE);
 	}
 	switch (type) {
 	case MESH:
@@ -641,9 +1008,24 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 		ShowWindow(hWnd_ExTex, SW_SHOW);
 		break;
 	}
+	case PARTICLES:
+	{
+		ShowWindow(hWnd_Part, SW_SHOW);
+		break;
+	}
 	case THRUSTERS:
 	{
 		ShowWindow(hWnd_Thr, SW_SHOW);
+		break;
+	}
+	case THRUSTERGROUPS:
+	{
+		ShowWindow(hWnd_ThrGrp, SW_SHOW);
+		break;
+	}
+	case TOUCHDOWNPOINTS:
+	{
+		ShowWindow(hWnd_Tdp, SW_SHOW);
 		break;
 	}
 	}
@@ -667,11 +1049,11 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 		case IDC_BUTTON_ADD:
 		{
 			if (CurrentSelection.hitem == hrootMeshes) {
-				SB1->MshMng->AddMeshDef();
+				VB1->MshMng->AddMeshDef();
 				UpdateTree(hWnd, MESH,hrootMeshes);
 			}
 			else if (CurrentSelection.hitem == hrootDocks) {
-				SB1->AddDockDef();
+				VB1->AddDockDef();
 				UpdateTree( hWnd, DOCK,hrootDocks);
 			}
 			else if (CurrentSelection.hitem == hrootAnimations) {
@@ -687,8 +1069,12 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 				UpdateTree(hWnd, PROPELLANT, 0);
 			}
 			else if (CurrentSelection.hitem == hrootExTex) {
-				SB1->AddExTexDef();
+				VB1->AddExTexDef();
 				UpdateTree(hWnd, EXTEX, 0);
+			}
+			else if (CurrentSelection.hitem == hrootParticles) {
+				PartMng->AddParticleDef();
+				UpdateTree(hWnd, PARTICLES, 0);
 			}
 			else if (CurrentSelection.hitem == hrootThrusters) {
 				ThrMng->AddThrDef();
@@ -751,6 +1137,10 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD EXHAUST TEXTURE");
 					}
+					else if (CurrentSelection.hitem == hrootParticles) {
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
+						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD PARTICLE STREAM");
+					}
 					else if (CurrentSelection.hitem == hrootThrusters) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD THRUSTER");
@@ -767,10 +1157,10 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 					switch (CurrentSelection.Type) {
 						case MESH:
 						{
-							SB1->MshMng->ResetHighlights();
+							VB1->MshMng->ResetHighlights();
 							LRESULT getcheck = SendDlgItemMessage(hwnd_Mesh, IDC_CHECK_HIGHLIGHT_MSH, BM_GETCHECK, 0, 0);
 							if (getcheck == BST_CHECKED) {
-								SB1->MshMng->HighlightMesh(SB1->MshMng->IdxDef2Msh(CurrentSelection.idx),true);
+								VB1->MshMng->HighlightMesh(VB1->MshMng->IdxDef2Msh(CurrentSelection.idx),true);
 							}
 							UpdateMeshDialog(hwnd_Mesh);
 							break;
@@ -805,9 +1195,24 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 							UpdateExTexDialog(hWnd_ExTex);
 							break;
 						}
+						case PARTICLES:
+						{
+							UpdatePartDialog(hWnd_Part);
+							break;
+						}
 						case THRUSTERS:
 						{
 							UpdateThrDialog(hWnd_Thr);
+							break;
+						}
+						case THRUSTERGROUPS:
+						{
+							UpdateThrGrpDialog(hWnd_ThrGrp);
+							break;
+						}
+						case TOUCHDOWNPOINTS:
+						{
+							UpdateTdpDialog(hWnd_Tdp);
 							break;
 						}
 					}
@@ -915,3 +1320,53 @@ double DialogControl::GetDlgItemDouble(HWND hWnd, int control_id) {
 	double val = atof(cbuf);
 	return val;
 }
+void DialogControl::SetDlgItemDouble(HWND hWnd, int control_id, double val, UINT precision) {
+	char cbuf[256] = { '\0' };
+	if (precision == 0) {
+		sprintf(cbuf, "%.0f", val);
+	}
+	else if (precision == 1) {
+		sprintf(cbuf, "%.1f", val);
+	}
+	else if (precision == 2) {
+		sprintf(cbuf, "%.2f", val);
+	}
+	else if (precision == 3) {
+		sprintf(cbuf, "%.3f", val);
+	}
+	else if (precision == 4) {
+		sprintf(cbuf, "%.4f", val);
+	}
+	else if (precision == 5) {
+		sprintf(cbuf, "%.5f", val);
+	}
+	else if (precision == 6) {
+		sprintf(cbuf, "%.6f", val);
+	}
+	SetDlgItemText(hWnd, control_id, cbuf);
+	return;
+}
+void DialogControl::SetDlgItemsTextVector3(HWND hWnd, int id1, int id2, int id3, VECTOR3 v3) {
+	char cbuf[256] = { '\0' };
+	sprintf(cbuf, "%.3f", v3.x);
+	SetDlgItemText(hWnd, id1, cbuf);
+	sprintf(cbuf, "%.3f", v3.y);
+	SetDlgItemText(hWnd, id2, cbuf);
+	sprintf(cbuf, "%.3f", v3.z);
+	SetDlgItemText(hWnd, id3, cbuf);
+	return;
+}
+VECTOR3 DialogControl::GetDlgItemsVector3(HWND hWnd, int id1, int id2, int id3) {
+	char cbuf[256] = { '\0' };
+	double val1 = 0;
+	double val2 = 0;
+	double val3 = 0;
+	GetDlgItemText(hWnd, id1, (LPSTR)cbuf, 256);
+	val1 = atof(cbuf);
+	GetDlgItemText(hWnd, id2, (LPSTR)cbuf, 256);
+	val2 = atof(cbuf);
+	GetDlgItemText(hWnd, id3, (LPSTR)cbuf, 256);
+	val3 = atof(cbuf);
+	return _V(val1, val2, val3);
+}
+

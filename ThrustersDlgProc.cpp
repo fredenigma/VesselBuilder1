@@ -1,7 +1,8 @@
-#include "StationBuilder1.h"
+#include "VesselBuilder1.h"
 #include "resource.h"
 #include "DialogControl.h"
 #include "PropellantManager.h"
+#include "ParticleManager.h"
 #include "ThrusterManager.h"
 #pragma comment(lib, "comctl32.lib")
 
@@ -65,12 +66,12 @@ void DialogControl::UpdateThrDialog(HWND hWnd) {
 		int index = SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_ADDSTRING, 0, (LPARAM)"DEFAULT");
 		SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_SETITEMDATA, index, (LPARAM)NULL);
 		int topick2 = -1;
-		for (UINT i = 0; i <SB1->GetExTexCount(); i++) {
-			if (!SB1->IsExTexCreated(i)) { continue; }
-			index = SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_ADDSTRING, 0, (LPARAM)SB1->GetExTexName(i).c_str());
-			SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_SETITEMDATA, index, (LPARAM)SB1->GetExTexSurf(i));
+		for (UINT i = 0; i <VB1->GetExTexCount(); i++) {
+			if (!VB1->IsExTexCreated(i)) { continue; }
+			index = SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_ADDSTRING, 0, (LPARAM)VB1->GetExTexName(i).c_str());
+			SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_SETITEMDATA, index, (LPARAM)VB1->GetExTexSurf(i));
 			if (ThrMng->ThrHasExhaust(idx)) {
-				if (ThrMng->GetThrExhaustTex(idx) == SB1->GetExTexSurf(i)) {
+				if (ThrMng->GetThrExhaustTex(idx) == VB1->GetExTexSurf(i)) {
 					topick2 = index;
 				}
 			}
@@ -93,6 +94,24 @@ void DialogControl::UpdateThrDialog(HWND hWnd) {
 		EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_THEXLSET), false);
 		EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_THEXWSET), false);
 	}
+
+	SendDlgItemMessage(hWnd, IDC_LIST_THPART, LB_RESETCONTENT, 0, 0);
+	sprintf(oapiDebugString(), "time:%.3f", oapiGetSimTime());
+	for (UINT i = 0; i < PartMng->GetParticleDefCount(); i++) {
+		SendDlgItemMessage(hWnd, IDC_LIST_THPART, LB_INSERTSTRING, i, (LPARAM)PartMng->GetParticleDefName(i).c_str());
+		SendDlgItemMessage(hWnd, IDC_LIST_THPART, LB_SETITEMDATA, i, (LPARAM)PartMng->GetParticleDefID(i));
+		SendDlgItemMessage(hWnd, IDC_LIST_THPART, LB_SETSEL, false, i);
+		vector<UINT> p_id = ThrMng->GetThrParticlesIDs(idx);
+		for (UINT j = 0; j < p_id.size(); j++) {
+			if (p_id[j] == PartMng->GetParticleDefID(i)) {
+				SendDlgItemMessage(hWnd, IDC_LIST_THPART, LB_SETSEL, true, i);
+			}
+		}
+	}
+
+
+
+
 
 	if (ThrMng->ThrIsTesting(idx)) {
 		SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_THTEST), "STOP TEST");
@@ -175,9 +194,9 @@ BOOL DialogControl::ThrDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 		}
 		case IDC_BTN_THPASTEV:
 		{
-			if (SB1->vclip.valid) {
-				SetDlgItemsTextVector3(hWnd, IDC_EDIT_THPOSX, IDC_EDIT_THPOSY, IDC_EDIT_THPOSZ, SB1->vclip.pos);
-				SetDlgItemsTextVector3(hWnd, IDC_EDIT_THDIRX, IDC_EDIT_THDIRY, IDC_EDIT_THDIRZ, SB1->vclip.dir);
+			if (VB1->vclip.valid) {
+				SetDlgItemsTextVector3(hWnd, IDC_EDIT_THPOSX, IDC_EDIT_THPOSY, IDC_EDIT_THPOSZ, VB1->vclip.pos);
+				SetDlgItemsTextVector3(hWnd, IDC_EDIT_THDIRX, IDC_EDIT_THDIRY, IDC_EDIT_THDIRZ, VB1->vclip.dir);
 			}
 			break;
 		}
@@ -231,10 +250,10 @@ BOOL DialogControl::ThrDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 			if (HIWORD(wParam) == BN_CLICKED) {
 				LRESULT getcheck = SendDlgItemMessage(hWnd, IDC_CHECK_THSHOW, BM_GETCHECK, 0, 0);
 				if (getcheck == BST_CHECKED) {
-					SB1->CreateThExhausts();
+					VB1->CreateThExhausts();
 				}
 				else {
-					SB1->DeleteThExhausts();
+					VB1->DeleteThExhausts();
 				}
 			}
 			break;
@@ -285,6 +304,22 @@ BOOL DialogControl::ThrDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 				SURFHANDLE surf= (SURFHANDLE)SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_GETITEMDATA, index, 0);
 				ThrMng->SetThrExhaustTex(idx, surf);
 			}
+			break;
+		}
+		case IDC_BUTTON_THPARTSET:
+		{
+			ThrMng->ClearThrParticles(idx);
+			int nsel = SendDlgItemMessage(hWnd, IDC_LIST_THPART, LB_GETSELCOUNT, 0, 0);
+			if (nsel <= 0) { break; }
+			UINT *sellist = new UINT[nsel];
+			SendDlgItemMessage(hWnd, IDC_LIST_THPART, LB_GETSELITEMS, nsel, (LPARAM)sellist);
+			vector<UINT> _ids;
+			for (UINT i = 0; i < nsel; i++) {
+				UINT _id = (UINT)SendDlgItemMessage(hWnd, IDC_LIST_THPART, LB_GETITEMDATA, (WPARAM)sellist[i], 0);
+				_ids.push_back(_id);
+			}
+			ThrMng->SetThrParticles(idx, _ids);
+			delete[] sellist;
 			break;
 		}
 

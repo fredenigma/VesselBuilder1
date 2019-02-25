@@ -1,9 +1,9 @@
-#include "StationBuilder1.h"
+#include "VesselBuilder1.h"
 #include "DialogControl.h"
 #include "AttachmentManager.h"
 
-AttachmentManager::AttachmentManager(StationBuilder1 *_SB1) {
-	SB1 = _SB1;
+AttachmentManager::AttachmentManager(VesselBuilder1 *_VB1) {
+	VB1 = _VB1;
 	att_defs.clear();
 	return;
 }
@@ -30,19 +30,19 @@ void AttachmentManager::CreateAttDef(bool toparent, VECTOR3 pos, VECTOR3 dir, VE
 
 void AttachmentManager::CreateAttDef(ATT_DEF att_d) {
 	ATT_DEF att = att_d;
-	att.ah = SB1->CreateAttachment(att.toparent, att.pos, att.dir, att.rot, att.id.c_str(), att.loose);
+	att.ah = VB1->CreateAttachment(att.toparent, att.pos, att.dir, att.rot, att.id.c_str(), att.loose);
 	//oapiWriteLogV("Attachment count:%i %i", SB1->AttachmentCount(true), SB1->AttachmentCount(false));
 	att.created = true;
 	att_defs.push_back(att);
 	return;
 }
 void AttachmentManager::DeleteAttDef(def_idx d_idx) {
-	SB1->DelAttachment(att_defs[d_idx].ah);
+	VB1->DelAttachment(att_defs[d_idx].ah);
 	att_defs.erase(att_defs.begin() + d_idx);
 	return;
 }
 void AttachmentManager::ModifyAttDef(def_idx d_idx, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot) {
-	SB1->SetAttachmentParams(att_defs[d_idx].ah, pos, dir, rot);
+	VB1->SetAttachmentParams(att_defs[d_idx].ah, pos, dir, rot);
 	att_defs[d_idx].pos = pos;
 	att_defs[d_idx].dir = dir;
 	att_defs[d_idx].antidir = dir*(-1);
@@ -79,7 +79,7 @@ void AttachmentManager::SetAttDefID(def_idx d_idx, string id) {
 	return;
 }
 void AttachmentManager::SetAttDefCreated(def_idx d_idx) {
-	att_defs[d_idx].ah = SB1->CreateAttachment(att_defs[d_idx].toparent, att_defs[d_idx].pos, att_defs[d_idx].dir, att_defs[d_idx].rot, att_defs[d_idx].id.c_str(), att_defs[d_idx].loose);
+	att_defs[d_idx].ah = VB1->CreateAttachment(att_defs[d_idx].toparent, att_defs[d_idx].pos, att_defs[d_idx].dir, att_defs[d_idx].rot, att_defs[d_idx].id.c_str(), att_defs[d_idx].loose);
 	att_defs[d_idx].created = true;
 	return;
 }
@@ -153,7 +153,7 @@ ATTACHMENTHANDLE AttachmentManager::GetAttDefAH(def_idx d_idx) {
 	return att_defs[d_idx].ah;
 }
 def_idx AttachmentManager::IdxAtt2Def(UINT att_idx) {
-	ATTACHMENTHANDLE ah = SB1->GetAttachmentHandle(false, att_idx);
+	ATTACHMENTHANDLE ah = VB1->GetAttachmentHandle(false, att_idx);
 	for (UINT i = 0; i < GetAttCount(); i++) {
 		if (att_defs[i].ah == ah) {
 			return i;
