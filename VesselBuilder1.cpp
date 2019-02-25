@@ -160,6 +160,7 @@ void VesselBuilder1::CreateDocks() {
 void VesselBuilder1::clbkSetClassCaps(FILEHANDLE cfg){
 	SetEmptyMass(1000);
 	SetSize(10);
+	
 	redL = oapiRegisterExhaustTexture("red_L");
 	greenL = oapiRegisterExhaustTexture("green_L");
 	blueL = oapiRegisterExhaustTexture("blue_L");
@@ -531,6 +532,13 @@ void VesselBuilder1::clbkPreStep(double simt, double simdt, double mjd) {
 	return;
 }
 void VesselBuilder1::clbkPostStep(double simt, double simdt, double mjd) {
+	/*VECTOR3 CS;
+	GetCrossSections(CS);
+	double cw_zp, cw_zm, cw_x, cw_y;
+	GetCW(cw_zp, cw_zm, cw_x, cw_y);
+	VECTOR3 rd;
+	GetRotDrag(rd);
+	sprintf(oapiDebugString(), "GGD:%.3f CS:%.3f %.3f %.3f RD:%.3f %.3f %.3f cw:%.3f %.3f %.3f %.3f", GetGravityGradientDamping(), CS.x, CS.y, CS.z, rd.x, rd.y, rd.z, cw_zp, cw_zm, cw_x, cw_y);*/
 	return;
 }
 void VesselBuilder1::clbkVisualCreated(VISHANDLE vis, int refcount) {
@@ -703,8 +711,18 @@ void VesselBuilder1::WriteCfgFile(string filename) {
 	oapiWriteLine(fh, cbuf);
 	oapiWriteLine(fh, " ");
 	oapiWriteItem_bool(fh, "NOEDITOR", NoEditor);
+	oapiWriteLine(fh, " ");
+	oapiWriteItem_float(fh, "Mass", GetEmptyMass());
+	oapiWriteItem_float(fh, "Size", GetSize());
+	VECTOR3 pmi;
+	GetPMI(pmi);
+	oapiWriteItem_vec(fh, "Inertia", pmi);
+	VECTOR3 cs;
+	GetCrossSections(cs);
+	oapiWriteItem_vec(fh, "CrossSections", cs);
+	oapiWriteItem_float(fh, "GravityGradientDamping", GetGravityGradientDamping());
+	oapiWriteLine(fh, " ");
 
-	
 	MshMng->WriteCfg(fh);
 
 	oapiWriteLine(fh, " ");

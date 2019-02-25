@@ -15,6 +15,7 @@
 #define IDD_DIALOG_THRGRP               113
 #define IDD_DIALOG_PARTICLES            114
 #define IDD_DIALOG_TDPOINTS             115
+#define IDD_DIALOG_SETTINGS             116
 #define IDC_TREE1                       1001
 #define IDC_SPIN_POSZ_S                 1005
 #define IDC_SPIN_POSZ_L                 1006
@@ -290,11 +291,26 @@
 #define IDC_CHECK_TDPSHOWSET            1257
 #define IDC_EDIT_TDPHFG                 1258
 #define IDC_EDIT_TDPRAD                 1259
-#define IDC_CHECK1                      1260
 #define IDC_CHECK_TDPTAILSITTER         1260
 #define IDC_STATIC_TDPDEFGRP            1261
 #define IDC_STATIC_TDPDEFHFG            1262
 #define IDC_STATIC_TDPDEFRAD            1263
+#define IDC_EDIT_SETEM                  1264
+#define IDC_EDIT_SETPMIX                1265
+#define IDC_EDIT_SETPMIY                1266
+#define IDC_EDIT_SETPMIZ                1267
+#define IDC_EDIT_SETCSX                 1268
+#define IDC_EDIT_SETCSY                 1269
+#define IDC_EDIT_SETCSZ                 1270
+#define IDC_EDIT_SETSIZE                1271
+#define IDC_EDIT_SETGGD                 1272
+#define IDC_STATIC_VESSELNAME           1278
+#define IDC_BUTTON_SETEMSET             1279
+#define IDC_BUTTON_SETSIZESET           1280
+#define IDC_BUTTON_SETPMISET            1281
+#define IDC_BUTTON_SETCSSET             1282
+#define IDC_BUTTON5                     1283
+#define IDC_BUTTON_SETGGDSET            1283
 
 // Next default values for new objects
 // 
@@ -302,7 +318,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1264
+#define _APS_NEXT_CONTROL_VALUE         1280
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -148,6 +148,9 @@
     <ClCompile Include="VesselBuilder1.cpp">
       <Filter>Vessel</Filter>
     </ClCompile>
+    <ClCompile Include="SettingsDlgProc.cpp">
+      <Filter>Dialog</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="VesselBuilder1.rc">

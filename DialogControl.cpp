@@ -100,7 +100,13 @@ BOOL CALLBACK TdpDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
 	return DlgCtrl->TdpDlgProc(hWnd, uMsg, wParam, lParam);
 }
-
+BOOL CALLBACK SettingsDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	if (uMsg == WM_INITDIALOG) {
+		SetWindowLong(hWnd, GWL_USERDATA, (LONG)lParam);
+	}
+	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
+	return DlgCtrl->SettingsDlgProc(hWnd, uMsg, wParam, lParam);
+}
 
 DialogControl::DialogControl(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;
@@ -180,6 +186,7 @@ void DialogControl::InitDialog(HWND hWnd) {
 	hWnd_Thr = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_THRUSTERS), hWnd, ThrDlgProcHook, (LPARAM)this);
 	hWnd_ThrGrp = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_THRGRP), hWnd, ThrGrpDlgProcHook, (LPARAM)this);
 	hWnd_Tdp = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_TDPOINTS), hWnd, TdpDlgProcHook, (LPARAM)this);
+	hWnd_Settings = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_SETTINGS), hWnd, SettingsDlgProcHook, (LPARAM)this);
 	SetWindowPos(hwnd_Mesh, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hwnd_Mesh, SW_HIDE);
 	SetWindowPos(hWnd_Dock, NULL, 255, 10, 0, 0, SWP_NOSIZE);
@@ -202,6 +209,9 @@ void DialogControl::InitDialog(HWND hWnd) {
 	ShowWindow(hWnd_ThrGrp, SW_HIDE);
 	SetWindowPos(hWnd_Tdp, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hWnd_Tdp, SW_HIDE);
+	SetWindowPos(hWnd_Settings, NULL, 255, 10, 0, 0, SWP_NOSIZE);
+	ShowWindow(hWnd_Settings, SW_HIDE);
+
 	return;
 }
 
@@ -838,6 +848,14 @@ void DialogControl::InitTree(HWND hWnd) {
 	TreeItem[Tir.hitem] = Tir;
 
 	insertstruct.hParent = hrootVessel;
+
+
+	insertstruct.item.pszText = (LPSTR)TEXT("General Settings\0");
+	insertstruct.item.cchTextMax = 18;
+	hrootSettings = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+	Tir.hitem = hrootSettings;
+	TreeItem[Tir.hitem] = Tir;
+
 	insertstruct.item.pszText = (LPSTR)TEXT("Meshes\0");
 	insertstruct.item.cchTextMax = 7;
 	hrootMeshes = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
@@ -910,9 +928,7 @@ void DialogControl::InitTree(HWND hWnd) {
 	Tir.hitem = hrootCameras;
 	TreeItem[Tir.hitem] = Tir;
 
-	insertstruct.item.pszText = (LPSTR)TEXT("Settings\0");
-	insertstruct.item.cchTextMax = 9;
-	hrootSettings = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+	
 	UpdateTree(hWnd, MESH,0);
 	UpdateTree(hWnd, DOCK,0);
 	UpdateTree(hWnd, ATTACHMENT, 0);
@@ -1123,7 +1139,7 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 					}
 					else if (CurrentSelection.hitem == hrootSettings) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_HIDE);
-						//ADD SHOW SETTINGS DIALOG
+						
 					}
 					else if (CurrentSelection.hitem == hrootAnimations) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
@@ -1148,7 +1164,13 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 					else {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_HIDE);
 					}
-
+					if (CurrentSelection.hitem == hrootSettings) {
+						ShowWindow(hWnd_Settings, SW_SHOW);
+						UpdateSettingsDialog(hWnd_Settings);
+					}
+					else {
+						ShowWindow(hWnd_Settings, SW_HIDE);
+					}
 
 
 					ShowTheRightDialog(CurrentSelection.Type);

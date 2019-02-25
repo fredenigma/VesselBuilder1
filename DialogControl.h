@@ -30,6 +30,7 @@ public:
 	BOOL ThrGrpDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL PartDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL TdpDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	BOOL SettingsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	map<HTREEITEM, TREE_ITEM_REF> TreeItem;
 	TREE_ITEM_REF CurrentSelection;
@@ -74,6 +75,7 @@ public:
 	void UpdateThrGrpDialog(HWND hWnd);
 	void UpdatePartDialog(HWND hWnd);
 	void UpdateTdpDialog(HWND hWnd);
+	void UpdateSettingsDialog(HWND hWnd);
 
 	HTREEITEM FindHtreeItem(ItemType type, UINT idx);
 	void InitAnimKeyCombo(HWND hWnd);
@@ -95,6 +97,7 @@ public:
 	HWND hWnd_ThrGrp;
 	HWND hWnd_Part;
 	HWND hWnd_Tdp;
+	HWND hWnd_Settings;
 
 	HWND GetDlg() { return hDlg; }
 	map<DWORD, string> oapi_keys;

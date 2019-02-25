@@ -167,6 +167,7 @@
     <ClCompile Include="ParticlesDlgProc.cpp" />
     <ClCompile Include="PropellantManager.cpp" />
     <ClCompile Include="PrpDlgProc.cpp" />
+    <ClCompile Include="SettingsDlgProc.cpp" />
     <ClCompile Include="VesselBuilder1.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
