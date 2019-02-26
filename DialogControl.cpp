@@ -10,6 +10,7 @@
 #include "ParticleManager.h"
 #include "ThrusterManager.h"
 #include "TouchdownPointsManager.h"
+#include "AirfoilsManager.h"
 #pragma comment(lib, "comctl32.lib")
 
 
@@ -107,6 +108,14 @@ BOOL CALLBACK SettingsDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
 	return DlgCtrl->SettingsDlgProc(hWnd, uMsg, wParam, lParam);
 }
+BOOL CALLBACK AirfoilsDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	if (uMsg == WM_INITDIALOG) {
+		SetWindowLong(hWnd, GWL_USERDATA, (LONG)lParam);
+	}
+	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
+	return DlgCtrl->AirfoilsDlgProc(hWnd, uMsg, wParam, lParam);
+}
+
 
 DialogControl::DialogControl(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;
@@ -117,6 +126,8 @@ DialogControl::DialogControl(VesselBuilder1 *_VB1) {
 	ThrGrpMng = VB1->ThrGrpMng;
 	PartMng = VB1->PartMng;
 	TdpMng = VB1->TdpMng;
+	AirfoilMng = VB1->AirfoilMng;
+
 	open = false;
 	hDlg = NULL;
 	TreeItem.clear();
@@ -138,6 +149,7 @@ DialogControl::~DialogControl() {
 	ThrGrpMng = NULL;
 	PartMng = NULL;
 	TdpMng = NULL;
+	AirfoilMng = NULL;
 	hDlg = NULL;
 	open = false;
 }
@@ -916,6 +928,18 @@ void DialogControl::InitTree(HWND hWnd) {
 	Tir.hitem = hrootTouchdownPoints;
 	TreeItem[Tir.hitem] = Tir;
 
+	insertstruct.item.pszText = (LPSTR)TEXT("Airfoils\0");
+	insertstruct.item.cchTextMax = 10;
+	hrootAirfoils = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+	Tir.hitem = hrootAirfoils;
+	TreeItem[Tir.hitem] = Tir;
+
+	insertstruct.item.pszText = (LPSTR)TEXT("Control Surfaces\0");
+	insertstruct.item.cchTextMax = 18;
+	hrootControlSurfaces = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+	Tir.hitem = hrootControlSurfaces;
+	TreeItem[Tir.hitem] = Tir;
+
 	insertstruct.item.pszText = (LPSTR)TEXT("Lights\0");
 	insertstruct.item.cchTextMax = 7;
 	hrootLights = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
@@ -928,6 +952,11 @@ void DialogControl::InitTree(HWND hWnd) {
 	Tir.hitem = hrootCameras;
 	TreeItem[Tir.hitem] = Tir;
 
+	insertstruct.item.pszText = (LPSTR)TEXT("Virtual Cockpit\0");
+	insertstruct.item.cchTextMax = 18;
+	hrootVC = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+	Tir.hitem = hrootVC;
+	TreeItem[Tir.hitem] = Tir;
 	
 	UpdateTree(hWnd, MESH,0);
 	UpdateTree(hWnd, DOCK,0);
@@ -1095,6 +1124,10 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 			else if (CurrentSelection.hitem == hrootThrusters) {
 				ThrMng->AddThrDef();
 				UpdateTree(hWnd, THRUSTERS, 0);
+			}
+			else if (CurrentSelection.hitem == hrootAirfoils) {
+				AirfoilMng->CreateAirfoilDef(LIFT_VERTICAL);
+				///
 			}
 			break;
 		}

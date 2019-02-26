@@ -133,6 +133,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Orbitersdk\include\Orbitersdk.h" />
+    <ClInclude Include="AirfoilsManager.h" />
     <ClInclude Include="AnimationManager.h" />
     <ClInclude Include="AnimCompDef.h" />
     <ClInclude Include="AnimDef.h" />
@@ -149,6 +150,8 @@
     <ClInclude Include="TouchdownPointsManager.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AirfoilsDlgProc.cpp" />
+    <ClCompile Include="AirfoilsManager.cpp" />
     <ClCompile Include="AnimationManager.cpp" />
     <ClCompile Include="AnimCompDef.cpp" />
     <ClCompile Include="AnimCompDlgProc.cpp" />

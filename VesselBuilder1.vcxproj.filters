@@ -46,6 +46,9 @@
     <ClInclude Include="VesselBuilder1.h">
       <Filter>Vessel</Filter>
     </ClInclude>
+    <ClInclude Include="AirfoilsManager.h">
+      <Filter>Vessel</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\Orbitersdk\lib\orbiter.lib">
@@ -149,6 +152,12 @@
       <Filter>Vessel</Filter>
     </ClCompile>
     <ClCompile Include="SettingsDlgProc.cpp">
+      <Filter>Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="AirfoilsManager.cpp">
+      <Filter>Vessel</Filter>
+    </ClCompile>
+    <ClCompile Include="AirfoilsDlgProc.cpp">
       <Filter>Dialog</Filter>
     </ClCompile>
   </ItemGroup>

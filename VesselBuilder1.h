@@ -91,6 +91,7 @@ class ThrusterManager;
 class ThrusterGroupManager;
 class ParticleManager;
 class TouchdownPointsManager;
+class AirfoilsManager;
 
 class VesselBuilder1 :public VESSEL4{
 public:
@@ -118,7 +119,7 @@ public:
  ThrusterGroupManager *ThrGrpMng;
  ParticleManager *PartMng;
  TouchdownPointsManager *TdpMng;
-
+ AirfoilsManager *AirfoilMng;
 
  VISHANDLE visual;
  

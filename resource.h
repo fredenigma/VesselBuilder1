@@ -16,6 +16,7 @@
 #define IDD_DIALOG_PARTICLES            114
 #define IDD_DIALOG_TDPOINTS             115
 #define IDD_DIALOG_SETTINGS             116
+#define IDD_DIALOG_AIRFOILS             117
 #define IDC_TREE1                       1001
 #define IDC_SPIN_POSZ_S                 1005
 #define IDC_SPIN_POSZ_L                 1006
@@ -307,10 +308,29 @@
 #define IDC_STATIC_VESSELNAME           1278
 #define IDC_BUTTON_SETEMSET             1279
 #define IDC_BUTTON_SETSIZESET           1280
+#define IDC_EDIT_AIRFOILREFX            1280
 #define IDC_BUTTON_SETPMISET            1281
+#define IDC_EDIT_AIRFOILC               1281
 #define IDC_BUTTON_SETCSSET             1282
-#define IDC_BUTTON5                     1283
+#define IDC_EDIT_AIRFOILNAME            1282
 #define IDC_BUTTON_SETGGDSET            1283
+#define IDC_EDIT_AIRFOILS               1283
+#define IDC_EDIT_AIRFOILA               1284
+#define IDC_EDIT_AIRFOILREFY            1285
+#define IDC_EDIT_AIRFOILREFZ            1286
+#define IDC_BUTTON_AIRFOILREFSET        1287
+#define IDC_BUTTON_AIRFOILNAMESET       1288
+#define IDC_BUTTON_AIRFOILCSET          1289
+#define IDC_BUTTON_AIRFOILASET          1290
+#define IDC_BUTTON_AIRFOILSSET          1291
+#define IDC_LIST_AIRFOILFUNC            1292
+#define IDC_BUTTON6                     1293
+#define IDC_BUTTON_DELAIRFOIL           1294
+#define IDC_BUTTON8                     1295
+#define IDC_BUTTON9                     1296
+#define IDC_EDIT8                       1297
+#define IDC_EDIT9                       1298
+#define IDC_EDIT10                      1299
 
 // Next default values for new objects
 // 
@@ -318,7 +338,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1280
+#define _APS_NEXT_CONTROL_VALUE         1300
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

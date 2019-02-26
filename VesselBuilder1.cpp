@@ -19,6 +19,7 @@
 #include "ThrusterManager.h"
 #include "ParticleManager.h"
 #include "TouchdownPointsManager.h"
+#include "AirfoilsManager.h"
 #define _CRT_SECURE_NO_WARNINGS
 #define _CRT_NONSTDC_NO_DEPRECATE
 
@@ -41,7 +42,8 @@ VesselBuilder1::VesselBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
 	ThrGrpMng = new ThrusterGroupManager(this);
 	PartMng = new ParticleManager(this);
 	TdpMng = new TouchdownPointsManager(this);
-	
+	AirfoilMng = new AirfoilsManager(this);
+
 	dock_definitions.clear();
 	extex_defs.clear();
 	
@@ -102,6 +104,9 @@ VesselBuilder1::~VesselBuilder1(){
 	PartMng = NULL;
 	delete TdpMng;
 	TdpMng = NULL;
+	delete AirfoilMng;
+	AirfoilMng = NULL;
+
 
 	CloseSBLog();
 	

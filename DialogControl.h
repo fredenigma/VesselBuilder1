@@ -1,7 +1,7 @@
 #pragma once
 #include <CommCtrl.h>
 
-enum ItemType { MESH, DOCK, ATTACHMENT, LIGHT, CAMERA, SPECIAL, SETTINGS,ROOTS,NONE,ANIMATIONS,ANIM_COMP,PROPELLANT,EXTEX,THRUSTERS,THRUSTERGROUPS,PARTICLES,TOUCHDOWNPOINTS };
+enum ItemType { MESH, DOCK, ATTACHMENT, LIGHT, CAMERA, SPECIAL, SETTINGS,ROOTS,NONE,ANIMATIONS,ANIM_COMP,PROPELLANT,EXTEX,THRUSTERS,THRUSTERGROUPS,PARTICLES,TOUCHDOWNPOINTS,AIRFOILS };
 struct TREE_ITEM_REF {
 	ItemType Type;
 	UINT idx;
@@ -31,6 +31,7 @@ public:
 	BOOL PartDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL TdpDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL SettingsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	BOOL AirfoilsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	map<HTREEITEM, TREE_ITEM_REF> TreeItem;
 	TREE_ITEM_REF CurrentSelection;
@@ -58,6 +59,9 @@ public:
 	HTREEITEM hrootThrusterGroups;
 	HTREEITEM hrootParticles;
 	HTREEITEM hrootTouchdownPoints;
+	HTREEITEM hrootAirfoils;
+	HTREEITEM hrootControlSurfaces;
+	HTREEITEM hrootVC;
 
 	void SetDlgItemsTextVector3(HWND hWnd, int id1, int id2, int id3, VECTOR3 v3);
 	VECTOR3 GetDlgItemsVector3(HWND hWnd, int id1, int id2, int id3);
@@ -76,6 +80,7 @@ public:
 	void UpdatePartDialog(HWND hWnd);
 	void UpdateTdpDialog(HWND hWnd);
 	void UpdateSettingsDialog(HWND hWnd);
+	void UpdateAirfoilDialog(HWND hWnd);
 
 	HTREEITEM FindHtreeItem(ItemType type, UINT idx);
 	void InitAnimKeyCombo(HWND hWnd);
@@ -98,6 +103,7 @@ public:
 	HWND hWnd_Part;
 	HWND hWnd_Tdp;
 	HWND hWnd_Settings;
+	HWND hWnd_Airfoils;
 
 	HWND GetDlg() { return hDlg; }
 	map<DWORD, string> oapi_keys;
@@ -108,7 +114,7 @@ public:
 	ThrusterGroupManager *ThrGrpMng;
 	ParticleManager *PartMng;
 	TouchdownPointsManager *TdpMng;
-
+	AirfoilsManager *AirfoilMng;
 	bool ShowingThrGrp;
 	bool AnimTesting;
 	double GetDlgItemDouble(HWND hWnd, int control_id);
