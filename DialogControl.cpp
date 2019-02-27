@@ -137,6 +137,12 @@ DialogControl::DialogControl(VesselBuilder1 *_VB1) {
 	InitOapiKeys();
 	AnimTesting = false;
 	ShowingThrGrp = false;
+	ShowingAFGraph = false;
+
+	penblack = CreatePen(PS_SOLID,2,RGB(0,0,0));
+	pengray = CreatePen(PS_SOLID, 1, RGB(160, 160, 160));
+	penblue_l = CreatePen(PS_SOLID, 3, RGB(0, 0, 255));
+
 //	ItemToSelect = NULL;
 
 }
@@ -151,6 +157,9 @@ DialogControl::~DialogControl() {
 	TdpMng = NULL;
 	AirfoilMng = NULL;
 	hDlg = NULL;
+	DeleteObject(penblack);
+	DeleteObject(pengray);
+	DeleteObject(penblue_l);
 	open = false;
 }
 void DialogControl::Open(HINSTANCE hDLL) {
@@ -199,6 +208,7 @@ void DialogControl::InitDialog(HWND hWnd) {
 	hWnd_ThrGrp = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_THRGRP), hWnd, ThrGrpDlgProcHook, (LPARAM)this);
 	hWnd_Tdp = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_TDPOINTS), hWnd, TdpDlgProcHook, (LPARAM)this);
 	hWnd_Settings = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_SETTINGS), hWnd, SettingsDlgProcHook, (LPARAM)this);
+	hWnd_Airfoils = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_AIRFOILS), hWnd, AirfoilsDlgProcHook, (LPARAM)this);
 	SetWindowPos(hwnd_Mesh, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hwnd_Mesh, SW_HIDE);
 	SetWindowPos(hWnd_Dock, NULL, 255, 10, 0, 0, SWP_NOSIZE);
@@ -223,6 +233,9 @@ void DialogControl::InitDialog(HWND hWnd) {
 	ShowWindow(hWnd_Tdp, SW_HIDE);
 	SetWindowPos(hWnd_Settings, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hWnd_Settings, SW_HIDE);
+	SetWindowPos(hWnd_Airfoils, NULL, 255, 10, 0, 0, SWP_NOSIZE);
+	ShowWindow(hWnd_Airfoils, SW_HIDE);
+
 
 	return;
 }
@@ -824,7 +837,35 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 
 		break;
 	}
+	case AIRFOILS:
+	{
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootAirfoils);
+		while (ht != NULL) {
+			TreeItem.erase(ht);
+			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootAirfoils);
+		}
+		TVINSERTSTRUCT insertstruct = { 0 };
 
+		insertstruct.hInsertAfter = TVI_ROOT;
+		insertstruct.item.mask = TVIF_TEXT;
+		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
+		insertstruct.hParent = hrootAirfoils;
+		for (UINT i = 0; i < AirfoilMng->GetAirfoilDefCount(); i++) {
+			char cbuf[256] = { '\0' };
+			sprintf(cbuf, "%s", AirfoilMng->GetAirfoilDefName(i).c_str());
+			insertstruct.item.pszText = (LPSTR)cbuf;
+			insertstruct.item.cchTextMax = strlen(cbuf);
+			TREE_ITEM_REF Tir = TREE_ITEM_REF();
+			Tir.Type = AIRFOILS;
+			Tir.idx = i;
+			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			TreeItem[Tir.hitem] = Tir;
+			TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootAirfoils, TVE_EXPAND);
+		}
+
+		break;
+	}
 
 
 	}
@@ -968,6 +1009,7 @@ void DialogControl::InitTree(HWND hWnd) {
 	UpdateTree(hWnd, THRUSTERS, 0);
 	UpdateTree(hWnd, THRUSTERGROUPS, 0);
 	UpdateTree(hWnd, TOUCHDOWNPOINTS, 0);
+	UpdateTree(hWnd, AIRFOILS, 0);
 	return;
 }
 
@@ -1015,6 +1057,13 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 	if (type != TOUCHDOWNPOINTS) {
 		ShowWindow(hWnd_Tdp, SW_HIDE);
 	}
+	if (type != AIRFOILS) {
+		ShowWindow(hWnd_Airfoils, SW_HIDE);
+		if (ShowingAFGraph) {
+			ShowAirfoilFuncGraph(hWnd_Airfoils, false);
+		}
+	}
+
 	switch (type) {
 	case MESH:
 	{
@@ -1073,6 +1122,11 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 		ShowWindow(hWnd_Tdp, SW_SHOW);
 		break;
 	}
+	case AIRFOILS:
+	{
+		ShowWindow(hWnd_Airfoils, SW_SHOW);
+		break;
+	}
 	}
 
 	return;
@@ -1127,7 +1181,17 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 			}
 			else if (CurrentSelection.hitem == hrootAirfoils) {
 				AirfoilMng->CreateAirfoilDef(LIFT_VERTICAL);
+				UpdateTree(hWnd, AIRFOILS, 0);
 				///
+			}
+			break;
+		}
+		case IDC_BUTTON_ADD2:
+		{
+			if (CurrentSelection.hitem == hrootAirfoils) {
+				AirfoilMng->CreateAirfoilDef(LIFT_HORIZONTAL);
+				UpdateTree(hWnd, AIRFOILS, 0);
+
 			}
 			break;
 		}
@@ -1153,21 +1217,26 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 					
 					if (CurrentSelection.hitem == hrootMeshes) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD MESH");
 					}else if (CurrentSelection.hitem == hrootDocks) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD DOCK");
 					}
 					else if (CurrentSelection.hitem == hrootAttachments) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD ATTACHMENT");
 					}
 					else if (CurrentSelection.hitem == hrootLights) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD LIGHT");
 					}
 					else if (CurrentSelection.hitem == hrootCameras) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD CAMERA");
 					}
 					else if (CurrentSelection.hitem == hrootSettings) {
@@ -1176,26 +1245,38 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 					}
 					else if (CurrentSelection.hitem == hrootAnimations) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD ANIMATION");
 					}
 					else if (CurrentSelection.hitem == hrootPropellant) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD PROPELLANT TANK");
 					}
 					else if (CurrentSelection.hitem == hrootExTex) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD EXHAUST TEXTURE");
 					}
 					else if (CurrentSelection.hitem == hrootParticles) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD PARTICLE STREAM");
 					}
 					else if (CurrentSelection.hitem == hrootThrusters) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD THRUSTER");
+					}
+					else if (CurrentSelection.hitem == hrootAirfoils) {
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_SHOW);
+						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD VERTICAL AIRFOIL");
+						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD2), (LPCSTR)"ADD HORIZONTAL AIRFOIL");
 					}
 					else {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_HIDE);
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 					}
 					if (CurrentSelection.hitem == hrootSettings) {
 						ShowWindow(hWnd_Settings, SW_SHOW);
@@ -1268,6 +1349,11 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 						case TOUCHDOWNPOINTS:
 						{
 							UpdateTdpDialog(hWnd_Tdp);
+							break;
+						}
+						case AIRFOILS:
+						{
+							UpdateAirfoilDialog(hWnd_Airfoils);
 							break;
 						}
 					}

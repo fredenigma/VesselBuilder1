@@ -1,5 +1,5 @@
 #pragma once
-
+enum AIRFOILS_DEFAULTS{NODEF,DELTAGLIDER,SHUTTLE,CAPSULE};
 
 class LiftCoeffDef {
 public:
@@ -8,14 +8,44 @@ public:
 	vector<double>AOA;
 	vector<double>CL;
 	vector<double>CM;
+	
+	AIRFOILS_DEFAULTS def_Model;
 	double A;
-	void AddPoint(double aoa, double cl,double cm);
-	void RemovePoint(UINT index);
+	bool AddPoint(double aoa, double cl,double cm);
+	bool RemovePoint(UINT index);
 	UINT GetAOAIndex(double aoa);
 	double GetCL(double aoa);
 	double GetCM(double aoa);
 	double GetCD(double aoa,double M);
 	void SetA(double _A);
+	UINT GetPointsCount();
+	double GetTableAOA(UINT index);
+	double GetTableCL(UINT index);
+	double GetTableCM(UINT index);
+	AIRFOIL_ORIENTATION align;
+	void SetAlign(AIRFOIL_ORIENTATION _align);
+	AIRFOIL_ORIENTATION GetAlign();
+	void SetDefModel(AIRFOILS_DEFAULTS ad);
+	AIRFOILS_DEFAULTS GetDefModel();
+	void InitDefModels();
+	vector<double>AOA_DGV;
+	vector<double>CL_DGV;
+	vector<double>CM_DGV;
+	vector<double>AOA_DGH;
+	vector<double>CL_DGH;
+	vector<double>CM_DGH;
+	vector<double>AOA_SHV;
+	vector<double>CL_SHV;
+	vector<double>CM_SHV;
+	vector<double>AOA_SHH;
+	vector<double>CL_SHH;
+	vector<double>CM_SHH;
+	vector<double>AOA_CAPV;
+	vector<double>CL_CAPV;
+	vector<double>CM_CAPV;
+	vector<double>AOA_CAPH;
+	vector<double>CL_CAPH;
+	vector<double>CM_CAPH;
 };
 struct AIRFOIL_DEFS {
 	string name;
@@ -47,6 +77,13 @@ public:
 	double GetAirfoilDefS(def_idx d_idx);
 	double GetAirfoilDefA(def_idx d_idx);
 	void GetAirfoilDefParams(def_idx d_idx,VECTOR3 &ref, double &c, double &S, double &A);
+	UINT GetAirfoilDefCount();
+	UINT GetAirfoilDefPointsCount(def_idx d_idx);
+	void GetAirfoilDefPoint(def_idx d_idx, UINT point_indx, double &aoa, double &cl, double &cm);
+	bool AddPointAirfoiDef(def_idx d_idx, double aoa, double cl, double cm);
+	bool RemovePointAirfoilDef(def_idx d_idx, UINT point_indx);
 	void ParseCfgFile(FILEHANDLE fh);
 	void WriteCfg(FILEHANDLE fh);
+	AIRFOILS_DEFAULTS GetAirfoilDefModel(def_idx d_idx);
+	void SetAirfoilDefModel(def_idx d_idx, AIRFOILS_DEFAULTS adf);
 };

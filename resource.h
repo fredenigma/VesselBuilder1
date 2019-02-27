@@ -87,6 +87,7 @@
 #define IDC_STATIC_MSH27                1058
 #define IDC_EDIT_FMDIR                  1059
 #define IDC_STATIC_MSH20                1059
+#define IDC_BUTTON_ADD2                 1059
 #define IDC_EDIT_ROT                    1060
 #define IDC_EDIT_FMROT                  1060
 #define IDC_STATIC_MSH21                1060
@@ -324,13 +325,15 @@
 #define IDC_BUTTON_AIRFOILASET          1290
 #define IDC_BUTTON_AIRFOILSSET          1291
 #define IDC_LIST_AIRFOILFUNC            1292
-#define IDC_BUTTON6                     1293
+#define IDC_BUTTON_AIRFOILVIEWGRAPH     1293
 #define IDC_BUTTON_DELAIRFOIL           1294
-#define IDC_BUTTON8                     1295
-#define IDC_BUTTON9                     1296
-#define IDC_EDIT8                       1297
-#define IDC_EDIT9                       1298
-#define IDC_EDIT10                      1299
+#define IDC_BUTTON_AIRFOILREMPOINT      1295
+#define IDC_BUTTON_AIRFOILADDPOINT      1296
+#define IDC_EDIT_AIRFOILCM              1297
+#define IDC_EDIT_AIRFOILCL              1298
+#define IDC_EDIT_AIRFOILAOA             1299
+#define IDC_COMBO_AIRFOILDEFAULTS       1300
+#define IDC_STATIC_AIRFOILGRAPH         1301
 
 // Next default values for new objects
 // 
@@ -338,7 +341,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1300
+#define _APS_NEXT_CONTROL_VALUE         1302
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -89,6 +89,10 @@ public:
 	int ComboFindItemData(HWND hWnd, DWORD Data);
 	int ComboFindItemData(HWND hWnd, void* data);
 	void UpdateAnimCompGroupLists(HWND hWnd, def_idx meshdef_idx);
+	void UpdateAirfoilFuncList(HWND hWnd);
+	void ShowAirfoilFuncGraph(HWND hWnd, bool show);
+	bool ShowingAFGraph;
+	void UpdateAirfoilFuncGraph(HWND hWnd);
 	void ShowAnimCompArmTip(HWND hWnd, bool show);
 	bool IsUintInVector(UINT u, vector<UINT>v);
 	HWND hwnd_Mesh;
@@ -120,6 +124,9 @@ public:
 	double GetDlgItemDouble(HWND hWnd, int control_id);
 	void SetDlgItemDouble(HWND hWnd, int control_id, double val, UINT precision);
 	bool IsCheckBoxChecked(HWND hWnd, int control_id);
+	HPEN penblack;
+	HPEN pengray;
+	HPEN penblue_l;
 //	HTREEITEM ItemToSelect;
 protected:
 	VesselBuilder1 *VB1;

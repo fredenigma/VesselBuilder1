@@ -48,6 +48,9 @@ LiftCoeffDef::LiftCoeffDef() {
 	AddPoint(-180 * RAD, 0, 0);
 	AddPoint(0, 0, 0);
 	AddPoint(180 * RAD, 0, 0);
+	align = LIFT_VERTICAL;
+	def_Model = NODEF;
+	InitDefModels();
 	return;
 }
 LiftCoeffDef::~LiftCoeffDef() {}
@@ -65,22 +68,20 @@ UINT LiftCoeffDef::GetAOAIndex(double aoa) {
 	}
 	return AOA.size();
 }
-void LiftCoeffDef::AddPoint(double aoa, double cl, double cm) {
-	if ((aoa < -180 * RAD) || (aoa > 180 * RAD)) { return; }
+bool LiftCoeffDef::AddPoint(double aoa, double cl, double cm) {
+	if ((aoa < -180 * RAD) || (aoa > 180 * RAD)) { return false; }
 	UINT index = GetAOAIndex(aoa);
 	AOA.insert(AOA.begin()+index, aoa);
 	CL.insert(CL.begin() + index, cl);
 	CM.insert(CM.begin() + index, cm);
-
-
-	return;
+	return true;
 }
-void LiftCoeffDef::RemovePoint(UINT index) {
-	if (index >= AOA.size()) { return; }
+bool LiftCoeffDef::RemovePoint(UINT index) {
+	if (index >= AOA.size()) { return false; }
 	AOA.erase(AOA.begin() + index);
 	CL.erase(CL.begin() + index);
 	CM.erase(CM.begin() + index);
-	return;
+	return true;
 }
 double LiftCoeffDef::GetCL(double aoa) {
 	if (aoa == -180 * RAD) { return CL[0]; }
@@ -99,16 +100,271 @@ double LiftCoeffDef::GetCM(double aoa) {
 	return cm;
 }
 double LiftCoeffDef::GetCD(double aoa,double M) {
-	double saoa = sin(aoa);
-	double pd = 0.015 + 0.4*saoa*saoa;  
-	double cd = pd + oapiGetInducedDrag(GetCL(aoa), A, 0.7) + oapiGetWaveDrag(M, 0.75, 1.0, 1.1, 0.04);
-	return 0;
+	double cd;
+	if (align == LIFT_VERTICAL) {
+		double saoa = sin(aoa);
+		double pd = 0.015 + 0.4*saoa*saoa;
+		cd = pd + oapiGetInducedDrag(GetCL(aoa), A, 0.7) + oapiGetWaveDrag(M, 0.75, 1.0, 1.1, 0.04);
+	}
+	else {
+		cd = 0.015 + oapiGetInducedDrag(GetCL(aoa), A, 0.6) + oapiGetWaveDrag(M, 0.75, 1.0, 1.1, 0.04);
+	}
+	
+	return cd;
 }
 void LiftCoeffDef::SetA(double _A) {
 	A = _A;
 	return;
 }
+void LiftCoeffDef::SetAlign(AIRFOIL_ORIENTATION _align) {
+	align = _align;
+	return;
+}
+AIRFOIL_ORIENTATION LiftCoeffDef::GetAlign() {
+	return align;
+}
+UINT LiftCoeffDef::GetPointsCount() {
+	return AOA.size();
+}
+double LiftCoeffDef::GetTableAOA(UINT index) {
+	return AOA[index];
+}
+double LiftCoeffDef::GetTableCL(UINT index) {
+	return CL[index];
+}
+double LiftCoeffDef::GetTableCM(UINT index) {
+	return CM[index];
+}
+void LiftCoeffDef::SetDefModel(AIRFOILS_DEFAULTS ad) {
+	def_Model = ad;
+	switch (ad) {
+	case NODEF:
+	{
+		break;
+	}
+	case DELTAGLIDER:
+	{
+		AOA.clear();
+		CL.clear();
+		CM.clear();
+		if (GetAlign() == AIRFOIL_ORIENTATION::LIFT_VERTICAL) {
+			AOA = AOA_DGV;
+			CL = CL_DGV;
+			CM = CM_DGV;
+		}
+		else {
+			AOA = AOA_DGH;
+			CL = CL_DGH;
+			CM = CM_DGH;
+		}
+		break;
+	}
+	case SHUTTLE:
+	{
+		AOA.clear();
+		CL.clear();
+		CM.clear();
+		if (GetAlign() == AIRFOIL_ORIENTATION::LIFT_VERTICAL) {
+			AOA = AOA_SHV;
+			CL = CL_SHV;
+			CM = CM_SHV;
+		}
+		else {
+			AOA = AOA_SHH;
+			CL = CL_SHH;
+			CM = CM_SHH;
+		}
+		break;
+	}
+	}
+	return;
+}
+AIRFOILS_DEFAULTS LiftCoeffDef::GetDefModel() {
+	return def_Model;
+}
+void LiftCoeffDef::InitDefModels() {
+	AOA_DGV.clear();
+	CL_DGV.clear();
+	CM_DGV.clear();
+	AOA_SHV.clear();
+	CL_SHV.clear();
+	CM_SHV.clear();
+	AOA_CAPV.clear();
+	CL_CAPV.clear();
+	CM_CAPV.clear();
+	AOA_DGH.clear();
+	CL_DGH.clear();
+	CM_DGH.clear();
+	AOA_SHH.clear();
+	CL_SHH.clear();
+	CM_SHH.clear();
+	AOA_CAPH.clear();
+	CL_CAPH.clear();
+	CM_CAPH.clear();
 
+	AOA_DGV.push_back(-180 * RAD);
+	AOA_DGV.push_back(-60 * RAD);
+	AOA_DGV.push_back(-30 * RAD);
+	AOA_DGV.push_back(-2 * RAD);
+	AOA_DGV.push_back(15 * RAD);
+	AOA_DGV.push_back(20 * RAD);
+	AOA_DGV.push_back(25 * RAD);
+	AOA_DGV.push_back(60 * RAD);
+	AOA_DGV.push_back(180 * RAD);
+	CL_DGV.push_back(0);
+	CL_DGV.push_back(0);
+	CL_DGV.push_back(-0.4);
+	CL_DGV.push_back(0);
+	CL_DGV.push_back(0.7);
+	CL_DGV.push_back(1);
+	CL_DGV.push_back(0.8);
+	CL_DGV.push_back(0);
+	CL_DGV.push_back(0);
+	CM_DGV.push_back(0);
+	CM_DGV.push_back(0);
+	CM_DGV.push_back(0.014);
+	CM_DGV.push_back(0.0039);
+	CM_DGV.push_back(-0.006);
+	CM_DGV.push_back(-0.008);
+	CM_DGV.push_back(-0.010);
+	CM_DGV.push_back(0);
+	CM_DGV.push_back(0);
+
+	AOA_DGH.push_back(-180 * RAD);
+	AOA_DGH.push_back(-135 * RAD);
+	AOA_DGH.push_back(-90 * RAD);
+	AOA_DGH.push_back(-45 * RAD);
+	AOA_DGH.push_back(45 * RAD);
+	AOA_DGH.push_back(90 * RAD);
+	AOA_DGH.push_back(135 * RAD);
+	AOA_DGH.push_back(180 * RAD);
+	CL_DGH.push_back(0);
+	CL_DGH.push_back(0.3);
+	CL_DGH.push_back(0);
+	CL_DGH.push_back(-0.3);
+	CL_DGH.push_back(0.3);
+	CL_DGH.push_back(0);
+	CL_DGH.push_back(-0.3);
+	CL_DGH.push_back(0);
+	for (UINT i = 0; i < 8; i++) {
+		CM_DGH.push_back(0);
+	}
+	AOA_SHV.push_back(-180 * RAD);
+	AOA_SHV.push_back(-165 * RAD);
+	AOA_SHV.push_back(-150 * RAD);
+	AOA_SHV.push_back(-135 * RAD);
+	AOA_SHV.push_back(-120 * RAD);
+	AOA_SHV.push_back(-105 * RAD);
+	AOA_SHV.push_back(-90 * RAD);
+	AOA_SHV.push_back(-75 * RAD);
+	AOA_SHV.push_back(-60 * RAD);
+	AOA_SHV.push_back(-45 * RAD);
+	AOA_SHV.push_back(-30 * RAD);
+	AOA_SHV.push_back(-15 * RAD);
+	AOA_SHV.push_back(0 * RAD);
+	AOA_SHV.push_back(15 * RAD);
+	AOA_SHV.push_back(30 * RAD);
+	AOA_SHV.push_back(45 * RAD);
+	AOA_SHV.push_back(60 * RAD);
+	AOA_SHV.push_back(75 * RAD);
+	AOA_SHV.push_back(90 * RAD);
+	AOA_SHV.push_back(105 * RAD);
+	AOA_SHV.push_back(120 * RAD);
+	AOA_SHV.push_back(135 * RAD);
+	AOA_SHV.push_back(150 * RAD);
+	AOA_SHV.push_back(165 * RAD);
+	AOA_SHV.push_back(180 * RAD);
+	CL_SHV.push_back(0.1);
+	CL_SHV.push_back(0.17);
+	CL_SHV.push_back(0.2);
+	CL_SHV.push_back(0.2);
+	CL_SHV.push_back(0.17);
+	CL_SHV.push_back(0.1);
+	CL_SHV.push_back(0);
+	CL_SHV.push_back(-0.11);
+	CL_SHV.push_back(-0.24);
+	CL_SHV.push_back(-0.38);
+	CL_SHV.push_back(-0.5);
+	CL_SHV.push_back(-0.5);
+	CL_SHV.push_back(-0.02);
+	CL_SHV.push_back(0.6355);
+	CL_SHV.push_back(0.63);
+	CL_SHV.push_back(0.46);
+	CL_SHV.push_back(0.28);
+	CL_SHV.push_back(0.13);
+	CL_SHV.push_back(0);
+	CL_SHV.push_back(-0.16);
+	CL_SHV.push_back(-0.26);
+	CL_SHV.push_back(-0.29);
+	CL_SHV.push_back(-0.24);
+	CL_SHV.push_back(-0.1);
+	CL_SHV.push_back(0.1);
+	CM_SHV.push_back(0);
+	CM_SHV.push_back(0);
+	CM_SHV.push_back(0);
+	CM_SHV.push_back(0);
+	CM_SHV.push_back(0);
+	CM_SHV.push_back(0);
+	CM_SHV.push_back(0);
+	CM_SHV.push_back(0);
+	CM_SHV.push_back(0);
+	CM_SHV.push_back(0.002);
+	CM_SHV.push_back(0.004);
+	CM_SHV.push_back(0.0025);
+	CM_SHV.push_back(0.0012);
+	CM_SHV.push_back(0);
+	CM_SHV.push_back(-0.0012);
+	CM_SHV.push_back(-0.0007);
+	CM_SHV.push_back(0);
+	CM_SHV.push_back(0);
+	CM_SHV.push_back(0);
+	CM_SHV.push_back(0);
+	CM_SHV.push_back(0);
+	CM_SHV.push_back(0);
+	CM_SHV.push_back(0);
+	CM_SHV.push_back(0);
+	CM_SHV.push_back(0);
+	
+	AOA_SHH.push_back(-180 * RAD);
+	AOA_SHH.push_back(-157.5 * RAD);
+	AOA_SHH.push_back(-135 * RAD);
+	AOA_SHH.push_back(-112.5 * RAD);
+	AOA_SHH.push_back(-90 * RAD);
+	AOA_SHH.push_back(-67.5 * RAD);
+	AOA_SHH.push_back(-45 * RAD);
+	AOA_SHH.push_back(-22.5 * RAD);
+	AOA_SHH.push_back(0 * RAD);
+	AOA_SHH.push_back(22.5 * RAD);
+	AOA_SHH.push_back(45 * RAD);
+	AOA_SHH.push_back(67.5 * RAD);
+	AOA_SHH.push_back(90 * RAD);
+	AOA_SHH.push_back(112.5 * RAD);
+	AOA_SHH.push_back(135 * RAD);
+	AOA_SHH.push_back(157.5 * RAD);
+	AOA_SHH.push_back(180 * RAD);
+	
+	CL_SHH.push_back(0);
+	CL_SHH.push_back(0.2);
+	CL_SHH.push_back(0.3);
+	CL_SHH.push_back(0.2);
+	CL_SHH.push_back(0);
+	CL_SHH.push_back(-0.2);
+	CL_SHH.push_back(-0.3);
+	CL_SHH.push_back(-0.2);
+	CL_SHH.push_back(0);
+	CL_SHH.push_back(0.2);
+	CL_SHH.push_back(0.3);
+	CL_SHH.push_back(0.2);
+	CL_SHH.push_back(0);
+	CL_SHH.push_back(-0.2);
+	CL_SHH.push_back(-0.3);
+	CL_SHH.push_back(-0.2);
+	CL_SHH.push_back(0);
+	for (UINT i = 0; i < 17; i++) {
+		CM_SHH.push_back(0);
+	}
+	return;
+}
 
 
 AirfoilsManager::AirfoilsManager(VesselBuilder1 *_VB1) {
@@ -123,6 +379,7 @@ void AirfoilsManager::CreateAirfoilDef(string name, AIRFOIL_ORIENTATION align, V
 	ad.name = name;
 	ad.LCD = new LiftCoeffDef;
 	ad.LCD->SetA(A);
+	ad.LCD->SetAlign(align);
 	ad.airfoil_h = VB1->CreateAirfoil3(align, ref, LiftCoeff, ad.LCD, c, S, A);
 	airfoil_defs.push_back(ad);
 	return;
@@ -139,7 +396,13 @@ void AirfoilsManager::CreateAirfoilDef(AIRFOIL_ORIENTATION align) {
 	double S = 100;
 	double A = 1.5;
 	char cbuf[256] = { '\0' };
-	sprintf(cbuf, "Airfoil_%i", airfoil_defs.size());
+	if (align == AIRFOIL_ORIENTATION::LIFT_VERTICAL) {
+		sprintf(cbuf, "V_Airfoil_%i", airfoil_defs.size());
+	}
+	else {
+		sprintf(cbuf, "H_Airfoil_%i", airfoil_defs.size());
+	}
+	
 	string name(cbuf);
 	return CreateAirfoilDef(name,align, ref, c, S, A);
 }
@@ -163,7 +426,7 @@ void AirfoilsManager::SetAirfoilDefS(def_idx d_idx, double newS) {
 	return;
 }
 void AirfoilsManager::SetairfoilDefA(def_idx d_idx, double newA) {
-	VB1->EditAirfoil(airfoil_defs[d_idx].airfoil_h, 0x04, _V(0, 0, 0), 0, 0, 0, newA);
+	VB1->EditAirfoil(airfoil_defs[d_idx].airfoil_h, 0x10, _V(0, 0, 0), 0, 0, 0, newA);
 	return;
 }
 VECTOR3 AirfoilsManager::GetAirfoilDefRef(def_idx d_idx) {
@@ -194,5 +457,31 @@ void AirfoilsManager::ParseCfgFile(FILEHANDLE fh) {
 	return;
 }
 void AirfoilsManager::WriteCfg(FILEHANDLE fh) {
+	return;
+}
+UINT AirfoilsManager::GetAirfoilDefCount() {
+	return airfoil_defs.size();
+}
+UINT AirfoilsManager::GetAirfoilDefPointsCount(def_idx d_idx) {
+	return airfoil_defs[d_idx].LCD->GetPointsCount();
+}
+void AirfoilsManager::GetAirfoilDefPoint(def_idx d_idx, UINT point_indx, double &aoa, double &cl, double &cm) {
+	aoa = airfoil_defs[d_idx].LCD->GetTableAOA(point_indx);
+	cl = airfoil_defs[d_idx].LCD->GetTableCL(point_indx);
+	cm = airfoil_defs[d_idx].LCD->GetTableCM(point_indx);
+	return;
+}
+bool AirfoilsManager::AddPointAirfoiDef(def_idx d_idx, double aoa, double cl, double cm) {
+	return airfoil_defs[d_idx].LCD->AddPoint(aoa, cl, cm);
+}
+bool AirfoilsManager::RemovePointAirfoilDef(def_idx d_idx, UINT point_indx) {
+	return airfoil_defs[d_idx].LCD->RemovePoint(point_indx);
+}
+
+AIRFOILS_DEFAULTS AirfoilsManager::GetAirfoilDefModel(def_idx d_idx) {
+	return airfoil_defs[d_idx].LCD->GetDefModel();
+}
+void AirfoilsManager::SetAirfoilDefModel(def_idx d_idx, AIRFOILS_DEFAULTS adf) {
+	airfoil_defs[d_idx].LCD->SetDefModel(adf);
 	return;
 }
