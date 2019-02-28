@@ -20,6 +20,7 @@
 #include "ParticleManager.h"
 #include "TouchdownPointsManager.h"
 #include "AirfoilsManager.h"
+#include "ControlSurfacesManager.h"
 #define _CRT_SECURE_NO_WARNINGS
 #define _CRT_NONSTDC_NO_DEPRECATE
 
@@ -43,6 +44,7 @@ VesselBuilder1::VesselBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
 	PartMng = new ParticleManager(this);
 	TdpMng = new TouchdownPointsManager(this);
 	AirfoilMng = new AirfoilsManager(this);
+	CtrSurfMng = new ControlSurfacesManager(this);
 
 	dock_definitions.clear();
 	extex_defs.clear();
@@ -106,7 +108,8 @@ VesselBuilder1::~VesselBuilder1(){
 	TdpMng = NULL;
 	delete AirfoilMng;
 	AirfoilMng = NULL;
-
+	delete CtrSurfMng;
+	CtrSurfMng = NULL;
 
 	CloseSBLog();
 	
@@ -178,8 +181,10 @@ void VesselBuilder1::clbkSetClassCaps(FILEHANDLE cfg){
 	if (!NoEditor) {
 		WriteBackupFile();
 	}
-	
-	
+	SetNosewheelSteering(true);
+	SetMaxWheelbrakeForce(2e5);
+	//SetCW(0.09, 0.09, 2, 1.4);
+	SetRotDrag(_V(0.10, 0.13, 0.04));
 	return;
 }
 void VesselBuilder1::clbkLoadStateEx(FILEHANDLE scn,void *vs)
@@ -455,7 +460,7 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 		return 1;
 	}
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == OAPI_KEY_K) {
-		DWORD td_count = this->GetTouchdownPointCount();
+	/*	DWORD td_count = this->GetTouchdownPointCount();
 		for (UINT i = 0; i < td_count; i++) {
 			oapiWriteLogV("td:%i", i);
 			TOUCHDOWNVTX tdvtx;
@@ -464,7 +469,7 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 			oapiWriteLogV("stiffness: %.6f damping:%.6f", tdvtx.stiffness, tdvtx.damping);
 			oapiWriteLogV("Mu:%.3f Mu_lng:%.3f", tdvtx.mu, tdvtx.mu_lng);
 		}
-
+		*/
 
 
 
@@ -473,9 +478,17 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 		return 1;
 	}
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && KEYMOD_CONTROL(kstate) && key == OAPI_KEY_K) {
-		
-	
-		
+	/*	ResetVehicle();
+		MshMng->msh_defs.clear();
+		AttMng->att_defs.clear();
+		PrpMng->tanks.clear();
+		AirfoilMng->airfoil_defs.clear();
+		AnimMng->animcomp_defs.clear();
+		AnimMng->anim_defs.clear();
+		PartMng->particle_defs.clear();
+		FILEHANDLE newcfg = oapiOpenFile("Vessels//VesselBuilder1//HST.cfg", FILE_IN, CONFIG);
+		clbkSetClassCaps(newcfg);
+		oapiCloseFile(newcfg, FILE_IN);*/
 		return 1;
 	}
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == OAPI_KEY_G) {
@@ -627,6 +640,12 @@ void VesselBuilder1::ResetVehicle() {
 	ClearDockDefinitions();
 	ClearLightEmitters();
 	ClearBeacons();
+	ClearAirfoilDefinitions();
+	ClearControlSurfaceDefinitions();
+	ClearThrusterDefinitions();
+	ClearLightEmitters();
+	ClearPropellantResources();
+	ClearVariableDragElements();
 	SBLog("Reset Complete");
 }
 
@@ -702,6 +721,9 @@ void VesselBuilder1::ParseCfgFile(FILEHANDLE fh) {
 	ThrMng->ParseCfgFile(fh);
 	ThrGrpMng->ParseCfgFile(fh);
 	TdpMng->ParseCfgFile(fh);
+	AirfoilMng->ParseCfgFile(fh);
+	CtrSurfMng->ParseCfgFile(fh);
+
 	if (!oapiReadItem_bool(fh, "NOEDITOR", NoEditor)) { NoEditor = false; }
 	SBLog("Parsing Completed");
 	return;
@@ -766,6 +788,8 @@ void VesselBuilder1::WriteCfgFile(string filename) {
 	ThrMng->WriteCfg(fh);
 	ThrGrpMng->WriteCfg(fh);
 	TdpMng->WriteCfg(fh);
+	AirfoilMng->WriteCfg(fh);
+	CtrSurfMng->WriteCfg(fh);
 	oapiCloseFile(fh, FILE_OUT);
 	return;
 }
@@ -1023,7 +1047,7 @@ void VesselBuilder1::CreateThExhausts() {
 		es.lofs = 0;
 		es.level = &level;
 		es.lpos = NULL;//&ThrMng->thr_defs[i].pos;
-		es.ldir = NULL;//&ThrMng->thr_defs[i].antidir;
+		es.ldir = &ThrMng->thr_defs[i].antidir;//NULL;//&ThrMng->thr_defs[i].antidir;
 		UINT idx = AddExhaust(&es);
 		ThExaustsID.push_back(idx);	
 	}
@@ -1048,10 +1072,12 @@ void VesselBuilder1::CreateThrGrpLaserExhausts(THGROUP_TYPE thgt) {
 	es.lofs = 0;
 	es.level = &level;
 	es.lpos = NULL;//&ThrMng->thr_defs[i].pos;
-	es.ldir = NULL;//&ThrMng->t
+	 //NULL;//&ThrMng->t
 	vector<THRUSTER_HANDLE>thrusters = ThrGrpMng->GetThrusters(thgt);
 	for (UINT i = 0; i < thrusters.size(); i++) {
 		es.th = thrusters[i];
+		def_idx th_idx = ThrMng->GetThrIdx(thrusters[i]);
+		es.ldir = &ThrMng->thr_defs[th_idx].antidir;
 		UINT idx = AddExhaust(&es);
 		ThGrpExhaustsID.push_back(idx);
 	}
@@ -1068,7 +1094,9 @@ void VesselBuilder1::CreateThrusterLaserExhaust(THRUSTER_HANDLE th) {
 	es.lofs = 0;
 	es.level = &level;
 	es.lpos = NULL;//&ThrMng->thr_defs[i].pos;
-	es.ldir = NULL;//&ThrMng->t
+	def_idx th_idx = ThrMng->GetThrIdx(th);
+	es.ldir = &ThrMng->thr_defs[th_idx].antidir;
+	//es.ldir = NULL;//&ThrMng->t
 	es.th = th;
 	UINT idx = AddExhaust(&es);
 	ThGrpExhaustsID.push_back(idx);

@@ -45,9 +45,9 @@ LiftCoeffDef::LiftCoeffDef() {
 	AOA.clear();
 	CL.clear();
 	CM.clear();
-	AddPoint(-180 * RAD, 0, 0);
-	AddPoint(0, 0, 0);
-	AddPoint(180 * RAD, 0, 0);
+	//AddPoint(-180 * RAD, 0, 0);
+	//AddPoint(0, 0, 0);
+	//AddPoint(180 * RAD, 0, 0);
 	align = LIFT_VERTICAL;
 	def_Model = NODEF;
 	InitDefModels();
@@ -374,15 +374,16 @@ AirfoilsManager::AirfoilsManager(VesselBuilder1 *_VB1) {
 }
 AirfoilsManager::~AirfoilsManager() { VB1 = NULL; }
 
-void AirfoilsManager::CreateAirfoilDef(string name, AIRFOIL_ORIENTATION align, VECTOR3 ref, double c, double S, double A) {
+UINT AirfoilsManager::CreateAirfoilDef(string name, AIRFOIL_ORIENTATION align, VECTOR3 ref, double c, double S, double A) {
 	AIRFOIL_DEFS ad = AIRFOIL_DEFS();
 	ad.name = name;
 	ad.LCD = new LiftCoeffDef;
 	ad.LCD->SetA(A);
 	ad.LCD->SetAlign(align);
 	ad.airfoil_h = VB1->CreateAirfoil3(align, ref, LiftCoeff, ad.LCD, c, S, A);
+	UINT index = airfoil_defs.size();
 	airfoil_defs.push_back(ad);
-	return;
+	return index;
 }
 void AirfoilsManager::SetAirfoilDefName(def_idx d_idx, string newname) {
 	airfoil_defs[d_idx].name = newname;
@@ -390,7 +391,7 @@ void AirfoilsManager::SetAirfoilDefName(def_idx d_idx, string newname) {
 string AirfoilsManager::GetAirfoilDefName(def_idx d_idx) {
 	return airfoil_defs[d_idx].name;
 }
-void AirfoilsManager::CreateAirfoilDef(AIRFOIL_ORIENTATION align) {
+UINT AirfoilsManager::CreateAirfoilDef(AIRFOIL_ORIENTATION align) {
 	VECTOR3 ref = _V(0, 0, 0);
 	double c = 10;
 	double S = 100;
@@ -453,10 +454,98 @@ void AirfoilsManager::GetAirfoilDefParams(def_idx d_idx, VECTOR3 &ref, double &c
 	VB1->GetAirfoilParam(airfoil_defs[d_idx].airfoil_h, &ref, NULL, NULL, &c, &S, &A);
 	return;
 }
+AIRFOIL_ORIENTATION AirfoilsManager::GetAirfoilDefOrientation(def_idx d_idx) {
+	return airfoil_defs[d_idx].LCD->GetAlign();
+}
 void AirfoilsManager::ParseCfgFile(FILEHANDLE fh) {
+	char cbuf[256] = { '\0' };
+	char namebuf[256] = { '\0' };
+	int id;
+	UINT airfoil_counter = 0;
+	sprintf(cbuf, "AIRFOIL_%i_ID", airfoil_counter);
+	while (oapiReadItem_int(fh, cbuf, id)) {
+		VECTOR3 ref;
+		double c, S, A;
+		sprintf(cbuf, "AIRFOIL_%i_NAME", airfoil_counter);
+		oapiReadItem_string(fh, cbuf, namebuf);
+		string name(namebuf);
+		sprintf(cbuf, "AIRFOIL_%i_ORIENTATION", airfoil_counter);
+		int al;
+		oapiReadItem_int(fh, cbuf, al);
+		AIRFOIL_ORIENTATION align = (AIRFOIL_ORIENTATION)al;
+		sprintf(cbuf, "AIRFOIL_%i_REF", airfoil_counter);
+		oapiReadItem_vec(fh, cbuf, ref);
+		sprintf(cbuf, "AIRFOIL_%i_C", airfoil_counter);
+		oapiReadItem_float(fh, cbuf, c);
+		sprintf(cbuf, "AIRFOIL_%i_S", airfoil_counter);
+		oapiReadItem_float(fh, cbuf, S);
+		sprintf(cbuf, "AIRFOIL_%i_A", airfoil_counter);
+		oapiReadItem_float(fh, cbuf, A);
+		UINT index = CreateAirfoilDef(name, align, ref, c, S, A);
+		UINT point_counter = 0;
+		sprintf(cbuf, "AIRFOIL_%i_POINT_%i_AOA", airfoil_counter, point_counter);
+		double aoa, cl, cm;
+		while (oapiReadItem_float(fh, cbuf, aoa)) {
+			sprintf(cbuf, "AIRFOIL_%i_POINT_%i_CL", airfoil_counter, point_counter);
+			oapiReadItem_float(fh, cbuf, cl);
+			sprintf(cbuf, "AIRFOIL_%i_POINT_%i_CM", airfoil_counter, point_counter);
+			oapiReadItem_float(fh, cbuf, cm);
+			aoa *= RAD;
+			AddPointAirfoiDef(index, aoa, cl, cm);
+			point_counter++;
+			sprintf(cbuf, "AIRFOIL_%i_POINT_%i_AOA", airfoil_counter, point_counter);
+		}
+
+		airfoil_counter++;
+		sprintf(cbuf, "AIRFOIL_%i_ID", airfoil_counter);
+	}
+	
+	
+	
+	
+	
+	
+
 	return;
 }
 void AirfoilsManager::WriteCfg(FILEHANDLE fh) {
+	oapiWriteLine(fh, " ");
+	oapiWriteLine(fh, ";<-------------------------AIRFOILS DEFINITIONS------------------------->");
+	oapiWriteLine(fh, " ");
+	for (UINT i = 0; i < GetAirfoilDefCount(); i++) {
+		char cbuf[256] = { '\0' };
+		sprintf(cbuf, "AIRFOIL_%i_ID", i);
+		oapiWriteItem_int(fh, cbuf, i);
+		sprintf(cbuf, "AIRFOIL_%i_NAME", i);
+		char namebuf[256] = { '\0' };
+		sprintf(namebuf, "%s", GetAirfoilDefName(i).c_str());
+		oapiWriteItem_string(fh, cbuf, namebuf);
+		VECTOR3 ref;
+		double c, S, A;
+		AIRFOIL_ORIENTATION align = GetAirfoilDefOrientation(i);
+		GetAirfoilDefParams(i, ref, c, S, A);
+		sprintf(cbuf, "AIRFOIL_%i_ORIENTATION", i);
+		oapiWriteItem_int(fh, cbuf, (int)align);
+		sprintf(cbuf, "AIRFOIL_%i_REF", i);
+		oapiWriteItem_vec(fh, cbuf, ref);
+		sprintf(cbuf, "AIRFOIL_%i_C", i);
+		oapiWriteItem_float(fh, cbuf, c);
+		sprintf(cbuf, "AIRFOIL_%i_S", i);
+		oapiWriteItem_float(fh, cbuf, S);
+		sprintf(cbuf, "AIRFOIL_%i_A", i);
+		oapiWriteItem_float(fh, cbuf, A);
+		for (UINT j = 0; j < GetAirfoilDefPointsCount(i); j++) {
+			double aoa, cl, cm;
+			GetAirfoilDefPoint(i, j, aoa, cl, cm);
+			sprintf(cbuf, "AIRFOIL_%i_POINT_%i_AOA", i, j);
+			oapiWriteItem_float(fh, cbuf, aoa*DEG);
+			sprintf(cbuf, "AIRFOIL_%i_POINT_%i_CL", i, j);
+			oapiWriteItem_float(fh, cbuf, cl);
+			sprintf(cbuf, "AIRFOIL_%i_POINT_%i_CM", i, j);
+			oapiWriteItem_float(fh, cbuf, cm);
+		}
+		oapiWriteLine(fh, " ");
+	}
 	return;
 }
 UINT AirfoilsManager::GetAirfoilDefCount() {

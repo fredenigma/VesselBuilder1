@@ -51,7 +51,7 @@ void TouchdownPointsManager::ParseCfgFile(FILEHANDLE fh) {
 	int changeoveranim;
 	char cbuf[256] = { '\0' };
 	sprintf(cbuf, "TDP_SECONDSET_ENABLED");
-	oapiReadItem_bool(fh, cbuf, SecondSetEnabled);
+	if (!oapiReadItem_bool(fh, cbuf, SecondSetEnabled)) {SecondSetEnabled = false;}
 	sprintf(cbuf, "TDP_CHANGEOVER_ANIM");
 	oapiReadItem_int(fh, cbuf, changeoveranim);
 	EnableSecondSet(SecondSetEnabled);

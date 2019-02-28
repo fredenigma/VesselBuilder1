@@ -213,34 +213,41 @@ BOOL DialogControl::TdpDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 
 				td[i].damping = damping;
 				td[i].mu = 3;
-				td[i].mu_lng = 0.5;
+				td[i].mu_lng = 0.2;
 				td[i].stiffness = stiffness;
 			}
 			
 			if (tailsitter) {
-				td[0].pos.x = -cos(30 * RAD)*ro;
-				td[0].pos.y = -sin(30 * RAD)*ro; 
-				td[0].pos.z = -HeightFromGround;
-				td[1].pos.x = 0;
-				td[1].pos.y = 1 * ro;
+				//to RECHECK!
+				td[1].pos.x = -cos(30 * RAD)*ro;
+				td[1].pos.y = -sin(30 * RAD)*ro; 
 				td[1].pos.z = -HeightFromGround;
-				td[2].pos.x = cos(30 * RAD)*ro;
-				td[2].pos.y = -sin(30 * RAD)*ro;
+				td[2].pos.x = 0;
+				td[2].pos.y = 1 * ro;
 				td[2].pos.z = -HeightFromGround;
+				td[0].pos.x = cos(30 * RAD)*ro;
+				td[0].pos.y = -sin(30 * RAD)*ro;
+				td[0].pos.z = -HeightFromGround;
 				td[3].pos.x = 0;
 				td[3].pos.z = 1 * ro;
 				td[3].pos.y = 0;
 			}
 			else {
-				td[0].pos.x = -cos(30 * RAD)*ro;
+
+				td[0].pos.x = 0;
 				td[0].pos.y = -HeightFromGround;
-				td[0].pos.z = -sin(30 * RAD)*ro;
-				td[2].pos.x = 0;
-				td[2].pos.y = -HeightFromGround;
-				td[2].pos.z = 1 * ro;
+				td[0].pos.z = 1.1 * ro;
+				td[0].mu = 1.5;
+				td[0].mu = 0.1;
+
+				td[1].pos.x = -cos(30 * RAD)*ro;
 				td[1].pos.y = -HeightFromGround;
 				td[1].pos.z = -sin(30 * RAD)*ro;
-				td[1].pos.x = cos(30 * RAD)*ro;
+
+				td[2].pos.x = cos(30 * RAD)*ro;
+				td[2].pos.y = -HeightFromGround;
+				td[2].pos.z = -sin(30 * RAD)*ro;
+				
 				td[3].pos.x = 0;
 				td[3].pos.y = 1 * ro;
 				td[3].pos.z = 0;

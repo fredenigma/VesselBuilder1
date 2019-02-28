@@ -161,6 +161,9 @@ void ThrusterManager::ParseCfgFile(FILEHANDLE fh) {
 		string parts(partsbuf);
 		vector<UINT>parts_defidx = VB1->readVectorUINT(parts);
 		for (UINT z = 0; z < parts_defidx.size(); z++) {
+			if (parts_defidx[z] == -1) {
+				continue;
+			}
 			AddThrParticles(thidx, parts_defidx[z]);
 		}
 
@@ -172,6 +175,7 @@ void ThrusterManager::ParseCfgFile(FILEHANDLE fh) {
 	return;
 }
 void ThrusterManager::WriteCfg(FILEHANDLE fh) {
+	oapiWriteLine(fh, " ");
 	oapiWriteLine(fh, ";<-------------------------THRUSTERS DEFINITIONS------------------------->");
 	oapiWriteLine(fh, " ");
 	for (DWORD i = 0; i < GetThrCount(); i++) {
@@ -245,6 +249,7 @@ void ThrusterManager::SetThrHasExhaust(def_idx d_idx, bool set) {
 	if (set) {
 		if (thr_defs[d_idx].ExhaustID != (UINT)-1) {
 			VB1->DelExhaust(thr_defs[d_idx].ExhaustID);
+			thr_defs[d_idx].ExhaustID = (UINT)-1;
 		}
 		EXHAUSTSPEC es;
 		es.th = thr_defs[d_idx].th;

@@ -1,7 +1,7 @@
 #pragma once
 #include <CommCtrl.h>
 
-enum ItemType { MESH, DOCK, ATTACHMENT, LIGHT, CAMERA, SPECIAL, SETTINGS,ROOTS,NONE,ANIMATIONS,ANIM_COMP,PROPELLANT,EXTEX,THRUSTERS,THRUSTERGROUPS,PARTICLES,TOUCHDOWNPOINTS,AIRFOILS };
+enum ItemType { MESH, DOCK, ATTACHMENT, LIGHT, CAMERA, SPECIAL, SETTINGS,ROOTS,NONE,ANIMATIONS,ANIM_COMP,PROPELLANT,EXTEX,THRUSTERS,THRUSTERGROUPS,PARTICLES,TOUCHDOWNPOINTS,AIRFOILS,CTRLSURFACES };
 struct TREE_ITEM_REF {
 	ItemType Type;
 	UINT idx;
@@ -32,6 +32,7 @@ public:
 	BOOL TdpDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL SettingsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL AirfoilsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	BOOL CtrlSurfDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	map<HTREEITEM, TREE_ITEM_REF> TreeItem;
 	TREE_ITEM_REF CurrentSelection;
@@ -81,6 +82,7 @@ public:
 	void UpdateTdpDialog(HWND hWnd);
 	void UpdateSettingsDialog(HWND hWnd);
 	void UpdateAirfoilDialog(HWND hWnd);
+	void UpdateCtrlSurfDialog(HWND hWnd);
 
 	HTREEITEM FindHtreeItem(ItemType type, UINT idx);
 	void InitAnimKeyCombo(HWND hWnd);
@@ -108,6 +110,7 @@ public:
 	HWND hWnd_Tdp;
 	HWND hWnd_Settings;
 	HWND hWnd_Airfoils;
+	HWND hWnd_CtrlSurfaces;
 
 	HWND GetDlg() { return hDlg; }
 	map<DWORD, string> oapi_keys;
@@ -119,6 +122,8 @@ public:
 	ParticleManager *PartMng;
 	TouchdownPointsManager *TdpMng;
 	AirfoilsManager *AirfoilMng;
+	ControlSurfacesManager *CtrSurfMng;
+
 	bool ShowingThrGrp;
 	bool AnimTesting;
 	double GetDlgItemDouble(HWND hWnd, int control_id);

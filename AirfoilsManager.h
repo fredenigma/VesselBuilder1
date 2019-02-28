@@ -63,8 +63,8 @@ public:
 	~AirfoilsManager();
 	VesselBuilder1 *VB1;
 	vector<AIRFOIL_DEFS> airfoil_defs;
-	void CreateAirfoilDef(string name,AIRFOIL_ORIENTATION align,VECTOR3 ref,double c, double S, double A);
-	void CreateAirfoilDef(AIRFOIL_ORIENTATION align);
+	UINT CreateAirfoilDef(string name,AIRFOIL_ORIENTATION align,VECTOR3 ref,double c, double S, double A);
+	UINT CreateAirfoilDef(AIRFOIL_ORIENTATION align);
 	void SetAirfoilDefName(def_idx d_idx, string newname);
 	string GetAirfoilDefName(def_idx d_idx);
 	void DeleteAirfoilDef(def_idx d_idx);
@@ -76,7 +76,8 @@ public:
 	double GetAirfoilDefC(def_idx d_idx);
 	double GetAirfoilDefS(def_idx d_idx);
 	double GetAirfoilDefA(def_idx d_idx);
-	void GetAirfoilDefParams(def_idx d_idx,VECTOR3 &ref, double &c, double &S, double &A);
+	void GetAirfoilDefParams(def_idx d_idx, VECTOR3 &ref, double &c, double &S, double &A);
+	AIRFOIL_ORIENTATION GetAirfoilDefOrientation(def_idx d_idx);
 	UINT GetAirfoilDefCount();
 	UINT GetAirfoilDefPointsCount(def_idx d_idx);
 	void GetAirfoilDefPoint(def_idx d_idx, UINT point_indx, double &aoa, double &cl, double &cm);

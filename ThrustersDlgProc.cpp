@@ -96,7 +96,7 @@ void DialogControl::UpdateThrDialog(HWND hWnd) {
 	}
 
 	SendDlgItemMessage(hWnd, IDC_LIST_THPART, LB_RESETCONTENT, 0, 0);
-	sprintf(oapiDebugString(), "time:%.3f", oapiGetSimTime());
+	//sprintf(oapiDebugString(), "time:%.3f", oapiGetSimTime());
 	for (UINT i = 0; i < PartMng->GetParticleDefCount(); i++) {
 		SendDlgItemMessage(hWnd, IDC_LIST_THPART, LB_INSERTSTRING, i, (LPARAM)PartMng->GetParticleDefName(i).c_str());
 		SendDlgItemMessage(hWnd, IDC_LIST_THPART, LB_SETITEMDATA, i, (LPARAM)PartMng->GetParticleDefID(i));

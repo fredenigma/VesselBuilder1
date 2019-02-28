@@ -16,38 +16,41 @@
     <ClInclude Include="AnimCompDef.h">
       <Filter>Vessel</Filter>
     </ClInclude>
-    <ClInclude Include="MeshManager.h">
-      <Filter>Vessel</Filter>
-    </ClInclude>
-    <ClInclude Include="AnimationManager.h">
-      <Filter>Vessel</Filter>
-    </ClInclude>
     <ClInclude Include="AnimDef.h">
       <Filter>Vessel</Filter>
     </ClInclude>
     <ClInclude Include="Log.h">
       <Filter>Vessel</Filter>
     </ClInclude>
-    <ClInclude Include="AttachmentManager.h">
-      <Filter>Vessel</Filter>
-    </ClInclude>
-    <ClInclude Include="PropellantManager.h">
-      <Filter>Vessel</Filter>
-    </ClInclude>
-    <ClInclude Include="ThrusterManager.h">
-      <Filter>Vessel</Filter>
-    </ClInclude>
-    <ClInclude Include="ParticleManager.h">
-      <Filter>Vessel</Filter>
-    </ClInclude>
-    <ClInclude Include="TouchdownPointsManager.h">
-      <Filter>Vessel</Filter>
-    </ClInclude>
     <ClInclude Include="VesselBuilder1.h">
       <Filter>Vessel</Filter>
     </ClInclude>
     <ClInclude Include="AirfoilsManager.h">
-      <Filter>Vessel</Filter>
+      <Filter>Vessel\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="AnimationManager.h">
+      <Filter>Vessel\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="AttachmentManager.h">
+      <Filter>Vessel\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshManager.h">
+      <Filter>Vessel\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="ParticleManager.h">
+      <Filter>Vessel\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="PropellantManager.h">
+      <Filter>Vessel\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="ThrusterManager.h">
+      <Filter>Vessel\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="TouchdownPointsManager.h">
+      <Filter>Vessel\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="ControlSurfacesManager.h">
+      <Filter>Vessel\Managers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -77,6 +80,9 @@
     <Filter Include="Dialog\FollowMe">
       <UniqueIdentifier>{db1265f4-179c-49ab-a54b-e825a09434de}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Vessel\Managers">
+      <UniqueIdentifier>{b761ed0d-41fb-4529-8166-5f473101d5df}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DialogControl.cpp">
@@ -100,19 +106,10 @@
     <ClCompile Include="AnimCompDef.cpp">
       <Filter>Vessel</Filter>
     </ClCompile>
-    <ClCompile Include="MeshManager.cpp">
-      <Filter>Vessel</Filter>
-    </ClCompile>
-    <ClCompile Include="AnimationManager.cpp">
-      <Filter>Vessel</Filter>
-    </ClCompile>
     <ClCompile Include="AnimDef.cpp">
       <Filter>Vessel</Filter>
     </ClCompile>
     <ClCompile Include="Log.cpp">
-      <Filter>Vessel</Filter>
-    </ClCompile>
-    <ClCompile Include="AttachmentManager.cpp">
       <Filter>Vessel</Filter>
     </ClCompile>
     <ClCompile Include="AttDlgProc.cpp">
@@ -120,12 +117,6 @@
     </ClCompile>
     <ClCompile Include="PrpDlgProc.cpp">
       <Filter>Dialog</Filter>
-    </ClCompile>
-    <ClCompile Include="PropellantManager.cpp">
-      <Filter>Vessel</Filter>
-    </ClCompile>
-    <ClCompile Include="ThrusterManager.cpp">
-      <Filter>Vessel</Filter>
     </ClCompile>
     <ClCompile Include="ThrustersDlgProc.cpp">
       <Filter>Dialog</Filter>
@@ -136,14 +127,8 @@
     <ClCompile Include="ThrGrpDlgProc.cpp">
       <Filter>Dialog</Filter>
     </ClCompile>
-    <ClCompile Include="ParticleManager.cpp">
-      <Filter>Vessel</Filter>
-    </ClCompile>
     <ClCompile Include="ParticlesDlgProc.cpp">
       <Filter>Dialog</Filter>
-    </ClCompile>
-    <ClCompile Include="TouchdownPointsManager.cpp">
-      <Filter>Vessel</Filter>
     </ClCompile>
     <ClCompile Include="TdpDlgProc.cpp">
       <Filter>Dialog</Filter>
@@ -154,10 +139,37 @@
     <ClCompile Include="SettingsDlgProc.cpp">
       <Filter>Dialog</Filter>
     </ClCompile>
-    <ClCompile Include="AirfoilsManager.cpp">
-      <Filter>Vessel</Filter>
-    </ClCompile>
     <ClCompile Include="AirfoilsDlgProc.cpp">
+      <Filter>Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="AirfoilsManager.cpp">
+      <Filter>Vessel\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="AnimationManager.cpp">
+      <Filter>Vessel\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="AttachmentManager.cpp">
+      <Filter>Vessel\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshManager.cpp">
+      <Filter>Vessel\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="ParticleManager.cpp">
+      <Filter>Vessel\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="PropellantManager.cpp">
+      <Filter>Vessel\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="ThrusterManager.cpp">
+      <Filter>Vessel\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="TouchdownPointsManager.cpp">
+      <Filter>Vessel\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="ControlSurfacesManager.cpp">
+      <Filter>Vessel\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="CtrlSurfDlgProc.cpp">
       <Filter>Dialog</Filter>
     </ClCompile>
   </ItemGroup>

@@ -11,19 +11,19 @@
 #include "ThrusterManager.h"
 #include "TouchdownPointsManager.h"
 #include "AirfoilsManager.h"
+#include "ControlSurfacesManager.h"
 #pragma comment(lib, "comctl32.lib")
 
 
 
 extern HINSTANCE hDLL;
 //extern void RotateMeshClbk(MESHHANDLE, bool);
-//Hooks...
 
+//Hooks...
 BOOL CALLBACK DlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	DialogControl *DlgCtrl = (uMsg == WM_INITDIALOG ? (DialogControl*)lParam : (DialogControl*)oapiGetDialogContext(hWnd));
 	return DlgCtrl->DlgProc(hWnd, uMsg, wParam, lParam);
 }
-//DialogControl* dlg;
 BOOL CALLBACK MeshDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	if (uMsg == WM_INITDIALOG) {
 		SetWindowLong(hWnd, GWL_USERDATA, (LONG)lParam);
@@ -115,7 +115,13 @@ BOOL CALLBACK AirfoilsDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
 	return DlgCtrl->AirfoilsDlgProc(hWnd, uMsg, wParam, lParam);
 }
-
+BOOL CALLBACK CtrlSurfDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	if (uMsg == WM_INITDIALOG) {
+		SetWindowLong(hWnd, GWL_USERDATA, (LONG)lParam);
+	}
+	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
+	return DlgCtrl->CtrlSurfDlgProc(hWnd, uMsg, wParam, lParam);
+}
 
 DialogControl::DialogControl(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;
@@ -127,6 +133,7 @@ DialogControl::DialogControl(VesselBuilder1 *_VB1) {
 	PartMng = VB1->PartMng;
 	TdpMng = VB1->TdpMng;
 	AirfoilMng = VB1->AirfoilMng;
+	CtrSurfMng = VB1->CtrSurfMng;
 
 	open = false;
 	hDlg = NULL;
@@ -156,6 +163,8 @@ DialogControl::~DialogControl() {
 	PartMng = NULL;
 	TdpMng = NULL;
 	AirfoilMng = NULL;
+	CtrSurfMng = NULL;
+
 	hDlg = NULL;
 	DeleteObject(penblack);
 	DeleteObject(pengray);
@@ -209,6 +218,7 @@ void DialogControl::InitDialog(HWND hWnd) {
 	hWnd_Tdp = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_TDPOINTS), hWnd, TdpDlgProcHook, (LPARAM)this);
 	hWnd_Settings = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_SETTINGS), hWnd, SettingsDlgProcHook, (LPARAM)this);
 	hWnd_Airfoils = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_AIRFOILS), hWnd, AirfoilsDlgProcHook, (LPARAM)this);
+	hWnd_CtrlSurfaces = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_CTRLSURF), hWnd, CtrlSurfDlgProcHook, (LPARAM)this);
 	SetWindowPos(hwnd_Mesh, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hwnd_Mesh, SW_HIDE);
 	SetWindowPos(hWnd_Dock, NULL, 255, 10, 0, 0, SWP_NOSIZE);
@@ -235,6 +245,8 @@ void DialogControl::InitDialog(HWND hWnd) {
 	ShowWindow(hWnd_Settings, SW_HIDE);
 	SetWindowPos(hWnd_Airfoils, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hWnd_Airfoils, SW_HIDE);
+	SetWindowPos(hWnd_CtrlSurfaces, NULL, 255, 10, 0, 0, SWP_NOSIZE);
+	ShowWindow(hWnd_CtrlSurfaces, SW_HIDE);
 
 
 	return;
@@ -866,6 +878,46 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 
 		break;
 	}
+	case CTRLSURFACES:
+	{
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootControlSurfaces);
+		while (ht != NULL) {
+			TreeItem.erase(ht);
+			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootControlSurfaces);
+		}
+		TVINSERTSTRUCT insertstruct = { 0 };
+
+		insertstruct.hInsertAfter = TVI_ROOT;
+		insertstruct.item.mask = TVIF_TEXT;
+		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
+		insertstruct.hParent = hrootControlSurfaces;
+		for (UINT i = 0; i < CtrSurfMng->CtrlSurfDefCount(); i++) {
+			char cbuf[256] = { '\0' };
+			if (CtrSurfMng->IsCtrlSurfDefDefined(i)) {
+				sprintf(cbuf, "%s", CtrSurfMng->GetCtrlSurfDefName(i).c_str());
+			}
+			else {
+				sprintf(cbuf, "*%s", CtrSurfMng->GetCtrlSurfDefName(i).c_str());
+			}
+			
+			insertstruct.item.pszText = (LPSTR)cbuf;
+			insertstruct.item.cchTextMax = strlen(cbuf);
+			TREE_ITEM_REF Tir = TREE_ITEM_REF();
+			Tir.Type = CTRLSURFACES;
+			Tir.idx = i;
+			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			TreeItem[Tir.hitem] = Tir;
+			TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootControlSurfaces, TVE_EXPAND);
+		}
+
+		break;
+	}
+
+
+
+
+
 
 
 	}
@@ -1010,6 +1062,7 @@ void DialogControl::InitTree(HWND hWnd) {
 	UpdateTree(hWnd, THRUSTERGROUPS, 0);
 	UpdateTree(hWnd, TOUCHDOWNPOINTS, 0);
 	UpdateTree(hWnd, AIRFOILS, 0);
+	UpdateTree(hWnd, CTRLSURFACES, 0);
 	return;
 }
 
@@ -1062,6 +1115,9 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 		if (ShowingAFGraph) {
 			ShowAirfoilFuncGraph(hWnd_Airfoils, false);
 		}
+	}
+	if (type != CTRLSURFACES) {
+		ShowWindow(hWnd_CtrlSurfaces, SW_HIDE);
 	}
 
 	switch (type) {
@@ -1127,6 +1183,10 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 		ShowWindow(hWnd_Airfoils, SW_SHOW);
 		break;
 	}
+	case CTRLSURFACES:
+	{ShowWindow(hWnd_CtrlSurfaces, SW_SHOW);
+		break;
+	}
 	}
 
 	return;
@@ -1183,6 +1243,10 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 				AirfoilMng->CreateAirfoilDef(LIFT_VERTICAL);
 				UpdateTree(hWnd, AIRFOILS, 0);
 				///
+			}
+			else if (CurrentSelection.hitem == hrootControlSurfaces) {
+				CtrSurfMng->CreateUndefinedCtrlSurfDef();
+				UpdateTree(hWnd, CTRLSURFACES, 0);
 			}
 			break;
 		}
@@ -1274,6 +1338,11 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD VERTICAL AIRFOIL");
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD2), (LPCSTR)"ADD HORIZONTAL AIRFOIL");
 					}
+					else if (CurrentSelection.hitem == hrootControlSurfaces) {
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
+						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD CONTROL SURFACE");
+					}
 					else {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_HIDE);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
@@ -1354,6 +1423,11 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 						case AIRFOILS:
 						{
 							UpdateAirfoilDialog(hWnd_Airfoils);
+							break;
+						}
+						case CTRLSURFACES:
+						{
+							UpdateCtrlSurfDialog(hWnd_CtrlSurfaces);
 							break;
 						}
 					}

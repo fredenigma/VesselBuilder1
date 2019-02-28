@@ -17,6 +17,7 @@
 #define IDD_DIALOG_TDPOINTS             115
 #define IDD_DIALOG_SETTINGS             116
 #define IDD_DIALOG_AIRFOILS             117
+#define IDD_DIALOG_CTRLSURF             118
 #define IDC_TREE1                       1001
 #define IDC_SPIN_POSZ_S                 1005
 #define IDC_SPIN_POSZ_L                 1006
@@ -88,13 +89,16 @@
 #define IDC_EDIT_FMDIR                  1059
 #define IDC_STATIC_MSH20                1059
 #define IDC_BUTTON_ADD2                 1059
+#define IDC_STATIC_MSH36                1059
 #define IDC_EDIT_ROT                    1060
 #define IDC_EDIT_FMROT                  1060
 #define IDC_STATIC_MSH21                1060
 #define IDC_STATIC_MSH28                1060
+#define IDC_STATIC_MSH37                1060
 #define IDC_SLIDER_FMSPEED              1061
 #define IDC_STATIC_MSH22                1061
 #define IDC_STATIC_MSH29                1061
+#define IDC_STATIC_MSH38                1061
 #define IDC_SPIN_FMX                    1062
 #define IDC_STATIC_MSH30                1062
 #define IDC_SPIN_FMY                    1063
@@ -334,6 +338,21 @@
 #define IDC_EDIT_AIRFOILAOA             1299
 #define IDC_COMBO_AIRFOILDEFAULTS       1300
 #define IDC_STATIC_AIRFOILGRAPH         1301
+#define IDC_EDIT_CSAREA                 1302
+#define IDC_EDIT_CSDCL                  1303
+#define IDC_EDIT_CSREFX                 1304
+#define IDC_EDIT_CSREFY                 1305
+#define IDC_EDIT_CSREFZ                 1306
+#define IDC_COMBO_CSAXIS                1307
+#define IDC_EDIT_CSDELAY                1308
+#define IDC_COMBO_CSANIM                1309
+#define IDC_COMBO_CSTYPE                1310
+#define IDC_EDIT_CSNAME                 1311
+#define IDC_BUTTON_CSAMESET             1312
+#define IDC_BUTTON_CSDELETE             1313
+#define IDC_BUTTON_CSDEFUNDEF           1314
+#define IDC_BUTTON2                     1315
+#define IDC_BUTTON_CSPASTEV             1315
 
 // Next default values for new objects
 // 
@@ -341,7 +360,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1302
+#define _APS_NEXT_CONTROL_VALUE         1316
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
