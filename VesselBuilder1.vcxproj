@@ -135,8 +135,6 @@
     <ClInclude Include="..\..\Orbitersdk\include\Orbitersdk.h" />
     <ClInclude Include="AirfoilsManager.h" />
     <ClInclude Include="AnimationManager.h" />
-    <ClInclude Include="AnimCompDef.h" />
-    <ClInclude Include="AnimDef.h" />
     <ClInclude Include="AttachmentManager.h" />
     <ClInclude Include="ControlSurfacesManager.h" />
     <ClInclude Include="DialogControl.h" />
@@ -154,9 +152,7 @@
     <ClCompile Include="AirfoilsDlgProc.cpp" />
     <ClCompile Include="AirfoilsManager.cpp" />
     <ClCompile Include="AnimationManager.cpp" />
-    <ClCompile Include="AnimCompDef.cpp" />
     <ClCompile Include="AnimCompDlgProc.cpp" />
-    <ClCompile Include="AnimDef.cpp" />
     <ClCompile Include="AnimDlgProc.cpp" />
     <ClCompile Include="AttachmentManager.cpp" />
     <ClCompile Include="AttDlgProc.cpp" />

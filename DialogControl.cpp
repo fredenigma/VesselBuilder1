@@ -2,8 +2,6 @@
 #include "resource.h"
 #include "DialogControl.h"
 #include "MeshManager.h"
-#include "AnimCompDef.h"
-#include "AnimDef.h"
 #include "AttachmentManager.h"
 #include "AnimationManager.h"
 #include "PropellantManager.h"
@@ -387,8 +385,9 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		insertstruct.item.mask = TVIF_TEXT;
 		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
 		insertstruct.hParent = hrootAnimations;
-		if (AnimMng->GetAnimDefCount() <= 0) { break; }
-		for (UINT i = 0; i < AnimMng->GetAnimDefCount(); i++) {
+		if (AnimMng->GetAnimDefsCount() <= 0) { break; }
+		for (UINT i = 0; i < AnimMng->GetAnimDefsCount(); i++) {
+			if (!AnimMng->IsAnimValid(i)) { continue; }
 			char cbuf[256] = { '\0' };
 			sprintf(cbuf, AnimMng->GetAnimName(i).c_str());
 			insertstruct.item.pszText = (LPSTR)cbuf;
@@ -404,9 +403,9 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), Tir.hitem, TVE_EXPAND);
 			HTREEITEM hparent = Tir.hitem;
 			for (UINT j = 0; j < AnimMng->GetAnimNComps(i); j++) {
-				AnimCompDef* acd = AnimMng->GetAnimComp(i, j);
-				UINT cidx = AnimMng->GetAnimCompDefCompIdx(acd);
-				if (cidx == -1) {continue;	}
+				ANIMATIONCOMPONENT_HANDLE ach = AnimMng->GetAnimComp(i, j);
+				UINT cidx = AnimMng->GetAnimCompDefIdx(ach);
+				if (cidx == (UINT)-1) {continue;	}
 				char cbuf2[256] = { '\0' };
 				sprintf(cbuf2, AnimMng->GetAnimCompDefName(cidx).c_str());
 				insertstruct.item.pszText = (LPSTR)cbuf2;
@@ -1520,14 +1519,6 @@ int DialogControl::ComboFindItemData(HWND hWnd, DWORD Data) {
 	return -1;
 }
 
-bool DialogControl::IsUintInVector(UINT u, vector<UINT>v) {
-	for (UINT i = 0; i < v.size(); i++) {
-		if (u == v[i]) {
-			return true;
-		}
-	}
-	return false;
-}
 
 double DialogControl::GetDlgItemDouble(HWND hWnd, int control_id) {
 	char cbuf[256] = { '\0' };

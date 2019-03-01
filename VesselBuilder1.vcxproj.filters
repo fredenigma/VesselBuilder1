@@ -13,12 +13,6 @@
     <ClInclude Include="FollowMeDlg.h">
       <Filter>Dialog\FollowMe</Filter>
     </ClInclude>
-    <ClInclude Include="AnimCompDef.h">
-      <Filter>Vessel</Filter>
-    </ClInclude>
-    <ClInclude Include="AnimDef.h">
-      <Filter>Vessel</Filter>
-    </ClInclude>
     <ClInclude Include="Log.h">
       <Filter>Vessel</Filter>
     </ClInclude>
@@ -26,9 +20,6 @@
       <Filter>Vessel</Filter>
     </ClInclude>
     <ClInclude Include="AirfoilsManager.h">
-      <Filter>Vessel\Managers</Filter>
-    </ClInclude>
-    <ClInclude Include="AnimationManager.h">
       <Filter>Vessel\Managers</Filter>
     </ClInclude>
     <ClInclude Include="AttachmentManager.h">
@@ -50,6 +41,9 @@
       <Filter>Vessel\Managers</Filter>
     </ClInclude>
     <ClInclude Include="ControlSurfacesManager.h">
+      <Filter>Vessel\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="AnimationManager.h">
       <Filter>Vessel\Managers</Filter>
     </ClInclude>
   </ItemGroup>
@@ -103,12 +97,6 @@
     <ClCompile Include="AnimCompDlgProc.cpp">
       <Filter>Dialog</Filter>
     </ClCompile>
-    <ClCompile Include="AnimCompDef.cpp">
-      <Filter>Vessel</Filter>
-    </ClCompile>
-    <ClCompile Include="AnimDef.cpp">
-      <Filter>Vessel</Filter>
-    </ClCompile>
     <ClCompile Include="Log.cpp">
       <Filter>Vessel</Filter>
     </ClCompile>
@@ -145,9 +133,6 @@
     <ClCompile Include="AirfoilsManager.cpp">
       <Filter>Vessel\Managers</Filter>
     </ClCompile>
-    <ClCompile Include="AnimationManager.cpp">
-      <Filter>Vessel\Managers</Filter>
-    </ClCompile>
     <ClCompile Include="AttachmentManager.cpp">
       <Filter>Vessel\Managers</Filter>
     </ClCompile>
@@ -171,6 +156,9 @@
     </ClCompile>
     <ClCompile Include="CtrlSurfDlgProc.cpp">
       <Filter>Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="AnimationManager.cpp">
+      <Filter>Vessel\Managers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

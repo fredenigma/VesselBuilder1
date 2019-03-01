@@ -1,219 +1,504 @@
 #include "VesselBuilder1.h"
 #include "DialogControl.h"
-#include "MeshManager.h"
-#include "AnimDef.h"
-#include "AnimCompDef.h"
+#include "AnimationManager.h"
 #include "AttachmentManager.h"
 #include "TouchdownPointsManager.h"
-#include "AnimationManager.h"
 
-AnimationManager::AnimationManager(VesselBuilder1 *_VB1) {
+AnimationManager::AnimationManager(VesselBuilder1* _VB1) {
 	VB1 = _VB1;
-	animcomp_defs.clear();
 	anim_defs.clear();
 	animcomp_defs.clear();
-	//AnimEditingMode = false;
 	ManualArmMoving = false;
 	CurrentManualAnim = -1;
+	return;
 }
 AnimationManager::~AnimationManager() {
-	for (UINT i = 0; i < animcomp_defs.size(); i++) {
-		if (animcomp_defs[i]->mgt) {
-			delete animcomp_defs[i]->mgt;
-		}
-		if (animcomp_defs[i]) {
-			delete animcomp_defs[i];
-		}
-	}
-	for (UINT i = 0; i < anim_defs.size(); i++) {
-		if (anim_defs[i]) {
-			delete anim_defs[i];
-		}
-	}
 	VB1 = NULL;
+	return;
 }
 
-UINT AnimationManager::NextAnimSeq() {
-	UINT counter = 0;
-	for (UINT i = 0; i < anim_defs.size(); i++) {
-		if (anim_defs[i]->IsValid()) {
-			counter++;
-		}
-	}
-	return counter;
-}
-void AnimationManager::AddAnimDef(double defstate, double duration,DWORD key, string name, AnimCycleType CycleType) {
-	AnimDef *acd = new AnimDef;
-	acd->defstate = defstate;
-	acd->duration = duration;
-	acd->speed = 1 / duration;
-	acd->key = key;
-	acd->SetState(defstate);
-	acd->SetName(name);
-	acd->SetCycleType(CycleType);
-	return AddAnimDef(acd);
-}
-void AnimationManager::AddAnimDef() {
-	AnimDef *ad = new AnimDef;
+UINT AnimationManager::AddAnimDef() {
 	char cbuf[256] = { '\0' };
-	sprintf(cbuf, "Anim_%i", anim_defs.size());
-	string ap(cbuf);
-	ad->SetName(ap);
-	return AddAnimDef(ad);
+	UINT index = anim_defs.size();
+	sprintf(cbuf, "Anim_%i", index);
+	string name(cbuf);
+	return AddAnimDef(name, 10, AnimCycleType::GOANDSTOP, OAPI_KEY_K, 0);
 }
-void AnimationManager::AddAnimDef(AnimDef *ad) {
-	ad->SetAnimIdx(VB1->CreateAnimation(ad->GetDefState()));
-	ad->SetSeqIdx(anim_defs.size());
+UINT AnimationManager::AddAnimDef(string name, double duration, AnimCycleType Cycle, DWORD Key, double defstate) {
+	ANIM_DEF ad = ANIM_DEF();
+	ad.name = name;
+	ad.duration = duration;
+	ad.speed = 1 / duration;
+	ad.CycleType = Cycle;
+	ad.Key = Key;
+	ad.idx = VB1->CreateAnimation(defstate);
+	UINT index = anim_defs.size();
 	anim_defs.push_back(ad);
-	
-	return;
+	return index;
 }
-
-anim_idx AnimationManager::IdxDef2Ani(def_idx _def_idx) {
-	return anim_defs[_def_idx]->GetAnimIdx();
-}
-def_idx AnimationManager::IdxAni2Def(anim_idx _anim_idx) {
-	for (UINT i = 0; i < anim_defs.size(); i++) {
-		if (anim_defs[i]->GetAnimIdx() == _anim_idx) {
-			return i;
-		}
+void AnimationManager::DeleteAnimDef(anim_idx a_idx) {
+	ANIMATION *anims;
+	UINT nanims = VB1->GetAnimPtr(&anims);
+	for (UINT i = 0; i < anims[a_idx].ncomp; i++) {
+		def_idx d_idx = GetAnimCompDefIdx(anims[a_idx].comp[i]);
+		InvalidateComponent(d_idx);
 	}
-	return (def_idx)-1;
-}
-
-
-void AnimationManager::SetAnimDefState(def_idx d_idx, double defstate) {
-	//def_idx idx = IdxAni2Def(an_idx);
-	anim_idx idx = anim_defs[d_idx]->GetAnimIdx();
-	ANIMATION* anim;
-	VB1->GetAnimPtr(&anim);
-	anim[idx].state = defstate;
-	anim[idx].defstate = defstate;
+	VB1->DelAnimation(a_idx);
+	anim_defs[a_idx].Valid = false;
 	
-	anim_defs[d_idx]->SetDefState(defstate);
-	anim_defs[d_idx]->SetState(defstate);
-	
-	return;		
-}
-void AnimationManager::ResetAnimation(def_idx d_idx) {
-	anim_idx idx = IdxDef2Ani(d_idx);
-	VB1->SetAnimation(idx, anim_defs[d_idx]->GetDefState());
 	return;
 }
-void AnimationManager::SetAnimationState(def_idx d_idx,double state) {
-	anim_idx idx = IdxDef2Ani(d_idx);
-	VB1->SetAnimation(idx, state);
-	anim_defs[d_idx]->SetState(state);
-	//UpdateTip(d_idx);
+void AnimationManager::InvalidateComponent(def_idx d_idx) {
+	animcomp_defs[d_idx].Valid = false;
 	return;
 }
-double AnimationManager::GetAnimationState(def_idx d_idx) {
-	return anim_defs[d_idx]->GetState();
+double AnimationManager::GetAnimDefState(anim_idx a_idx) {
+	ANIMATION *anims;
+	VB1->GetAnimPtr(&anims);
+	return anims[a_idx].defstate;
 }
-void AnimationManager::UpdateTip(def_idx d_idx) {
-	bool hastip = false;
-	UINT CompIdx = 0;
-	for (UINT i = 0; i < anim_defs[d_idx]->Comps.size(); i++) {
-		if (anim_defs[d_idx]->Comps[i]->IsArmTip()) {
-			hastip = true;
-			CompIdx = i;
-		}
-	}
-	if (!hastip) { return; }
-	//sprintf(oapiDebugString(), "Att Tip:%i", anim_defs[d_idx]->Comps[CompIdx]->GetAttTip());
-	def_idx attidx = anim_defs[d_idx]->Comps[CompIdx]->GetAttTip();
-	ATTACHMENTHANDLE ah = VB1->AttMng->GetAttDefAH(attidx);
-	//SB1->AttMng->ModifyAttDef(anim_defs[d_idx]->Comps[CompIdx]->GetAttTip(), anim_defs[d_idx]->Comps[CompIdx]->Tip[0], anim_defs[d_idx]->Comps[CompIdx]->Tip[1] - anim_defs[d_idx]->Comps[CompIdx]->Tip[0], anim_defs[d_idx]->Comps[CompIdx]->Tip[2] - anim_defs[d_idx]->Comps[CompIdx]->Tip[0]);
-	VB1->SetAttachmentParams(ah, anim_defs[d_idx]->Comps[CompIdx]->Tip[0], anim_defs[d_idx]->Comps[CompIdx]->Tip[1] - anim_defs[d_idx]->Comps[CompIdx]->Tip[0], anim_defs[d_idx]->Comps[CompIdx]->Tip[2] - anim_defs[d_idx]->Comps[CompIdx]->Tip[0]);
+void AnimationManager::SetAnimDefState(anim_idx a_idx, double newdefstate) {
+	ANIMATION *anims;
+	VB1->GetAnimPtr(&anims);
+	anims[a_idx].state = newdefstate;
+	anims[a_idx].defstate = newdefstate;
 	return;
 }
-void AnimationManager::SetAnimDuration(def_idx d_idx, double duration) {
-	anim_defs[d_idx]->SetDuration(duration);
+bool AnimationManager::IsAnimValid(anim_idx a_idx) {
+	return anim_defs[a_idx].Valid;
+}
+void AnimationManager::SetAnimName(anim_idx a_idx, string newname) {
+	anim_defs[a_idx].name = newname;
 	return;
 }
-double AnimationManager::GetAnimDuration(def_idx d_idx) {
-	return anim_defs[d_idx]->GetDuration();
+string AnimationManager::GetAnimName(anim_idx a_idx) {
+	return anim_defs[a_idx].name;
 }
-double AnimationManager::GetAnimDefState(def_idx d_idx) {
-	return anim_defs[d_idx]->GetDefState();
-}
-/*void AnimationManager::SetAnimPrefix(def_idx d_idx, string prefix) {
-	anim_defs[d_idx]->SetPrefix(prefix);
-	return;
-}*/
-/*string AnimationManager::GetAnimPrefix(def_idx d_idx) {
-	return anim_defs[d_idx]->GetPrefix();
-}*/
-void AnimationManager::SetAnimName(def_idx d_idx, string name) {
-	anim_defs[d_idx]->SetName(name);
+void AnimationManager::SetAnimCycle(anim_idx a_idx, AnimCycleType Cycle) {
+	anim_defs[a_idx].CycleType = Cycle;
 	return;
 }
-string AnimationManager::GetAnimName(def_idx d_idx) {
-	return anim_defs[d_idx]->GetName();
+AnimCycleType AnimationManager::GetAnimCycle(anim_idx a_idx) {
+	return anim_defs[a_idx].CycleType;
 }
-/*string AnimationManager::GetAnimFullName(def_idx d_idx) {
-	return anim_defs[d_idx]->GetFullName();
-}*/
-void AnimationManager::SetAnimCycleType(def_idx d_idx, AnimCycleType CycleType) {
-	anim_defs[d_idx]->SetCycleType(CycleType);
+void AnimationManager::SetAnimDuration(anim_idx a_idx, double newduration) {
+	anim_defs[a_idx].duration = newduration;
+	anim_defs[a_idx].speed = 1 / newduration;
 	return;
 }
-AnimCycleType AnimationManager::GetAnimCycleType(def_idx d_idx) {
-	return anim_defs[d_idx]->GetCycleType();
+double AnimationManager::GetAnimDuration(anim_idx a_idx) {
+	return anim_defs[a_idx].duration;
 }
-bool AnimationManager::IsAnimValid(def_idx d_idx) {
-	return anim_defs[d_idx]->IsValid();
-}
-void AnimationManager::InvalidateAnim(def_idx d_idx) {
-	anim_defs[d_idx]->InvalidAnimDef();
+void AnimationManager::SetAnimKey(anim_idx a_idx, DWORD newKey) {
+	anim_defs[a_idx].Key = newKey;
 	return;
 }
-bool AnimationManager::IsAnimCompValid(def_idx d_idx) {
-	return animcomp_defs[d_idx]->IsValid();
+DWORD AnimationManager::GetAnimKey(anim_idx a_idx) {
+	return anim_defs[a_idx].Key;
 }
-void AnimationManager::InvalidateAnimComp(def_idx d_idx) {
-	animcomp_defs[d_idx]->Invalidate();
+void AnimationManager::SetAnimParams(anim_idx a_idx, double duration, AnimCycleType Cycle, DWORD Key) {
+	anim_defs[a_idx].duration = duration;
+	anim_defs[a_idx].speed = 1 / duration;
+	anim_defs[a_idx].CycleType = Cycle;
+	anim_defs[a_idx].Key = Key;
 	return;
 }
-void AnimationManager::CompsCleanUp() {
-	vector<AnimCompDef*>::iterator it = animcomp_defs.begin();
-	while (it != animcomp_defs.end()) {
-		if (!(*it)->IsValid()) {
-			it = animcomp_defs.erase(it);
+void AnimationManager::GetAnimParams(anim_idx a_idx, double &duration, AnimCycleType &Cycle, DWORD &Key) {
+	duration = anim_defs[a_idx].duration;
+	Cycle = anim_defs[a_idx].CycleType;
+	Key = anim_defs[a_idx].Key;
+	return;
+}
+void AnimationManager::SetAnimationState(anim_idx a_idx, double newstate) {
+	VB1->SetAnimation(a_idx, newstate);
+	//Touchdownpoints check for swap
+	if (a_idx == VB1->TdpMng->GetChangeOverAnimation()) {
+		if (newstate > 0.999) {
+			if (VB1->TdpMng->GetCurrentSet() == 1) {
+				VB1->TdpMng->SetCurrentSet(2);
+			}
 		}
 		else {
+			if (VB1->TdpMng->GetCurrentSet() == 2) {
+				VB1->TdpMng->SetCurrentSet(1);
+			}
+		}
+	}
+	return;
+}
+double AnimationManager::GetAnimationState(anim_idx a_idx) {
+	return VB1->GetAnimation(a_idx);
+}
+
+UINT AnimationManager::AddAnimCompDef(anim_idx a_idx, MGROUP_TRANSFORM::TYPE type) { 
+	char cbuf[256] = { '\0' };
+	int index = animcomp_defs.size();
+	sprintf(cbuf, "AnimComp_%i", index);
+	string name(cbuf);
+	vector<UINT>empty;
+	empty.clear();
+	return AddAnimCompDef(a_idx, name, 0, 1, 0, 0, empty, -1, (int)type, _V(0, 0, 0), _V(0, 0, 1), _V(1, 1, 1), _V(0, 0, 0), 0);
+}
+UINT AnimationManager::AddAnimCompDef(anim_idx a_idx, string name, double state0, double state1, int mesh, int ngrps, vector<UINT>grps, int parent, int type, VECTOR3 ref, VECTOR3 axis, VECTOR3 scale, VECTOR3 shift, double angle) {
+	ANIMCOMP_DEF acd = ANIMCOMP_DEF();
+	acd.name = name;
+	acd.ref = ref;
+	acd.axis = axis;
+	MGROUP_TRANSFORM *mgt;
+	bool wgrps = false;
+	UINT *grp = NULL;
+	if ((ngrps > 0)&&(mesh!=LOCALVERTEXLIST)) {
+		grp = new UINT[ngrps];
+		for (UINT i = 0; i < ngrps; i++) {
+			grp[i] = grps[i];
+		}
+		wgrps = true;
+	}
+	switch (type) {		//type 1 Rotate 2 translate 3 scale
+	case 1:
+	{
+		mgt = new MGROUP_ROTATE(mesh, grp, ngrps, ref, axis, angle);
+				
+		break;
+	}
+	case 2:
+	{
+		mgt = new MGROUP_TRANSLATE(mesh, grp, ngrps, shift);
+		
+		break;
+	}
+	case 3:
+	{
+		mgt = new MGROUP_SCALE(mesh, grp, ngrps, ref, scale);
+		break;
+	}
+	}
+	ANIMATIONCOMPONENT_HANDLE parent_ach = GetAnimCompDefACH(parent);
+
+	acd.ach = VB1->AddAnimationComponent(a_idx, state0, state1, mgt, parent_ach);
+	acd.a_idx = a_idx;
+	UINT index = animcomp_defs.size();
+	animcomp_defs.push_back(acd);
+	return index;
+}
+void AnimationManager::DeleteAnimCompDef(def_idx d_idx) {
+
+	VB1->DelAnimationComponent(animcomp_defs[d_idx].a_idx, animcomp_defs[d_idx].ach);
+	animcomp_defs[d_idx].Valid = false;
+	return;
+}
+bool AnimationManager::IsAnimCompDefValid(def_idx d_idx) {
+	return animcomp_defs[d_idx].Valid;
+}
+void AnimationManager::SetAnimCompDefName(def_idx d_idx, string newname) {
+	animcomp_defs[d_idx].name = newname;
+	return;
+}
+string AnimationManager::GetAnimCompDefName(def_idx d_idx) {
+	return animcomp_defs[d_idx].name;
+}
+void AnimationManager::SetAnimCompDefState0(def_idx d_idx, double newState0) {
+	((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->state0 = newState0;
+	return;
+}
+double AnimationManager::GetAnimCompDefState0(def_idx d_idx) {
+	return ((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->state0;
+}
+void AnimationManager::SetAnimCompDefState1(def_idx d_idx, double newState1) {
+	((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->state1 = newState1;
+	return;
+}
+double AnimationManager::GetAnimCompDefState1(def_idx d_idx) {
+	return ((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->state1;
+}
+void AnimationManager::SetAnimCompDefRef(def_idx d_idx, VECTOR3 newRef) {
+	animcomp_defs[d_idx].ref = newRef;
+	if(((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->Type()==MGROUP_TRANSFORM::ROTATE){
+		((MGROUP_ROTATE*)((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans)->ref = newRef;
+	}
+	else if (((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->Type() == MGROUP_TRANSFORM::SCALE) {
+		((MGROUP_SCALE*)((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans)->ref = newRef;
+	}
+	return;
+}
+VECTOR3 AnimationManager::GetAnimCompDefRef(def_idx d_idx) {
+	return animcomp_defs[d_idx].ref;
+	/*if (((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->Type() == MGROUP_TRANSFORM::ROTATE) {
+		return ((MGROUP_ROTATE*)((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans)->ref;
+	}
+	else if (((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->Type() == MGROUP_TRANSFORM::SCALE) {
+		return ((MGROUP_SCALE*)((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans)->ref;
+	}
+	else {
+		return _V(0, 0, 0);
+	}*/
+}
+void AnimationManager::SetAnimCompDefScale(def_idx d_idx, VECTOR3 newScale) {
+	((MGROUP_SCALE*)((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans)->scale = newScale;
+	return;
+}
+VECTOR3 AnimationManager::GetAnimCompDefScale(def_idx d_idx) {
+	return ((MGROUP_SCALE*)((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans)->scale;
+}
+void AnimationManager::SetAnimCompDefShift(def_idx d_idx, VECTOR3 newShift) {
+	((MGROUP_TRANSLATE*)((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans)->shift = newShift;
+	return;
+}
+VECTOR3 AnimationManager::GetAnimCompDefShift(def_idx d_idx) {
+	return ((MGROUP_TRANSLATE*)((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans)->shift;
+}
+void AnimationManager::SetAnimCompDefAxis(def_idx d_idx, VECTOR3 newAxis) {
+	animcomp_defs[d_idx].axis = newAxis;
+	((MGROUP_ROTATE*)((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans)->axis = newAxis;
+	return;
+}
+VECTOR3 AnimationManager::GetAnimCompDefAxis(def_idx d_idx) {
+	return animcomp_defs[d_idx].axis;
+	//return ((MGROUP_ROTATE*)((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans)->axis;
+}
+void AnimationManager::SetAnimCompDefAngle(def_idx d_idx, double newAngle) {
+	((MGROUP_ROTATE*)((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans)->angle = newAngle;
+	return;
+}
+double AnimationManager::GetAnimCompDefAngle(def_idx d_idx) {
+	return ((MGROUP_ROTATE*)((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans)->angle;
+}
+void AnimationManager::SetAnimCompDefMesh(def_idx d_idx, msh_idx m_idx) {
+	((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->mesh = m_idx;
+	return;
+}
+msh_idx AnimationManager::GetAnimCompDefMesh(def_idx d_idx) {
+	return ((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->mesh;
+}
+void AnimationManager::AddAnimCompDefGroups(def_idx d_idx, vector<UINT>addgroups) {
+	int oldngrps = ((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->ngrp;
+	int addngrps = addgroups.size();
+	int newngrps = oldngrps + addngrps;
+	((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->ngrp = newngrps;
+	UINT *newgrp = new UINT[newngrps];
+	for (UINT i = 0; i < oldngrps; i++) {
+		newgrp[i] = ((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->grp[i];
+	}
+	for (UINT j = oldngrps; j < newngrps; j++) {
+		newgrp[j] = addgroups[j - oldngrps];
+	}
+	if (((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->grp) {
+		delete[]((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->grp;
+	}
+	((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->grp = newgrp;
+
+	return;
+}
+void AnimationManager::RemoveAnimCompDefGroups(def_idx d_idx, vector<UINT>remgroups) {
+	int size_remgrps = remgroups.size();
+	if (size_remgrps <= 0) { return; }
+	int size_oldgrps = ((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->ngrp;
+	
+	vector<UINT>working_grps;
+	working_grps.clear();
+	for (UINT i = 0; i < size_oldgrps; i++) {
+		working_grps.push_back(((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->grp[i]);
+	}
+	for (UINT i = 0; i < working_grps.size(); i++) {
+		if (VB1->IsUintInVector(working_grps[i], remgroups)) {
+			working_grps[i] = (UINT)-1;
+		}
+	}
+
+	vector<UINT>::iterator it = working_grps.begin();
+	while(it != working_grps.end()) {
+		if ((*it) == (UINT)-1) {
+			it = working_grps.erase(it);
+		}else{
 			++it;
 		}
 	}
 
+	int newsize = size_oldgrps - size_remgrps;
+	UINT *grps = new UINT[newsize];
+	for (UINT i = 0; i < newsize; i++) {
+		grps[i] = working_grps[i];
+	}
+	if (((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->grp) {
+		delete[]((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->grp;
+	}
+	((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->grp = grps;
+	((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->ngrp = newsize;
+
+
 	return;
 }
-void AnimationManager::DeleteAnimDef(def_idx d_idx) {
-	for (UINT i = 0; i < anim_defs[d_idx]->Comps.size(); i++) {
-		if (anim_defs[d_idx]->Comps[i]) {
-			anim_defs[d_idx]->Comps[i]->Invalidate();
+vector<UINT> AnimationManager::GetAnimCompDefGroups(def_idx d_idx) {
+	vector<UINT> grps;
+	grps.clear();
+	int ngrps = ((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->ngrp;
+	if (((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->mesh == LOCALVERTEXLIST) {
+		return grps;
+	}
+	for (UINT i = 0; i < ngrps; i++) {
+		grps.push_back(((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->grp[i]);
+	}
+	return grps;
+}
+int AnimationManager::GetAnimCompDefNGroups(def_idx d_idx) {
+	return ((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->ngrp;
+}
+
+void AnimationManager::ResetAnimCompDefGroups(def_idx d_idx) {
+	((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->grp = NULL;
+	((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->ngrp = 0;
+	return;
+}
+
+void AnimationManager::SetAnimCompDefParent(def_idx d_idx, ANIMATIONCOMPONENT_HANDLE parent_ach) {
+	ANIMATIONCOMP* old_parent = ((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->parent;
+	if (old_parent != NULL) {
+		int old_parent_nchildren = old_parent->nchildren;
+		UINT oldme_index = 0;
+		for (UINT i = 0; i < old_parent_nchildren; i++) {
+			if (old_parent->children[i] == (ANIMATIONCOMP*)animcomp_defs[d_idx].ach) {
+				oldme_index = i;
+			}
+		}
+		ANIMATIONCOMP** old_parent_newchildren = new ANIMATIONCOMP*[old_parent_nchildren - 1];
+		for (UINT j = 0; j < old_parent_nchildren - 1; j++) {
+			if (j < oldme_index) {
+				old_parent_newchildren[j] = old_parent->children[j];
+			}
+			else {
+				old_parent_newchildren[j] = old_parent->children[j - 1];
+			}
+		}
+		old_parent->nchildren = old_parent_nchildren - 1;
+		if (old_parent->children) {
+			delete[] old_parent->children;
+		}
+		old_parent->children = old_parent_newchildren;
+
+	}
+	
+
+	ANIMATIONCOMP* newParent = NULL;
+	if (parent_ach == NULL) {
+		((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->parent = NULL;
+	}
+	else {
+		newParent = (ANIMATIONCOMP*)parent_ach;
+		((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->parent = newParent;
+		int new_parent_nchildren = newParent->nchildren;
+		ANIMATIONCOMP** newparent_newchildren = new ANIMATIONCOMP*[new_parent_nchildren + 1];
+		for (UINT k = 0; k < new_parent_nchildren; k++) {
+			newparent_newchildren[k] = newParent->children[k];
+		}
+		newparent_newchildren[new_parent_nchildren] = (ANIMATIONCOMP*)animcomp_defs[d_idx].ach;
+		if (newParent->children) {
+			delete[] newParent->children;
+		}
+		newParent->children = newparent_newchildren;
+		newParent->nchildren = new_parent_nchildren + 1;
+
+	}
+	return;
+}
+ANIMATIONCOMPONENT_HANDLE AnimationManager::GetAnimCompDefParent(def_idx d_idx) {
+	return ((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->parent;	
+}
+UINT AnimationManager::GetAnimDefsCount(){
+	return anim_defs.size();
+/*	UINT anim_counter = 0;
+	for (UINT i = 0; i < anim_defs.size(); i++) {
+		if (anim_defs[i].Valid) {
+			anim_counter++;
 		}
 	}
-	anim_defs[d_idx]->Comps.clear();
+	return anim_counter;*/
+}
+UINT AnimationManager::GetAnimCompDefsCount(){
+	return animcomp_defs.size();
+}
 
-	CompsCleanUp();
-	anim_idx idx = IdxDef2Ani(d_idx);
-	VB1->DelAnimation(idx);
-	anim_defs.erase(anim_defs.begin() + d_idx);
+ANIMATIONCOMPONENT_HANDLE AnimationManager::GetAnimCompDefACH(int d_idx) {
+	if (d_idx < 0) {
+		return NULL;
+	}
+	else {
+		return animcomp_defs[d_idx].ach;
+	}
+}
+UINT AnimationManager::GetAnimCompDefIdx(ANIMATIONCOMPONENT_HANDLE ach) {
+	for (UINT i = 0; i < animcomp_defs.size(); i++) {
+		if (ach == GetAnimCompDefACH(i)) {
+			return i;
+		}
+	}
+	return (UINT)-1;
+}
+UINT AnimationManager::GetAnimCompDefSeqIdx(def_idx d_idx) {
+	UINT a_counter = 0;
+	for (UINT i = 0; i < GetAnimDefsCount(); i++) {
+		if (i == animcomp_defs[d_idx].a_idx) {
+			return a_counter;
+		}
+		if (IsAnimValid(i)) {
+			a_counter++;
+		}
+	}
+	return (UINT)-1;
+}
+int AnimationManager::GetParentCompDefIdx(ANIMATIONCOMPONENT_HANDLE parent_ach) {
+	if (parent_ach == NULL) { return -1; }
+	UINT ac_counter = 0;
+	for (UINT i = 0; i < GetAnimCompDefsCount(); i++) {
+		if (GetAnimCompDefACH(i) == parent_ach) {
+			return ac_counter;
+		}
+		if (IsAnimCompDefValid(i)) {
+			ac_counter++;
+		}
+	}
+	return -1;
+}
+
+
+bool AnimationManager::IsAnimRunning(anim_idx a_idx) {
+	return anim_defs[a_idx].running;
+}
+bool AnimationManager::IsAnimBackward(anim_idx a_idx) {
+	return anim_defs[a_idx].backward;
+}
+double AnimationManager::GetAnimSpeed(anim_idx a_idx) {
+	return anim_defs[a_idx].speed;
+}
+void AnimationManager::StartAnimation(anim_idx a_idx) {
+	anim_defs[a_idx].running = true;
+}
+void AnimationManager::StartAnimationForward(anim_idx a_idx) {
+	anim_defs[a_idx].running = true;
+	anim_defs[a_idx].backward = false;
 	return;
 }
-void AnimationManager::SetAnimKey(def_idx d_idx, DWORD key) {
-	anim_defs[d_idx]->SetKey(key);
+void AnimationManager::StartAnimationBackward(anim_idx a_idx) {
+	anim_defs[a_idx].running = true;
+	anim_defs[a_idx].backward = true;
 	return;
 }
-UINT AnimationManager::GetAnimNComps(def_idx d_idx) {
-	return anim_defs[d_idx]->GetNComps();
+void AnimationManager::StopAnimation(anim_idx a_idx) {
+	anim_defs[a_idx].running = false;
+}
+void AnimationManager::SetAnimationBackward(anim_idx a_idx, bool backward) {
+	anim_defs[a_idx].backward = backward;
+	return;
+}
+void AnimationManager::ResetAnimation(anim_idx a_idx) {
+	double defstate = GetAnimDefState(a_idx);
+	SetAnimationState(a_idx, defstate);
+	return;
 }
 void AnimationManager::StartManualArm() {
 	ManualArmMoving = true;
 	if (CurrentManualAnim == -1) {
 		for (UINT i = 0; i < anim_defs.size(); i++) {
-			if ((anim_defs[i]->GetKey() == 0) && (anim_defs[i]->GetCycleType() == AnimCycleType::MANUAL)) {
+			if ((GetAnimKey(i)== 0) && (GetAnimCycle(i) == AnimCycleType::MANUAL)) {
 				CurrentManualAnim = i;
 				return;
 			}
@@ -231,25 +516,67 @@ bool AnimationManager::ManualArmActive() {
 	return ManualArmMoving;
 }
 
+bool AnimationManager::IsAnimCompArmTip(def_idx d_idx) {
+	return animcomp_defs[d_idx].ArmTip;
+}
+void AnimationManager::SetIsAnimCompArmTip(def_idx d_idx, bool set) {
+	animcomp_defs[d_idx].ArmTip = set;
+	return;
+}
+void AnimationManager::SetAnimCompDefAttTip(def_idx d_idx, def_idx AttIdx) {
+	animcomp_defs[d_idx].TipAttIdx = AttIdx;
+	return;
+}
+void AnimationManager::SetAnimCompDefTips(def_idx d_idx, VECTOR3 v1, VECTOR3 v2, VECTOR3 v3) {
+	if (animcomp_defs[d_idx].Tip) {
+		delete[] animcomp_defs[d_idx].Tip;
+	}
+	animcomp_defs[d_idx].Tip = new VECTOR3[3];
+	animcomp_defs[d_idx].Tip[0] = v1;
+	animcomp_defs[d_idx].Tip[1] = v2;
+	animcomp_defs[d_idx].Tip[2] = v3;
+	animcomp_defs[d_idx].oldTip[0] = v1;
+	animcomp_defs[d_idx].oldTip[1] = v2;
+	animcomp_defs[d_idx].oldTip[2] = v3;
+	return;
+}
+
+void AnimationManager::SetAnimCompDefArmTip(def_idx d_idx, def_idx AttIdx) {
+	SetIsAnimCompArmTip(d_idx, true);
+	SetAnimCompDefAttTip(d_idx, AttIdx);
+	SetAnimCompDefMesh(d_idx, LOCALVERTEXLIST);
+	ResetAnimCompDefGroups(d_idx);
+	VECTOR3 pos, dir, rot;
+	VB1->AttMng->GetAttDefPosDirRot(AttIdx, pos, dir, rot);
+	SetAnimCompDefTips(d_idx, pos, pos + dir, pos + rot);
+	((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->grp = MAKEGROUPARRAY(animcomp_defs[d_idx].Tip);
+	((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->ngrp = 3;
+	return;
+}
+def_idx AnimationManager::GetAnimCompDefAttTip(def_idx d_idx) {
+	return animcomp_defs[d_idx].TipAttIdx;
+}
+
+
 void AnimationManager::ConsumeAnimBufferedKey(DWORD key, bool down, char *kstate) {
 	for (UINT i = 0; i < anim_defs.size(); i++) {
-		if (!KEYMOD_ALT(kstate) && KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == anim_defs[i]->GetKey()) {
-			if ((anim_defs[i]->GetCycleType() == AnimCycleType::MANUAL) || (anim_defs[i]->GetCycleType() == AnimCycleType::AUTOMATIC)) { continue; }
-			if (anim_defs[i]->IsRunning()) {
-				anim_defs[i]->Stop();
+		if (!KEYMOD_ALT(kstate) && KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == GetAnimKey(i)) {
+			if ((GetAnimCycle(i) == AnimCycleType::MANUAL) || (GetAnimCycle(i) == AnimCycleType::AUTOMATIC)) { continue; }
+			if (IsAnimRunning(i)) {
+				StopAnimation(i);
 			}
 			else {
-				anim_defs[i]->StartForward();
+				StartAnimationForward(i);
 			}
 
 		}
-		if (!KEYMOD_ALT(kstate) && KEYMOD_SHIFT(kstate) && KEYMOD_CONTROL(kstate) && key == anim_defs[i]->GetKey()) {
-			if ((anim_defs[i]->GetCycleType() == AnimCycleType::MANUAL) || (anim_defs[i]->GetCycleType() == AnimCycleType::AUTOMATIC)) { continue; }
-			if (anim_defs[i]->IsRunning()) {
-				anim_defs[i]->Stop();
+		if (!KEYMOD_ALT(kstate) && KEYMOD_SHIFT(kstate) && KEYMOD_CONTROL(kstate) && key == GetAnimKey(i)) {
+			if ((GetAnimCycle(i)== AnimCycleType::MANUAL) || (GetAnimCycle(i) == AnimCycleType::AUTOMATIC)) { continue; }
+			if (IsAnimRunning(i)) {
+				StopAnimation(i);
 			}
 			else {
-				anim_defs[i]->StartBackward();
+				StartAnimationBackward(i);
 			}
 
 		}
@@ -262,13 +589,13 @@ void AnimationManager::ConsumeAnimBufferedKey(DWORD key, bool down, char *kstate
 			StartManualArm();
 		}
 	}
-	
+
 	if (!KEYMOD_ALT(kstate) && KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == OAPI_KEY_LEFT) {
 		if (ManualArmActive()) {
 			vector<UINT> manualAnimsIdx;
 			manualAnimsIdx.clear();
 			for (UINT i = 0; i < anim_defs.size(); i++) {
-				if ((anim_defs[i]->GetKey() == 0) && (anim_defs[i]->GetCycleType() == AnimCycleType::MANUAL)) {
+				if ((GetAnimKey(i) == 0) && (GetAnimCycle(i) == AnimCycleType::MANUAL)) {
 					manualAnimsIdx.push_back(i);
 				}
 			}
@@ -282,18 +609,18 @@ void AnimationManager::ConsumeAnimBufferedKey(DWORD key, bool down, char *kstate
 			}
 		}
 	}
-	
+
 	if (!KEYMOD_ALT(kstate) && KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == OAPI_KEY_RIGHT) {
 		if (ManualArmActive()) {
-			
+
 			vector<UINT> manualAnimsIdx;
 			manualAnimsIdx.clear();
 			for (UINT i = 0; i < anim_defs.size(); i++) {
-				if ((anim_defs[i]->GetKey() == 0) && (anim_defs[i]->GetCycleType() == AnimCycleType::MANUAL)) {
+				if ((GetAnimKey(i) == 0) && (GetAnimCycle(i) == AnimCycleType::MANUAL)) {
 					manualAnimsIdx.push_back(i);
 				}
 			}
-			if (manualAnimsIdx.size() <= 0){
+			if (manualAnimsIdx.size() <= 0) {
 				StopManualArm();
 			}
 			vector<UINT>::iterator it = find(manualAnimsIdx.begin(), manualAnimsIdx.end(), CurrentManualAnim);
@@ -303,37 +630,37 @@ void AnimationManager::ConsumeAnimBufferedKey(DWORD key, bool down, char *kstate
 			}
 		}
 	}
-	
+
 
 	return;
 }
 void AnimationManager::ConsumeAnimDirectKey(char *kstate) {
 	for (UINT i = 0; i < anim_defs.size(); i++) {
-		if (anim_defs[i]->GetCycleType() != AnimCycleType::MANUAL) { continue; }
-		if (!KEYMOD_ALT(kstate) && KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && KEYDOWN(kstate, anim_defs[i]->GetKey())) {
-			double speed = anim_defs[i]->GetSpeed();
-			double state = anim_defs[i]->GetState();
+		if (GetAnimCycle(i) != AnimCycleType::MANUAL) { continue; }
+		if (!KEYMOD_ALT(kstate) && KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && KEYDOWN(kstate, GetAnimKey(i))) {
+			double speed = GetAnimSpeed(i);
+			double state = GetAnimationState(i);
 			state += speed*oapiGetSimStep();
 			if (state > 1) { state = 1; }
 			SetAnimationState(i, state);
-			RESETKEY(kstate, anim_defs[i]->GetKey());
-			
+			RESETKEY(kstate, GetAnimKey(i));
+
 		}
-		if (!KEYMOD_ALT(kstate) && KEYMOD_SHIFT(kstate) && KEYMOD_CONTROL(kstate) && KEYDOWN(kstate, anim_defs[i]->GetKey())) {
-			double speed =(-1)* anim_defs[i]->GetSpeed();
-			double state = anim_defs[i]->GetState();
+		if (!KEYMOD_ALT(kstate) && KEYMOD_SHIFT(kstate) && KEYMOD_CONTROL(kstate) && KEYDOWN(kstate, GetAnimKey(i))) {
+			double speed = (-1)*GetAnimSpeed(i);
+			double state = GetAnimationState(i);
 			state += speed*oapiGetSimStep();
 			if (state < 0) { state = 0; }
 			SetAnimationState(i, state);
-			RESETKEY(kstate, anim_defs[i]->GetKey());
-			
+			RESETKEY(kstate, GetAnimKey(i));
+
 		}
 	}
 	if (ManualArmActive()) {
 		if (KEYMOD_SHIFT(kstate)) {
 			if (KEYDOWN(kstate, OAPI_KEY_UP)) {
-				double speed = anim_defs[CurrentManualAnim]->GetSpeed();
-				double state = anim_defs[CurrentManualAnim]->GetState();
+				double speed = GetAnimSpeed(CurrentManualAnim);
+				double state = GetAnimationState(CurrentManualAnim);
 				state += speed*oapiGetSimStep();
 				if (state > 1) { state = 1; }
 				SetAnimationState(CurrentManualAnim, state);
@@ -341,8 +668,8 @@ void AnimationManager::ConsumeAnimDirectKey(char *kstate) {
 				return;
 			}
 			if (KEYDOWN(kstate, OAPI_KEY_DOWN)) {
-				double speed = (-1)* anim_defs[CurrentManualAnim]->GetSpeed();
-				double state = anim_defs[CurrentManualAnim]->GetState();
+				double speed = (-1)* GetAnimSpeed(CurrentManualAnim);
+				double state = GetAnimationState(CurrentManualAnim);
 				state += speed*oapiGetSimStep();
 				if (state < 0) { state = 0; }
 				SetAnimationState(CurrentManualAnim, state);
@@ -350,75 +677,28 @@ void AnimationManager::ConsumeAnimDirectKey(char *kstate) {
 				return;
 			}
 		}
-		
+
 	}
 	return;
 }
 
-
-
-/*ANIMATIONCOMPONENT_HANDLE AnimationManager::FindParentACH(UINT parent_comp_idx) {
-	if (parent_comp_idx == (UINT)-1) { return NULL; }
-	for (UINT i = 0; i < animcomp_defs.size(); i++) {
-		if (animcomp_defs[i]->GetCompIdx()== parent_comp_idx) {
-			return animcomp_defs[i]->GetACH();
-		}
-	}
-
-	return NULL;
-}*/
-
-void AnimationManager::AddAnimCompDef(def_idx animdef_idx, MGROUP_TRANSFORM::TYPE type) {
-	AnimCompDef *acd = new AnimCompDef;
-	//acd = new AnimCompDef();
-	acd->Init(type);
-	char cbuf[256] = { '\0' };
-	sprintf(cbuf, "AnimComp_%i", animcomp_defs.size());
-	string name(cbuf);
-	acd->SetName(name);
-	return AddAnimCompDef(animdef_idx, acd);
-}
-void AnimationManager::AddAnimCompDef(def_idx animdef_idx, AnimCompDef* acd) {
-	/*if (acd->ParentACD)
-	{
-		acd->SetParent(acd->ParentACD->ach);
-	}
-	else {
-		acd->SetParent(NULL);
-	}*/
-
-	acd->AssignToAnimation(anim_defs[animdef_idx]->GetAnimIdx(), VB1);
-	
-//	acd->SetPrefix(prefix);
-	animcomp_defs.push_back(acd);
-	anim_defs[animdef_idx]->Comps.push_back(acd);
-	return;
-}
-def_idx AnimationManager::IdxSeq2Def(UINT seq_idx) {
-	for (UINT i = 0; i < anim_defs.size(); i++) {
-		if (anim_defs[i]->GetSeqIdx() == seq_idx) {
-			return i;
-		}
-	}
-	return (UINT)-1;
-}
 
 void AnimationManager::AnimationPreStep(double simt, double simdt, double mjd) {
 	for (UINT i = 0; i < anim_defs.size(); i++) {
-		if (anim_defs[i]->IsRunning()) {
-			double speed = anim_defs[i]->GetSpeed();
-			double state = anim_defs[i]->GetState();
-			if (anim_defs[i]->IsBackward()) {
+		if (IsAnimRunning(i)) {
+			double speed = GetAnimSpeed(i);
+			double state = GetAnimationState(i);
+			if (IsAnimBackward(i)) {
 				speed *= -1;
 			}
 			state += speed*oapiGetSimStep();
 
 			if (state> 1) {
-				switch (anim_defs[i]->GetCycleType()) {
+				switch (GetAnimCycle(i)) {
 				case GOANDSTOP:
 				{
-					state=1;
-					anim_defs[i]->Stop();
+					state = 1;
+					StopAnimation(i);
 					break;
 				}
 				case RESTART:
@@ -428,7 +708,7 @@ void AnimationManager::AnimationPreStep(double simt, double simdt, double mjd) {
 				}
 				case REVERSE:
 				{
-					anim_defs[i]->SetBackward(true);
+					SetAnimationBackward(i, true);
 					break;
 				}
 
@@ -436,12 +716,12 @@ void AnimationManager::AnimationPreStep(double simt, double simdt, double mjd) {
 				}
 			}
 			else if (state< 0) {
-				switch (anim_defs[i]->GetCycleType()) {
+				switch (GetAnimCycle(i)) {
 				case GOANDSTOP:
 				{
 					state = 0;
-					anim_defs[i]->Stop();
-					anim_defs[i]->SetBackward(false);
+					StopAnimation(i);
+					SetAnimationBackward(i,false);
 					break;
 				}
 				case RESTART:
@@ -452,688 +732,260 @@ void AnimationManager::AnimationPreStep(double simt, double simdt, double mjd) {
 				}
 				case REVERSE:
 				{
-					anim_defs[i]->SetBackward(false);
+					SetAnimationBackward(i, false);
 					break;
 				}
 
 
 				}
 			}
-			SetAnimationState(i,state);
-			//Touchdownpoints check for swap
-			if (i == VB1->TdpMng->GetChangeOverAnimation()) {
-				if (state > 0.999) {
-					if (VB1->TdpMng->GetCurrentSet() == 1) {
-						VB1->TdpMng->SetCurrentSet(2);
-					}
-				}
-				else {
-					if (VB1->TdpMng->GetCurrentSet() == 2) {
-						VB1->TdpMng->SetCurrentSet(1);
-					}
-				}
-			}
+			SetAnimationState(i, state);
+			
 		}
-		
+
 	}
 	for (UINT i = 0; i < animcomp_defs.size(); i++) {
-		if (animcomp_defs[i]->IsArmTip()) {
-			if ((!VB1->AreVector3Equal(animcomp_defs[i]->Tip[0], animcomp_defs[i]->oldTip[0]))||(!VB1->AreVector3Equal(animcomp_defs[i]->Tip[1], animcomp_defs[i]->oldTip[1]))||(!VB1->AreVector3Equal(animcomp_defs[i]->Tip[2], animcomp_defs[i]->oldTip[2]))) {
-				animcomp_defs[i]->oldTip[0] = animcomp_defs[i]->Tip[0];
-				animcomp_defs[i]->oldTip[1] = animcomp_defs[i]->Tip[1];
-				animcomp_defs[i]->oldTip[2] = animcomp_defs[i]->Tip[2];
-				def_idx attidx = animcomp_defs[i]->GetAttTip();
+		if (IsAnimCompArmTip(i)) {
+			if ((!VB1->AreVector3Equal(animcomp_defs[i].Tip[0], animcomp_defs[i].oldTip[0])) || (!VB1->AreVector3Equal(animcomp_defs[i].Tip[1], animcomp_defs[i].oldTip[1])) || (!VB1->AreVector3Equal(animcomp_defs[i].Tip[2], animcomp_defs[i].oldTip[2]))) {
+				animcomp_defs[i].oldTip[0] = animcomp_defs[i].Tip[0];
+				animcomp_defs[i].oldTip[1] = animcomp_defs[i].Tip[1];
+				animcomp_defs[i].oldTip[2] = animcomp_defs[i].Tip[2];
+				def_idx attidx = GetAnimCompDefAttTip(i);
 				ATTACHMENTHANDLE ah = VB1->AttMng->GetAttDefAH(attidx);
-				VB1->SetAttachmentParams(ah, animcomp_defs[i]->Tip[0], animcomp_defs[i]->Tip[1]- animcomp_defs[i]->Tip[0], animcomp_defs[i]->Tip[2]- animcomp_defs[i]->Tip[0]);
+				VB1->SetAttachmentParams(ah, animcomp_defs[i].Tip[0], animcomp_defs[i].Tip[1] - animcomp_defs[i].Tip[0], animcomp_defs[i].Tip[2] - animcomp_defs[i].Tip[0]);
 			}
 		}
 	}
 	if (ManualArmActive()) {
-		sprintf(oapiDebugString(), "Manual Anim:%s %.3f",anim_defs[CurrentManualAnim]->GetName().c_str(),anim_defs[CurrentManualAnim]->GetState());
+		sprintf(oapiDebugString(), "Manual Anim:%s %.3f", GetAnimName(CurrentManualAnim).c_str(), GetAnimationState(CurrentManualAnim));
 	}
+
+
+
 	return;
 }
 
-void AnimationManager::DeleteAnimCompDef(def_idx d_idx) {
-	for (UINT i = 0; i < animcomp_defs[d_idx]->ChildrenACD.size(); i++) {
-		if (animcomp_defs[d_idx]->ChildrenACD[i]) {
-			def_idx anim_index = GetAnimCompDefSeqIdx(GetAnimCompDefCompIdx(animcomp_defs[d_idx]->ChildrenACD[i]));
-			for (UINT j = 0; j < anim_defs[anim_index]->Comps.size(); j++) {
-				if (anim_defs[anim_index]->Comps[j] == animcomp_defs[d_idx]) {
-					anim_defs[anim_index]->Comps.erase(anim_defs[anim_index]->Comps.begin() + j);
-					break;
-				}
-			}
-			animcomp_defs[d_idx]->ChildrenACD[i]->Invalidate();
-		}
-		
-	}
-	for (UINT i = 0; i < animcomp_defs.size(); i++) {
-		for (UINT j = 0; j < animcomp_defs[i]->ChildrenACD.size(); i++) {
-			if (animcomp_defs[i]->ChildrenACD[j] == animcomp_defs[d_idx]) {
-				animcomp_defs[i]->ChildrenACD.erase(animcomp_defs[i]->ChildrenACD.begin() + j);
-				break;
-			}
-		}
-	}
-	def_idx anim_index2 = IdxAni2Def(animcomp_defs[d_idx]->anim_idx);
-	animcomp_defs[d_idx]->anim_idx;
-	
+void AnimationManager::ParseCfgFile(FILEHANDLE fh) {
+	UINT anim_counter = 0;
+	char cbuf[256] = { '\0' };
+	int id;
+	sprintf(cbuf, "ANIM_%i_ID", anim_counter);
+	while (oapiReadItem_int(fh, cbuf, id)) {
+		sprintf(cbuf, "ANIM_%i_NAME", anim_counter);
+		char namebuf[256] = { '\0' };
+		oapiReadItem_string(fh, cbuf, namebuf);
+		string name(namebuf);
+		double defstate, duration;
+		DWORD key;
+		AnimCycleType Cycle;
+		sprintf(cbuf, "ANIM_%i_DEFSTATE", anim_counter);
+		oapiReadItem_float(fh, cbuf, defstate);
+		sprintf(cbuf, "ANIM_%i_DURATION", anim_counter);
+		oapiReadItem_float(fh, cbuf, duration);
+		sprintf(cbuf, "ANIM_%i_KEY", anim_counter);
+		int kk;
+		oapiReadItem_int(fh, cbuf, kk);
+		key = (DWORD)kk;
+		int Cyc;
+		sprintf(cbuf, "ANIM_%i_CYCLE", anim_counter);
+		oapiReadItem_int(fh, cbuf, Cyc);
+		Cycle = (AnimCycleType)Cyc;
 
-	/*vector<AnimCompDef*>::iterator it = anim_defs[anim_index2]->Comps.begin();
-	while (it != anim_defs[anim_index2]->Comps.end()) {
-		if (!(*it)->IsValid()) {
-			it = animcomp_defs.erase(it);
-		}
-		else {
-			++it;
-		}
-	}*/
+		AddAnimDef(name, duration, Cycle, key, defstate);
 
-	for (UINT k = 0; k < anim_defs[anim_index2]->Comps.size(); k++) {
-		if (anim_defs[anim_index2]->Comps[k]) {
-			if (anim_defs[anim_index2]->Comps[k] == animcomp_defs[d_idx]) {
-				anim_defs[anim_index2]->Comps.erase(anim_defs[anim_index2]->Comps.begin() + k);
-
-				break;
-			}
-			
-		}
+		anim_counter++;
+		sprintf(cbuf, "ANIM_%i_ID", anim_counter);
 	}
-	VB1->DelAnimationComponent(anim_index2, GetAnimCompDefACH(d_idx));
-	animcomp_defs[d_idx]->Invalidate();
-	CompsCleanUp();
-	return;
-}
-void AnimationManager::SetAnimCompDefState0(def_idx d_idx, double newState0) {
-	animcomp_defs[d_idx]->SetState0(newState0);
-	return;
-}
-void AnimationManager::SetAnimCompDefState1(def_idx d_idx, double newState1) {
-	animcomp_defs[d_idx]->SetState1(newState1);
-	return;
-}
-void AnimationManager::SetAnimCompDefRef(def_idx d_idx, VECTOR3 newRef) {
-	animcomp_defs[d_idx]->SetRef(newRef);
-	return;
-}
-void AnimationManager::SetAnimCompDefScale(def_idx d_idx, VECTOR3 newScale) {
-	animcomp_defs[d_idx]->SetScale(newScale);
-	return;
-}
-void AnimationManager::SetAnimCompDefShift(def_idx d_idx, VECTOR3 newShift) {
-	animcomp_defs[d_idx]->SetShift(newShift);
-	return;
-}
-void AnimationManager::SetAnimCompDefAxis(def_idx d_idx, VECTOR3 newAxis) {
-	animcomp_defs[d_idx]->SetAxis(newAxis);
-	return;
-}
-void AnimationManager::SetAnimCompDefAngle(def_idx d_idx, double newAngle) {
-	animcomp_defs[d_idx]->SetAngle(newAngle);
-	return;
-}
-void AnimationManager::SetAnimCompDefName(def_idx d_idx, string name) {
-	animcomp_defs[d_idx]->SetName(name);
-	return;
-}
-/*void AnimationManager::SetAnimCompDefPrefix(def_idx d_idx, string prefix) {
-	animcomp_defs[d_idx]->SetPrefix(prefix);
-	return;
-}*/
-void AnimationManager::SetAnimCompDefMesh(def_idx d_idx, msh_idx m_idx) {
-	animcomp_defs[d_idx]->SetMesh(m_idx);
-	return;
-}
-void AnimationManager::AnimCompDefAddGroups(def_idx d_idx, vector<UINT>grps) {
-	animcomp_defs[d_idx]->AddGroups(grps);
-	return;
-}
-void AnimationManager::AnimCompDefRemoveGroups(def_idx d_idx, vector<UINT>grps) {
-	animcomp_defs[d_idx]->RemoveGroups(grps);
-	return;
-}
-string AnimationManager::GetAnimCompDefName(def_idx d_idx) {
-	return animcomp_defs[d_idx]->GetName();
-}
-/*string AnimationManager::GetAnimCompDefFullName(def_idx d_idx) {
-	return animcomp_defs[d_idx]->GetFullName();
-}*/
-double AnimationManager::GetAnimCompDefState0(def_idx d_idx) {
-	return animcomp_defs[d_idx]->GetState0();
-}
-double AnimationManager::GetAnimCompDefState1(def_idx d_idx) {
-	return animcomp_defs[d_idx]->GetState1();
-}
-VECTOR3 AnimationManager::GetAnimCompDefRef(def_idx d_idx) {
-	return animcomp_defs[d_idx]->GetRef();
-}
-VECTOR3 AnimationManager::GetAnimCompDefAxis(def_idx d_idx) {
-	return animcomp_defs[d_idx]->GetAxis();
-}
-VECTOR3 AnimationManager::GetAnimCompDefShift(def_idx d_idx) {
-	return animcomp_defs[d_idx]->GetShift();
-}
-VECTOR3 AnimationManager::GetAnimCompDefScale(def_idx d_idx) {
-	return animcomp_defs[d_idx]->GetScale();
-}
-double AnimationManager::GetAnimCompDefAngle(def_idx d_idx){
-	return animcomp_defs[d_idx]->GetAngle();
-}
-msh_idx AnimationManager::GetAnimCompDefMesh(def_idx d_idx) {
-	return animcomp_defs[d_idx]->GetMesh();
-}
-vector<UINT> AnimationManager::GetAnimCompDefGroups(def_idx d_idx) {
-	return animcomp_defs[d_idx]->GetGroups();
-}
-int AnimationManager::GetAnimCompDefNGroups(def_idx d_idx) {
-	return animcomp_defs[d_idx]->GetNgrps();
-}
-void AnimationManager::AssignAnimCompDefToAnimation(def_idx comp_idx, anim_idx _anim_idx, VESSEL *v) {
-	animcomp_defs[comp_idx]->AssignToAnimation(_anim_idx, v);
-	return;
-}
-//void AnimationManager::SetAnimCompDefParent(def_idx d_idx, ANIMATIONCOMPONENT_HANDLE _parent) {
-void AnimationManager::SetAnimCompDefParent(def_idx d_idx, AnimCompDef* newParent_acd) {
-	animcomp_defs[d_idx]->SetParent(newParent_acd);
-	animcomp_defs[d_idx]->ParentACD = newParent_acd;
-	for (UINT i = 0; i < animcomp_defs.size(); i++) {
-		for (UINT j = 0; j < animcomp_defs[i]->ChildrenACD.size(); j++) {
-			if (animcomp_defs[i]->ChildrenACD[j] == animcomp_defs[d_idx]) {
-				animcomp_defs[i]->ChildrenACD.erase(animcomp_defs[i]->ChildrenACD.begin() + j);
-				break;
+
+	for (UINT i = 0; i < 256; i++) {
+		cbuf[i] = '\0';
+	}
+	UINT animcompdef_counter = 0;
+	sprintf(cbuf, "ANIMCOMP_%i_ID", animcompdef_counter);
+	while (oapiReadItem_int(fh, cbuf, id)) {
+		char namebuf[256] = { '\0' };
+		int seq, parent_idx, armatt, mesh, type_int, ngrps;
+		bool arm_tip;
+		double state0, state1, angle;
+		VECTOR3 ref, axis, scale, shift;
+		vector<UINT>grps;
+		MGROUP_TRANSFORM::TYPE type;
+		sprintf(cbuf, "ANIMCOMP_%i_NAME", animcompdef_counter);
+		oapiReadItem_string(fh, cbuf, namebuf);
+		string name(namebuf);
+		sprintf(cbuf, "ANIMCOMP_%i_SEQ", animcompdef_counter);
+		oapiReadItem_int(fh, cbuf, seq);
+		sprintf(cbuf, "ANIMCOMP_%i_STATE0", animcompdef_counter);
+		oapiReadItem_float(fh, cbuf, state0);
+		sprintf(cbuf, "ANIMCOMP_%i_STATE1", animcompdef_counter);
+		oapiReadItem_float(fh, cbuf, state1);
+		sprintf(cbuf, "ANIMCOMP_%i_MESH", animcompdef_counter);
+		oapiReadItem_int(fh, cbuf, mesh);
+		sprintf(cbuf, "ANIMCOMP_%i_NGRPS", animcompdef_counter);
+		oapiReadItem_int(fh, cbuf, ngrps);
+
+		grps.clear();
+		if (ngrps > 0) {
+			sprintf(cbuf, "ANIMCOMP_%i_GRPS", animcompdef_counter);
+			char grpsbuf[256] = { '\0' };
+			oapiReadItem_string(fh, cbuf, grpsbuf);
+			string grpsbuf_s(grpsbuf);
+			grps = VB1->readVectorUINT(grpsbuf_s);
+			if ((grps.size() == 1) && (grps[0] == -1)){
+				mesh = LOCALVERTEXLIST;
 			}
 		}
+		sprintf(cbuf, "ANIMCOMP_%i_TYPE", animcompdef_counter);
+		oapiReadItem_int(fh, cbuf, type_int);
+		type = (MGROUP_TRANSFORM::TYPE)type_int;
+		if (type_int == 1) { //ROTATE
+			sprintf(cbuf, "ANIMCOMP_%i_REF", animcompdef_counter);
+			oapiReadItem_vec(fh, cbuf, ref);
+			sprintf(cbuf, "ANIMCOMP_%i_AXIS", animcompdef_counter);
+			oapiReadItem_vec(fh, cbuf, axis);
+			sprintf(cbuf, "ANIMCOMP_%i_ANGLE", animcompdef_counter);
+			oapiReadItem_float(fh, cbuf, angle);
+			angle *= RAD;
+		}
+		else if (type_int == 2) { //TRANSLATE
+			sprintf(cbuf, "ANIMCOMP_%i_SHIFT", animcompdef_counter);
+			oapiReadItem_vec(fh, cbuf, shift);
+		}
+		else if (type_int == 3) { //SCALE
+			sprintf(cbuf, "ANIMCOMP_%i_REF", animcompdef_counter);
+			oapiReadItem_vec(fh, cbuf, ref);
+			sprintf(cbuf, "ANIMCOMP_%i_SCALE", animcompdef_counter);
+			oapiReadItem_vec(fh, cbuf, scale);
+		}
+		sprintf(cbuf, "ANIMCOMP_%i_ARMTIP", animcompdef_counter);
+		if (!oapiReadItem_bool(fh, cbuf, arm_tip)) { arm_tip = false; }
+		if (arm_tip) {
+			sprintf(cbuf, "ANIMCOMP_%i_ARMATT", animcompdef_counter);
+			oapiReadItem_int(fh, cbuf, armatt);
+		}
+
+		sprintf(cbuf, "ANIMCOMP_%i_PARENT", animcompdef_counter);
+		oapiReadItem_int(fh, cbuf, parent_idx);
+		UINT index = AddAnimCompDef(seq, name, state0, state1, mesh, ngrps, grps, parent_idx, type_int, ref, axis, scale, shift, angle);
+		if (arm_tip) {
+			SetAnimCompDefArmTip(index, armatt);
+		}
+
+
+		animcompdef_counter++;
+		sprintf(cbuf, "ANIMCOMP_%i_ID", animcompdef_counter);
 	}
-	if (newParent_acd != NULL) {
-		newParent_acd->ChildrenACD.push_back(animcomp_defs[d_idx]);
-	}
-	
 	return;
 }
-
-UINT AnimationManager::GetAnimCompDefCompIdx(AnimCompDef* acd) {
-	for (UINT i = 0; i < animcomp_defs.size(); i++) {
-		if (animcomp_defs[i] == acd) {
-			return i;
-		}
-	}
-	return (UINT)-1;
-	/*
-	size_t pos = find(animcomp_defs.begin(), animcomp_defs.end(), acd) - animcomp_defs.begin();
-	if (pos >= animcomp_defs.size()) {
-		return (UINT)-1;
-	}
-	else {
-		return (UINT)pos;
-	}*/
-	//return animcomp_defs[d_idx]->GetCompIdx();
-}
-UINT AnimationManager::GetAnimCompDefSeqIdx(def_idx d_idx) {
-	for (UINT i = 0; i < anim_defs.size(); i++) {
-		for (UINT j = 0; j < anim_defs[i]->Comps.size(); j++) {
-			if (anim_defs[i]->Comps[j] == animcomp_defs[d_idx]) {
-				return i;
-			}
-		}
-	}
-	return (UINT)-1;
-}
-UINT AnimationManager::GetAnimCompDefParentCompIdx(def_idx d_idx) {
-	if (animcomp_defs[d_idx]->ParentACD) {
-		return GetAnimCompDefCompIdx(animcomp_defs[d_idx]->ParentACD);
-	}
-	else {
-		return (UINT)-1;
-	}
-	
-}
-ANIMATIONCOMPONENT_HANDLE AnimationManager::GetAnimCompDefParentACH(def_idx d_idx) {
-	return animcomp_defs[d_idx]->GetParentACH();
-}
-MGROUP_TRANSFORM::TYPE AnimationManager::GetAnimCompDefType(def_idx d_idx) {
-	return animcomp_defs[d_idx]->GetType();
-}
-ANIMATIONCOMPONENT_HANDLE AnimationManager::GetAnimCompDefACH(def_idx d_idx) {
-	return animcomp_defs[d_idx]->GetACH();
-}
-
-UINT AnimationManager::GetAnimDefCount() {
-	UINT counter = 0;
-	for (UINT i = 0; i < anim_defs.size(); i++) {
-		if (anim_defs[i]->IsValid()) {
-			counter++;
-		}
-	}
-	return counter;
-}
-UINT AnimationManager::GetAnimCompDefCount() {
-	return animcomp_defs.size();
-}
-DWORD AnimationManager::GetAnimKey(def_idx d_idx) {
-	return anim_defs[d_idx]->GetKey();
-}
-//anim_idx AnimationManager::FindAnimDefIndex(UINT comp_idx) {
-//	return 0;
-//}
-
-AnimCompDef* AnimationManager::GetAnimComp(def_idx d_idx) {
-	return animcomp_defs[d_idx];
-}
-AnimCompDef* AnimationManager::GetAnimComp(def_idx animd_idx,UINT comp_idx) {
-	if (comp_idx < anim_defs[animd_idx]->Comps.size()) {
-		return anim_defs[animd_idx]->Comps[comp_idx];
-	}
-	return NULL;
-}
-/*void AnimationManager::UpdateAllCompsSeq(def_idx d_idx) { //DA CHIAMARE QUANDO CANCELLO UNA ANIM!
-	for (UINT i = 0; i < anim_defs.size(); i++) {
-		for (UINT j = 0; j < animcomp_defs.size(); j++) {
-			if (animcomp_defs[j]->anim_idx == anim_defs[i]->GetAnimIdx()) {
-				animcomp_defs[j]->SetSeqIdx(anim_defs[i]->GetSeqIdx());
-			}
-		}
-	}
-	return;
-}*/
 void AnimationManager::WriteCfg(FILEHANDLE fh) {
+
 	oapiWriteLine(fh, " ");
 	oapiWriteLine(fh, ";<-------------------------ANIMATIONS DEFINITIONS------------------------->");
 	oapiWriteLine(fh, " ");
 
 	char cbuf[256] = { '\0' };
 	char cbuf2[256] = { '\0' };
-	oapiWriteItem_int(fh, "NUMBER_OF_ANIMATIONS", anim_defs.size());
-	for (UINT i = 0; i < anim_defs.size(); i++) {
-		sprintf(cbuf, "ANIM_%i_ID", i);
-		oapiWriteItem_int(fh, cbuf, i);
-		sprintf(cbuf, "ANIM_%i_NAME",i);
-		sprintf(cbuf2, "%s", anim_defs[i]->GetName().c_str());
+	UINT anim_counter = 0;
+	for (UINT i = 0; i < GetAnimDefsCount(); i++) {
+		if (!IsAnimValid(i)) { continue; }
+		sprintf(cbuf, "ANIM_%i_ID", anim_counter);
+		oapiWriteItem_int(fh, cbuf, anim_counter);
+		sprintf(cbuf, "ANIM_%i_NAME", anim_counter);
+		sprintf(cbuf2, "%s", GetAnimName(i).c_str());
 		oapiWriteItem_string(fh, cbuf, cbuf2);
-		sprintf(cbuf, "ANIM_%i_DEFSTATE",i);
-		oapiWriteItem_float(fh, cbuf, anim_defs[i]->GetDefState());
-		sprintf(cbuf, "ANIM_%i_DURATION",i);
-		oapiWriteItem_float(fh, cbuf, anim_defs[i]->GetDuration());
-		sprintf(cbuf, "ANIM_%i_KEY", i);
-		oapiWriteItem_int(fh, cbuf, anim_defs[i]->GetKey());
-		sprintf(cbuf, "ANIM_%i_CYCLE", i);
-		oapiWriteItem_int(fh, cbuf, (int)anim_defs[i]->GetCycleType());
+		sprintf(cbuf, "ANIM_%i_DEFSTATE", anim_counter);
+		oapiWriteItem_float(fh, cbuf, GetAnimDefState(i));
+		sprintf(cbuf, "ANIM_%i_DURATION", anim_counter);
+		oapiWriteItem_float(fh, cbuf, GetAnimDuration(i));
+		sprintf(cbuf, "ANIM_%i_KEY", anim_counter);
+		oapiWriteItem_int(fh, cbuf, GetAnimKey(i));
+		sprintf(cbuf, "ANIM_%i_CYCLE", anim_counter);
+		oapiWriteItem_int(fh, cbuf, (int)GetAnimCycle(i));
 		oapiWriteLine(fh, " ");
+		anim_counter++;
 
 	}
-	oapiWriteItem_int(fh, "NUMBER_OF_ANIMATION_COMPONENTS", animcomp_defs.size());
-	for (UINT i = 0; i < animcomp_defs.size(); i++) {
-		sprintf(cbuf, "ANIMCOMP_%i_ID", i);
-		oapiWriteItem_int(fh, cbuf, i);
-		sprintf(cbuf, "ANIMCOMP_%i_SEQ", i);
+
+	UINT animcompdef_counter = 0;
+	for (UINT i = 0; i < GetAnimCompDefsCount(); i++) {
+		if (!IsAnimCompDefValid(i)) { continue; }
+		sprintf(cbuf, "ANIMCOMP_%i_ID", animcompdef_counter);
+		oapiWriteItem_int(fh, cbuf, animcompdef_counter);
+		sprintf(cbuf, "ANIMCOMP_%i_SEQ", animcompdef_counter);
 		oapiWriteItem_int(fh, cbuf, GetAnimCompDefSeqIdx(i));
-		sprintf(cbuf, "ANIMCOMP_%i_NAME", i);
-		sprintf(cbuf2, "%s", animcomp_defs[i]->GetName().c_str());
+		sprintf(cbuf, "ANIMCOMP_%i_NAME", animcompdef_counter);
+		sprintf(cbuf2, "%s", GetAnimCompDefName(i).c_str());
 		oapiWriteItem_string(fh, cbuf, cbuf2);
-		sprintf(cbuf, "ANIMCOMP_%i_STATE0", i);
-		oapiWriteItem_float(fh,cbuf,animcomp_defs[i]->GetState0());
-		sprintf(cbuf, "ANIMCOMP_%i_STATE1", i);
-		oapiWriteItem_float(fh, cbuf, animcomp_defs[i]->GetState1());
-		bool isArmTip = animcomp_defs[i]->IsArmTip();
-		sprintf(cbuf, "ANIMCOMP_%i_ARMTIP", i);
+		sprintf(cbuf, "ANIMCOMP_%i_STATE0", animcompdef_counter);
+		oapiWriteItem_float(fh, cbuf, GetAnimCompDefState0(i));
+		sprintf(cbuf, "ANIMCOMP_%i_STATE1", animcompdef_counter);
+		oapiWriteItem_float(fh, cbuf, GetAnimCompDefState1(i));
+		bool isArmTip = IsAnimCompArmTip(i);
+		sprintf(cbuf, "ANIMCOMP_%i_ARMTIP", animcompdef_counter);
 		oapiWriteItem_bool(fh, cbuf, isArmTip);
 		if (isArmTip) {
-			sprintf(cbuf, "ANIMCOMP_%i_ARMATT", i);
-			oapiWriteItem_int(fh, cbuf, animcomp_defs[i]->GetAttTip());
+			sprintf(cbuf, "ANIMCOMP_%i_ARMATT", animcompdef_counter);
+			oapiWriteItem_int(fh, cbuf, GetAnimCompDefAttTip(i));
 		}
-		sprintf(cbuf, "ANIMCOMP_%i_MESH", i);
-		oapiWriteItem_int(fh, cbuf, animcomp_defs[i]->GetMesh());
-		sprintf(cbuf, "ANIMCOMP_%i_TYPE", i);
-		int type = (int)animcomp_defs[i]->GetType();
+		sprintf(cbuf, "ANIMCOMP_%i_MESH", animcompdef_counter);
+		oapiWriteItem_int(fh, cbuf, GetAnimCompDefMesh(i));
+		sprintf(cbuf, "ANIMCOMP_%i_TYPE", animcompdef_counter);
+		int type = (int)GetAnimCompDefType(i);
 		oapiWriteItem_int(fh, cbuf, type);
 		if (type == 1) { //ROTATE
-			sprintf(cbuf, "ANIMCOMP_%i_REF", i);
-			oapiWriteItem_vec(fh, cbuf, animcomp_defs[i]->GetRef());
-			sprintf(cbuf, "ANIMCOMP_%i_AXIS", i);
-			oapiWriteItem_vec(fh, cbuf, animcomp_defs[i]->GetAxis());
-			sprintf(cbuf, "ANIMCOMP_%i_ANGLE", i);
-			oapiWriteItem_float(fh, cbuf, animcomp_defs[i]->GetAngle()*DEG);
+			sprintf(cbuf, "ANIMCOMP_%i_REF", animcompdef_counter);
+			oapiWriteItem_vec(fh, cbuf, GetAnimCompDefRef(i));
+			sprintf(cbuf, "ANIMCOMP_%i_AXIS", animcompdef_counter);
+			oapiWriteItem_vec(fh, cbuf, GetAnimCompDefAxis(i));
+			sprintf(cbuf, "ANIMCOMP_%i_ANGLE", animcompdef_counter);
+			oapiWriteItem_float(fh, cbuf, GetAnimCompDefAngle(i)*DEG);
 		}
 		else if (type == 2) { //TRANSLATE
-			sprintf(cbuf, "ANIMCOMP_%i_SHIFT", i);
-			oapiWriteItem_vec(fh, cbuf, animcomp_defs[i]->GetShift());
+			sprintf(cbuf, "ANIMCOMP_%i_SHIFT", animcompdef_counter);
+			oapiWriteItem_vec(fh, cbuf, GetAnimCompDefShift(i));
 		}
 		else if (type == 3) { //SCALE
-			sprintf(cbuf, "ANIMCOMP_%i_REF", i);
-			oapiWriteItem_vec(fh, cbuf, animcomp_defs[i]->GetRef());
-			sprintf(cbuf, "ANIMCOMP_%i_SCALE", i);
-			oapiWriteItem_vec(fh, cbuf, animcomp_defs[i]->GetScale());
+			sprintf(cbuf, "ANIMCOMP_%i_REF", animcompdef_counter);
+			oapiWriteItem_vec(fh, cbuf, GetAnimCompDefRef(i));
+			sprintf(cbuf, "ANIMCOMP_%i_SCALE", animcompdef_counter);
+			oapiWriteItem_vec(fh, cbuf, GetAnimCompDefScale(i));
 		}
-		sprintf(cbuf, "ANIMCOMP_%i_NGRPS", i);
-		int ngrps = animcomp_defs[i]->GetNgrps();
-		oapiWriteItem_int(fh, cbuf,ngrps);
-		string grpsline(" ");
-		if (ngrps > 0)
-		{
-			for (UINT j = 0; j < ngrps; j++) {
-				char add[128] = { '\0' };
-				if (j == ngrps - 1) {
-					sprintf(add, "%i", animcomp_defs[i]->grps[j]);
-				}
-				else {
-					sprintf(add, "%i, ", animcomp_defs[i]->grps[j]);
-				}
-				string adds(add);
-				grpsline += adds;
-			}
-			sprintf(cbuf2, "%s", grpsline.c_str());
-		}
-		else {
-			sprintf(cbuf2, "%i", -1);
-		}		
-		sprintf(cbuf, "ANIMCOMP_%i_GRPS", i);
+		sprintf(cbuf, "ANIMCOMP_%i_NGRPS", animcompdef_counter);
+		int ngrps = GetAnimCompDefNGroups(i);
+		oapiWriteItem_int(fh, cbuf, ngrps);
+		vector<UINT> grps = GetAnimCompDefGroups(i);
+		string line = VB1->WriteVectorUINT(grps);
+		sprintf(cbuf2, "%s", line.c_str());
+		sprintf(cbuf, "ANIMCOMP_%i_GRPS", animcompdef_counter);
 		oapiWriteItem_string(fh, cbuf, cbuf2);
-		sprintf(cbuf, "ANIMCOMP_%i_PARENT", i);
-		oapiWriteItem_int(fh, cbuf, GetAnimCompDefCompIdx(animcomp_defs[i]->ParentACD));
+		sprintf(cbuf, "ANIMCOMP_%i_PARENT", animcompdef_counter);
+		oapiWriteItem_int(fh, cbuf, GetParentCompDefIdx(GetAnimCompDefParent(i)));
 		oapiWriteLine(fh, " ");
-	}
-
-	return;
-}
-void AnimationManager::StartAnim(def_idx d_idx) {
-	anim_defs[d_idx]->Start();
-	return;
-}
-void AnimationManager::SetAnimBackward(def_idx d_idx, bool bw) {
-	anim_defs[d_idx]->SetBackward(bw);
-	return;
-}
-void AnimationManager::StopAnim(def_idx d_idx) {
-	anim_defs[d_idx]->Stop();
-	return;
-}
-void AnimationManager::ResetAnim(def_idx d_idx) {
-	SetAnimationState(d_idx, anim_defs[d_idx]->GetDefState());
-	return;
-}
-void AnimationManager::AnimCompDefResetGroups(def_idx d_idx) {
-	animcomp_defs[d_idx]->ResetGroups();
-	return;
-}
-AnimCompDef* AnimationManager::GetAnimCompDefParent(def_idx d_idx) {
-	return animcomp_defs[d_idx]->ParentACD;
-}
-
-void AnimationManager::ParseCfgFile(FILEHANDLE fh) {
-	UINT anim_counter = 0;
-	char cbuf[256] = { '\0' };
-	sprintf(cbuf, "ANIM_%i_ID", anim_counter);
-	int id;
-
-	while (oapiReadItem_int(fh, cbuf, id)) {
-		sprintf(cbuf, "ANIM_%i_NAME", anim_counter);
-		char anim_name[256] = { '\0' };
-		oapiReadItem_string(fh, cbuf, anim_name);
-		string name(anim_name);
-		double defstate;
-		sprintf(cbuf, "ANIM_%i_DEFSTATE", anim_counter);
-		oapiReadItem_float(fh, cbuf, defstate);
-		double duration;
-		sprintf(cbuf, "ANIM_%i_DURATION", anim_counter);
-		oapiReadItem_float(fh, cbuf, duration);
-		int key;
-		sprintf(cbuf, "ANIM_%i_KEY", anim_counter);
-		oapiReadItem_int(fh, cbuf, key);
-		int cycletype;
-		sprintf(cbuf, "ANIM_%i_CYCLE", anim_counter);
-		oapiReadItem_int(fh, cbuf, cycletype);
-		AddAnimDef(defstate, duration, key, name, (AnimCycleType)cycletype);
-		anim_counter++;
-		sprintf(cbuf, "ANIM_%i_ID", anim_counter);
-	}
-
-	UINT animcomp_counter = 0;
-	sprintf(cbuf, "ANIMCOMP_%i_ID", animcomp_counter);
-	int ac_id;
-
-	while (oapiReadItem_int(fh, cbuf, ac_id)) {
-		int seq;
-		sprintf(cbuf, "ANIMCOMP_%i_SEQ", animcomp_counter);
-		oapiReadItem_int(fh, cbuf, seq);
-		char animcomp_name[256] = { '\0' };
-		sprintf(cbuf, "ANIMCOMP_%i_NAME", animcomp_counter);
-		oapiReadItem_string(fh, cbuf, animcomp_name);
-		string name(animcomp_name);
-		sprintf(cbuf, "ANIMCOMP_%i_STATE0", animcomp_counter);
-		double state0 = 0;
-		oapiReadItem_float(fh, cbuf, state0);
-		sprintf(cbuf, "ANIMCOMP_%i_STATE1", animcomp_counter);
-		double state1 = 0;
-		oapiReadItem_float(fh, cbuf, state1);
-		int mesh;
-		sprintf(cbuf, "ANIMCOMP_%i_MESH", animcomp_counter);
-		oapiReadItem_int(fh, cbuf, mesh);
-		int ngrps = -1;
-		sprintf(cbuf, "ANIMCOMP_%i_NGRPS", animcomp_counter);
-		oapiReadItem_int(fh, cbuf, ngrps);
-		vector<UINT>grps;
-		grps.clear();
-		if (ngrps > 0) {
-			char grpsbuf[512] = { '\0' };
-			sprintf(cbuf, "ANIMCOMP_%i_GRPS", animcomp_counter);
-			oapiReadItem_string(fh, cbuf, grpsbuf);
-			string grpsbuf_s(grpsbuf);
-			
-			string delimiter = ",";
-			size_t pos0 = 0;
-			size_t pos1 = 0;
-			while (pos1 != string::npos) {
-				pos1 = grpsbuf_s.find(delimiter, pos0);
-				string token = grpsbuf_s.substr(pos0, pos1 - pos0);
-				grps.push_back(stoi(token));
-				pos0 = pos1 + delimiter.length();
-			}
-		}
-		int parent_idx = -1;
-		sprintf(cbuf, "ANIMCOMP_%i_PARENT", animcomp_counter);
-		oapiReadItem_int(fh, cbuf, parent_idx);
-		
-
-
-
-
-		int type;
-		sprintf(cbuf, "ANIMCOMP_%i_TYPE", animcomp_counter);
-		oapiReadItem_int(fh, cbuf, type);
-		VECTOR3 ref, axis, scale, shift;
-		double angle;
-		if (type == 1) {
-			sprintf(cbuf, "ANIMCOMP_%i_REF", animcomp_counter);
-			oapiReadItem_vec(fh, cbuf, ref);
-			sprintf(cbuf, "ANIMCOMP_%i_AXIS", animcomp_counter);
-			oapiReadItem_vec(fh, cbuf, axis);
-			sprintf(cbuf, "ANIMCOMP_%i_ANGLE", animcomp_counter);
-			oapiReadItem_float(fh, cbuf, angle);
-			angle *= RAD;
-		}
-		else if (type == 2) {
-			sprintf(cbuf, "ANIMCOMP_%i_SHIFT", animcomp_counter);
-			oapiReadItem_vec(fh, cbuf, shift);
-		}
-		else if (type == 3) {
-			sprintf(cbuf, "ANIMCOMP_%i_SCALE", animcomp_counter);
-			oapiReadItem_vec(fh, cbuf, scale);
-			sprintf(cbuf, "ANIMCOMP_%i_REF", animcomp_counter);
-			oapiReadItem_vec(fh, cbuf, ref);
-
-		}
-		bool isArmTip = false;
-		sprintf(cbuf, "ANIMCOMP_%i_ARMTIP", animcomp_counter);
-		oapiReadItem_bool(fh, cbuf, isArmTip);
-		int AttIdx = -1;
-		if (isArmTip) {
-			sprintf(cbuf, "ANIMCOMP_%i_ARMATT", animcomp_counter);
-			oapiReadItem_int(fh, cbuf, AttIdx);
-		}
-		
-
-
-		AddAnimCompDef(seq, name, state0, state1, mesh, ngrps, grps, parent_idx,type, ref, axis, scale, shift, angle);
-		if (isArmTip) {
-			SetAnimCompDefArmTip(animcomp_defs.size() - 1, AttIdx);
-		}
-		animcomp_counter++;
-		sprintf(cbuf, "ANIMCOMP_%i_ID", animcomp_counter);
+		animcompdef_counter++;
 	}
 
 
-	return;
-}
-
-void AnimationManager::AddAnimCompDef(def_idx animdef_idx, string name, double state0, double state1, int mesh, int ngrps, vector<UINT>grps, int parent, int type, VECTOR3 ref, VECTOR3 axis, VECTOR3 scale, VECTOR3 shift, double angle) {
-	AnimCompDef* acd = new AnimCompDef;
-	acd->state0 = state0;
-	acd->state1 = state1;
-	acd->name = name;
-	acd->ngrps = ngrps;
-	acd->grps = grps;
-	acd->ref = ref;
-	acd->scale = scale;
-	acd->angle = angle;
-	acd->shift = shift;
-	acd->axis = axis;
-	acd->mesh = mesh;
-	switch (type) {
-	case 1:
-	{
-		if (ngrps <= 0) {
-			acd->mgt = new MGROUP_ROTATE(mesh, NULL, 0, ref, axis, angle);
-		}
-		else {
-			acd->pgrps = new UINT[ngrps];
-			for (UINT i = 0; i < ngrps; i++) {
-				acd->pgrps[i] = grps[i];
-			}
-			acd->mgt = new MGROUP_ROTATE(mesh, acd->pgrps, ngrps, ref, axis, angle);
-		}
-		break;
-	}
-	case 2:
-	{
-		if (ngrps <= 0) {
-			acd->mgt = new MGROUP_TRANSLATE(mesh, NULL, 0, shift);
-		}
-		else {
-			acd->pgrps = new UINT[ngrps];
-			for (UINT i = 0; i < ngrps; i++) {
-				acd->pgrps[i] = grps[i];
-			}
-			acd->mgt = new MGROUP_TRANSLATE(mesh, acd->pgrps, ngrps, shift);
-		}
-		break;
-	}
-	case 3:
-	{
-		if (ngrps <= 0) {
-			acd->mgt = new MGROUP_SCALE(mesh, NULL, 0, ref, scale);
-		}
-		else {
-			acd->pgrps = new UINT[ngrps];
-			for (UINT i = 0; i < ngrps; i++) {
-				acd->pgrps[i] = grps[i];
-			}
-			acd->mgt = new MGROUP_SCALE(mesh, acd->pgrps, ngrps,ref, scale);
-		}
-		break;
-	}
-	}
-
-	AddAnimCompDef(animdef_idx, acd);
-	if (parent > -1) {
-		AnimCompDef* parent_acd = GetAnimComp(parent);
-		SetAnimCompDefParent(animcomp_defs.size() - 1, parent_acd);
-	}
 	
 
-}
 
 
-bool AnimationManager::IsAnimCompDefArmTip(def_idx d_idx) {
-	return animcomp_defs[d_idx]->IsArmTip();
-}
-void AnimationManager::GetAnimCompDefTips(def_idx d_idx, VECTOR3 &v1, VECTOR3 &v2, VECTOR3 &v3) {
-	return animcomp_defs[d_idx]->GetTips(v1, v2, v3);
-}
-def_idx AnimationManager::GetAnimCompDefAttTip(def_idx d_idx) {
-	return animcomp_defs[d_idx]->GetAttTip();
-}
-void AnimationManager::SetAnimCompDefTips(def_idx d_idx, VECTOR3 v1, VECTOR3 v2, VECTOR3 v3) {
-	return animcomp_defs[d_idx]->SetTips(v1, v2, v3);
-}
-
-void AnimationManager::SetIsAnimCompDefArmTip(def_idx d_idx, bool set) {
-	return animcomp_defs[d_idx]->SetIsArmTip(set);
-}
-void AnimationManager::SetAnimCompDefAttTip(def_idx d_idx, def_idx att_idx) {
-	return animcomp_defs[d_idx]->SetAttTip(att_idx);
-}
-void AnimationManager::SetAnimCompDefArmTip(def_idx d_idx, def_idx AttIdx) {
-
-	animcomp_defs[d_idx]->SetIsArmTip(true);
-	animcomp_defs[d_idx]->SetAttTip(AttIdx);
-	SetAnimCompDefMesh(d_idx, LOCALVERTEXLIST);
-	AnimCompDefResetGroups(d_idx);
-	VECTOR3 pos, dir, rot;
-	VB1->AttMng->GetAttDefPosDirRot(AttIdx, pos, dir, rot);
-	animcomp_defs[d_idx]->SetTips(pos, pos + dir, pos + rot);
-	((ANIMATIONCOMP*)animcomp_defs[d_idx]->ach)->trans->grp = MAKEGROUPARRAY(animcomp_defs[d_idx]->Tip);
-	((ANIMATIONCOMP*)animcomp_defs[d_idx]->ach)->trans->ngrp = 3;
-//	animcomp_defs[d_idx]->ngrps = 3;
 	return;
 }
-
-bool AnimationManager::IsAnimationRunning(def_idx d_idx) {
-	return anim_defs[d_idx]->IsRunning();
+UINT AnimationManager::GetAnimNComps(anim_idx a_idx) {
+	ANIMATION* anims;
+	VB1->GetAnimPtr(&anims);
+	return anims[a_idx].ncomp;
 }
-bool AnimationManager::IsAnimationBackward(def_idx d_idx) {
-	return anim_defs[d_idx]->IsBackward();
+ANIMATIONCOMPONENT_HANDLE AnimationManager::GetAnimComp(anim_idx a_idx, UINT comp_idx) {
+	ANIMATION* anims;
+	VB1->GetAnimPtr(&anims);
+	return anims[a_idx].comp[comp_idx];
 }
-int AnimationManager::AnimationRunStatus(def_idx d_idx) {
-	if ((anim_defs[d_idx]->IsRunning()) && (!anim_defs[d_idx]->IsBackward())) {
-		return 1;
-	}
-	else if ((anim_defs[d_idx]->IsRunning()) && (anim_defs[d_idx]->IsBackward())) {
-		return -1;
-	}
-	else {
-		return 0;
-	}
+MGROUP_TRANSFORM::TYPE AnimationManager::GetAnimCompDefType(def_idx d_idx) {
+	return ((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->Type();
 }
-
-
-/*
-for (UINT i = 0; i < animcomp_defs.size(); i++) {
-	
-	
-	sprintf(cbuf, "ANIMCOMP_%i_NGRPS", i);
-	int ngrps = animcomp_defs[i]->GetNgrps();
-	oapiWriteItem_int(fh, cbuf, ngrps);
-	string grpsline(" ");
-	if (ngrps > 0)
-	{
-		for (UINT j = 0; j < ngrps; j++) {
-			char add[128] = { '\0' };
-			if (j == ngrps - 1) {
-				sprintf(add, "%i", animcomp_defs[i]->grps[j]);
-			}
-			else {
-				sprintf(add, "%i, ", animcomp_defs[i]->grps[j]);
-			}
-			string adds(add);
-			grpsline += adds;
-		}
-		sprintf(cbuf2, "%s", grpsline.c_str());
-	}
-	else {
-		sprintf(cbuf2, "%i", -1);
-	}
-	sprintf(cbuf, "ANIMCOMP_%i_GRPS", i);
-	oapiWriteItem_string(fh, cbuf, cbuf2);
-	sprintf(cbuf, "ANIMCOMP_%i_PARENT", i);
-	oapiWriteItem_int(fh, cbuf, GetAnimCompDefCompIdx(animcomp_defs[i]->ParentACD));
-	*/
+int AnimationManager::AnimationRunStatus(anim_idx a_idx) {
+	if ((IsAnimRunning(a_idx)) && (!IsAnimBackward(a_idx))) { return 1; }
+	else if ((IsAnimRunning(a_idx)) && (IsAnimBackward(a_idx))) { return -1; }
+	else { return 0; }
+}

@@ -31,11 +31,12 @@ void DialogControl::UpdateCtrlSurfDialog(HWND hWnd) {
 	SendDlgItemMessage(hWnd, IDC_COMBO_CSANIM, CB_RESETCONTENT, 0, 0);
 	SendDlgItemMessage(hWnd, IDC_COMBO_CSANIM, CB_INSERTSTRING, 0, (LPARAM)"NONE");
 	SendDlgItemMessage(hWnd, IDC_COMBO_CSANIM, CB_SETITEMDATA, 0, (UINT)-1);
-	for (UINT i = 0; i < AnimMng->GetAnimDefCount(); i++) {
+	for (UINT i = 0; i < AnimMng->GetAnimDefsCount(); i++) {
+		if (!AnimMng->IsAnimValid(i)) { continue; }
 		char cbuf[256] = { '\0' };
 		sprintf(cbuf, "%s", AnimMng->GetAnimName(i).c_str());
-		SendDlgItemMessage(hWnd, IDC_COMBO_CSANIM, CB_INSERTSTRING, i+1, (LPARAM)cbuf);
-		SendDlgItemMessage(hWnd, IDC_COMBO_CSANIM, CB_SETITEMDATA, i+1, i);
+		int index = SendDlgItemMessage(hWnd, IDC_COMBO_CSANIM, CB_ADDSTRING, 0, (LPARAM)cbuf);
+		SendDlgItemMessage(hWnd, IDC_COMBO_CSANIM, CB_SETITEMDATA, index, i);
 	}
 	if (anim != (UINT)-1) {
 		SendDlgItemMessage(hWnd, IDC_COMBO_CSANIM, CB_SETCURSEL, anim+1, 0);

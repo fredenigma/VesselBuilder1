@@ -11,8 +11,6 @@
 #include "DlgCtrl.h"
 #include "gcAPI.h"
 #include "MeshManager.h"
-#include "AnimDef.h"
-#include "AnimCompDef.h"
 #include "AttachmentManager.h"
 #include "AnimationManager.h"
 #include "PropellantManager.h"
@@ -195,7 +193,7 @@ void VesselBuilder1::clbkLoadStateEx(FILEHANDLE scn,void *vs)
 		if (!_strnicmp(line, "ANIM_", 5)) {
 			UINT seq = 0;
 			sscanf(line + 5, "%i", &seq);
-			if (seq >= AnimMng->GetAnimDefCount()) { continue; }
+			if (seq >= AnimMng->GetAnimDefsCount()) { continue; }
 			UINT c = 1;
 			if ((seq > 9)&&(seq<100)) { c = 2; }
 			else if ((seq > 99) && (seq < 1000)) { c = 3; }
@@ -205,12 +203,12 @@ void VesselBuilder1::clbkLoadStateEx(FILEHANDLE scn,void *vs)
 			sscanf(line + 5 + 1 + c, "%lf %d", &state, &status);
 			AnimMng->SetAnimationState(seq, state);
 			if (status == 1) {
-				AnimMng->StartAnim(seq);
-				AnimMng->SetAnimBackward(seq, false);
+				AnimMng->StartAnimation(seq);
+				AnimMng->SetAnimationBackward(seq, false);
 			}
 			else if (status == -1) {
-				AnimMng->StartAnim(seq);
-				AnimMng->SetAnimBackward(seq, true);
+				AnimMng->StartAnimation(seq);
+				AnimMng->SetAnimationBackward(seq, true);
 			}
 		}
 		
@@ -230,7 +228,9 @@ void VesselBuilder1::clbkSaveState(FILEHANDLE scn)
 	
 	SaveDefaultState(scn);
 
-	for (UINT i = 0; i < AnimMng->GetAnimDefCount(); i++) {
+	for (UINT i = 0; i < AnimMng->GetAnimDefsCount(); i++) {
+		if (!AnimMng->IsAnimValid(i)) { continue; }
+		if (AnimMng->GetAnimCycle(i) == AnimCycleType::AUTOMATIC) { continue; }
 		char buff[256] = { '\0' };
 		char buff2[256] = { '\0' };
 		sprintf(buff, "ANIM_%i",i);
@@ -264,7 +264,7 @@ bool VesselBuilder1::ToggleGrapple() {
 	
 	ATTACHMENTHANDLE ah = GetAttachmentHandle(false, currentGrabAtt);
 	OBJHANDLE h_attached = GetAttachmentStatus(ah);
-	if (h_attached != NULL) {
+	if (h_attached == NULL) {
 		VECTOR3 gpos, grms, pos, dir, rot;
 		GetAttachmentParams(ah, pos, dir, rot);
 		Local2Global(pos, grms);  // global position of RMS tip
@@ -289,6 +289,7 @@ bool VesselBuilder1::ToggleGrapple() {
 					att_h_candidate = hAtt;
 				}
 			}
+			
 		}
 		if ((index_candidate == -1) || (h_candidate == NULL)) {
 			return false;
@@ -1300,7 +1301,14 @@ vector<UINT> VesselBuilder1::readVectorUINT(string s) {
 	}
 	return r;
 }
-
+bool VesselBuilder1::IsUintInVector(UINT u, vector<UINT>v) {
+	for (UINT i = 0; i < v.size(); i++) {
+		if (u == v[i]) {
+			return true;
+		}
+	}
+	return false;
+}
 /*if (ngrps > 0) {
 			char grpsbuf[512] = { '\0' };
 			sprintf(cbuf, "ANIMCOMP_%i_GRPS", animcomp_counter);

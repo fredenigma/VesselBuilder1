@@ -2,8 +2,7 @@
 #include "resource.h"
 #include "DialogControl.h"
 #include "AnimationManager.h"
-#include "AnimDef.h"
-#include "AnimCompDef.h"
+
 
 #pragma comment(lib, "comctl32.lib")
 
@@ -11,7 +10,7 @@
 
 void DialogControl::UpdateAnimDialog(HWND hWnd) {
 	UINT idx = CurrentSelection.idx;
-	if (idx >= AnimMng->GetAnimDefCount()) { return; }
+	if (idx >= AnimMng->GetAnimDefsCount()) { return; }
 	char cbuf[256] = { '\0' };
 	sprintf(cbuf, "%.2f", AnimMng->GetAnimDefState(idx));
 	SetDlgItemText(hWnd, IDC_EDIT_ANIMDEFSTATE, (LPCSTR)cbuf);
@@ -29,7 +28,7 @@ void DialogControl::UpdateAnimDialog(HWND hWnd) {
 
 	SendDlgItemMessage(hWnd, IDC_SLIDER_ANIMTEST, TBM_SETPOS, true, (int)(AnimMng->GetAnimDefState(idx)*100));
 
-	switch (AnimMng->GetAnimCycleType(idx)) {
+	switch (AnimMng->GetAnimCycle(idx)) {
 	case GOANDSTOP:
 	{
 		SendDlgItemMessage(hWnd, IDC_COMBO_ANIMTYPE, CB_SETCURSEL, 0, 0);
@@ -48,6 +47,11 @@ void DialogControl::UpdateAnimDialog(HWND hWnd) {
 	case MANUAL:
 	{
 		SendDlgItemMessage(hWnd, IDC_COMBO_ANIMTYPE, CB_SETCURSEL, 3, 0);
+		break;
+	}
+	case AUTOMATIC:
+	{
+		SendDlgItemMessage(hWnd, IDC_COMBO_ANIMTYPE, CB_SETCURSEL, 4, 0);
 		break;
 	}
 	}
@@ -150,7 +154,7 @@ BOOL DialogControl::AnimDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 			if (HIWORD(wParam) == CBN_SELCHANGE) {
 				int index = SendDlgItemMessage(hWnd, IDC_COMBO_ANIMTYPE, CB_GETCURSEL, 0, 0);
 				AnimCycleType Type = (AnimCycleType)SendDlgItemMessage(hWnd, IDC_COMBO_ANIMTYPE, CB_GETITEMDATA, index, 0);
-				AnimMng->SetAnimCycleType(idx, Type);
+				AnimMng->SetAnimCycle(idx, Type);
 			}
 			break;
 		}
@@ -174,7 +178,7 @@ BOOL DialogControl::AnimDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 				EnableWindow(GetDlgItem(hWnd, IDC_SLIDER_ANIMTEST), true);
 				EnableWindow(GetDlgItem(hDlg, IDC_TREE1), false);
 				SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ANIMTESTANIM), "STOP");
-				AnimMng->StartAnim(idx);
+				AnimMng->StartAnimation(idx);
 
 			}
 			else {
@@ -195,8 +199,8 @@ BOOL DialogControl::AnimDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 				EnableWindow(GetDlgItem(hWnd, IDC_SLIDER_ANIMTEST), false);
 				EnableWindow(GetDlgItem(hDlg, IDC_TREE1), true);
 				SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ANIMTESTANIM), "TEST ANIMATION");
-				AnimMng->StopAnim(idx);
-				AnimMng->ResetAnim(idx);
+				AnimMng->StopAnimation(idx);
+				AnimMng->ResetAnimation(idx);
 				SendDlgItemMessage(hWnd, IDC_SLIDER_ANIMTEST, TBM_SETPOS, true, (int)(AnimMng->GetAnimDefState(idx) * 100));
 			}
 			break;

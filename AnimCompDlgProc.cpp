@@ -2,8 +2,6 @@
 #include "resource.h"
 #include "DialogControl.h"
 #include "MeshManager.h"
-#include "AnimCompDef.h"
-#include "AnimDef.h"
 #include "AttachmentManager.h"
 #include "AnimationManager.h"
 #pragma comment(lib, "comctl32.lib")
@@ -14,7 +12,7 @@ void DialogControl::UpdateAnimCompGroupLists(HWND hWnd, def_idx meshdef_idx) {
 	SendDlgItemMessage(hWnd, IDC_LIST_ANIMCOMPGRPSINANIM, LB_RESETCONTENT, 0, 0);
 	for (UINT i = 0; i < VB1->MshMng->GetMeshDefNGrps(meshdef_idx); i++) {
 		
-		if (IsUintInVector(i, AnimMng->GetAnimCompDefGroups(idx))) {
+		if (VB1->IsUintInVector(i, AnimMng->GetAnimCompDefGroups(idx))) {
 			char cbuf[128] = { '\0' };
 			sprintf(cbuf, "%i", i);
 			int index = SendDlgItemMessage(hWnd, IDC_LIST_ANIMCOMPGRPSINANIM, LB_ADDSTRING, 0, (LPARAM)cbuf);
@@ -60,7 +58,7 @@ void DialogControl::UpdateAnimCompDialog(HWND hWnd) {
 	char cbuf[256] = { '\0' };
 	SetDlgItemText(hWnd, IDC_EDIT_ANIMCOMPNAME, (LPCSTR)AnimMng->GetAnimCompDefName(idx).c_str());
 
-	if (!AnimMng->IsAnimCompDefArmTip(idx)) {
+	if (!AnimMng->IsAnimCompArmTip(idx)) {
 		ShowAnimCompArmTip(hWnd, false);
 		SendDlgItemMessage(hWnd, IDC_CHECK_ANIMCOMPARMTIP, BM_SETCHECK, BST_UNCHECKED, 0);
 	}
@@ -107,15 +105,16 @@ void DialogControl::UpdateAnimCompDialog(HWND hWnd) {
 	SendDlgItemMessage(hWnd, IDC_COMBO_ANIMCOMPPARENT, CB_RESETCONTENT, 0, 0);
 	for (UINT i = 0; i < idx;i++){// AnimMng->GetAnimCompDefCount(); i++) {
 		if (i == idx) { continue; }
+		if (!AnimMng->IsAnimCompDefValid(i)) { continue; }
 		int index = SendDlgItemMessage(hWnd, IDC_COMBO_ANIMCOMPPARENT, CB_ADDSTRING, 0, (LPARAM)AnimMng->GetAnimCompDefName(i).c_str());
-		SendDlgItemMessage(hWnd, IDC_COMBO_ANIMCOMPPARENT, CB_SETITEMDATA, index, (LPARAM)AnimMng->GetAnimComp(i));
+		SendDlgItemMessage(hWnd, IDC_COMBO_ANIMCOMPPARENT, CB_SETITEMDATA, index, (LPARAM)AnimMng->GetAnimCompDefACH(i));
 	}
 	SendDlgItemMessage(hWnd, IDC_COMBO_ANIMCOMPPARENT, CB_INSERTSTRING, 0, (LPARAM)"NONE");
 	SendDlgItemMessage(hWnd, IDC_COMBO_ANIMCOMPPARENT, CB_SETITEMDATA, 0, (LPARAM)NULL);
 
-	AnimCompDef* acd = AnimMng->GetAnimCompDefParent(idx);
-	if (acd != NULL) {
-		int comboindex = ComboFindItemData(GetDlgItem(hWnd, IDC_COMBO_ANIMCOMPPARENT), (void*)acd);
+	ANIMATIONCOMPONENT_HANDLE pach = AnimMng->GetAnimCompDefParent(idx);
+	if (pach!= NULL) {
+		int comboindex = ComboFindItemData(GetDlgItem(hWnd, IDC_COMBO_ANIMCOMPPARENT), (void*)pach);
 		SendDlgItemMessage(hWnd, IDC_COMBO_ANIMCOMPPARENT, CB_SETCURSEL, comboindex, 0);
 	}
 	else {
@@ -271,11 +270,11 @@ BOOL DialogControl::AnimCompDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 				int groupnumber = SendDlgItemMessage(hWnd, IDC_LIST_ANIMCOMPGRPSTOPICK, LB_GETITEMDATA, sellist[i], 0);
 				grpstopass.push_back(groupnumber);
 			}
-			AnimMng->AnimCompDefAddGroups(idx, grpstopass);
+			AnimMng->AddAnimCompDefGroups(idx, grpstopass);
 			delete[] sellist;
 			
 			UpdateAnimCompGroupLists(hWnd, VB1->MshMng->IdxMsh2Def(AnimMng->GetAnimCompDefMesh(idx)));
-			AnimMng->SetIsAnimCompDefArmTip(idx, false);
+			AnimMng->SetIsAnimCompArmTip(idx, false);
 			//((ANIMATIONCOMP*)SB1->animcomp_defs[CurrentSelection.idx].ach)->trans->grp = SB1->animcomp_defs[CurrentSelection.idx].pgrps;
 			//((ANIMATIONCOMP*)SB1->animcomp_defs[CurrentSelection.idx].ach)->trans->ngrp = SB1->animcomp_defs[CurrentSelection.idx].grps.size();
 			break;
@@ -291,7 +290,7 @@ BOOL DialogControl::AnimCompDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 				int groupnumber = SendDlgItemMessage(hWnd, IDC_LIST_ANIMCOMPGRPSINANIM, LB_GETITEMDATA, sellist[i], 0);
 				grpstopass.push_back(groupnumber);
 			}
-			AnimMng->AnimCompDefRemoveGroups(idx, grpstopass);
+			AnimMng->RemoveAnimCompDefGroups(idx, grpstopass);
 			////////////////////AnimMng->AnimCompDefAddGroups(idx, grpstopass);
 			delete[] sellist;
 
@@ -334,7 +333,7 @@ BOOL DialogControl::AnimCompDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 		{
 			if (VB1->vclip.valid) {
 				VECTOR3 msh_pos = _V(0, 0, 0);
-				if (!AnimMng->IsAnimCompDefArmTip(idx))
+				if (!AnimMng->IsAnimCompArmTip(idx))
 				{
 					msh_pos = VB1->MshMng->GetMeshDefPos(VB1->MshMng->IdxMsh2Def(AnimMng->GetAnimCompDefMesh(idx)));
 				}
@@ -350,12 +349,9 @@ BOOL DialogControl::AnimCompDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 				int index = SendDlgItemMessage(hWnd, IDC_COMBO_ANIMCOMPMESH, CB_GETCURSEL, 0, 0);
 				msh_idx m_idx = SendDlgItemMessage(hWnd, IDC_COMBO_ANIMCOMPMESH, CB_GETITEMDATA, index, 0);
 				AnimMng->SetAnimCompDefMesh(idx, m_idx);
-				AnimMng->AnimCompDefResetGroups(idx);
+				AnimMng->ResetAnimCompDefGroups(idx);
 				UpdateAnimCompGroupLists(hWnd, VB1->MshMng->IdxMsh2Def(AnimMng->GetAnimCompDefMesh(idx)));
-				AnimMng->SetIsAnimCompDefArmTip(idx, false);
-				//UpdateAnimCompDialog(hWnd);
-				//DWORD Key = SendDlgItemMessage(hWnd, IDC_COMBO_ANIMKEY, CB_GETITEMDATA, index, 0);
-				//AnimMng->SetAnimKey(idx, Key);
+				AnimMng->SetIsAnimCompArmTip(idx, false);
 			}
 			break;
 		}
@@ -363,10 +359,8 @@ BOOL DialogControl::AnimCompDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 		{
 			if (HIWORD(wParam) == CBN_SELCHANGE) {
 				int index = SendDlgItemMessage(hWnd, IDC_COMBO_ANIMCOMPPARENT, CB_GETCURSEL, 0, 0);
-				//ANIMATIONCOMPONENT_HANDLE parent_ach =(ANIMATIONCOMPONENT_HANDLE)SendDlgItemMessage(hWnd, IDC_COMBO_ANIMCOMPPARENT, CB_GETITEMDATA, index, 0);
-				AnimCompDef* parent_acd = (AnimCompDef*)SendDlgItemMessage(hWnd, IDC_COMBO_ANIMCOMPPARENT, CB_GETITEMDATA, index, 0);
-				
-				AnimMng->SetAnimCompDefParent(idx, parent_acd);
+				ANIMATIONCOMPONENT_HANDLE parent_ach = (ANIMATIONCOMPONENT_HANDLE)SendDlgItemMessage(hWnd, IDC_COMBO_ANIMCOMPPARENT, CB_GETITEMDATA, index, 0);
+				AnimMng->SetAnimCompDefParent(idx, parent_ach);
 			}
 
 

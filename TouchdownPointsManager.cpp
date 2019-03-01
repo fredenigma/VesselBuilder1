@@ -165,7 +165,7 @@ void TouchdownPointsManager::RemovePoint(UINT set, UINT idx) {
 		set1.erase(set1.begin() + idx);
 	}
 	else {
-		set2.erase(set1.begin() + idx);
+		set2.erase(set2.begin() + idx);
 	}
 }
 void TouchdownPointsManager::EnableSecondSet(bool enable) {

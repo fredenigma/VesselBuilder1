@@ -76,11 +76,12 @@ void DialogControl::UpdateTdpDialog(HWND hWnd) {
 			SendDlgItemMessage(hWnd, IDC_EDIT_TDPMU, EM_SETREADONLY, false, 0);
 			SendDlgItemMessage(hWnd, IDC_EDIT_TDPMULNG, EM_SETREADONLY, false, 0);
 			SendDlgItemMessage(hWnd, IDC_COMBO_TDPCHANGEOVERANIM, CB_RESETCONTENT, 0, 0);
-			for (UINT i = 0; i < AnimMng->GetAnimDefCount(); i++) {
+			for (UINT i = 0; i < AnimMng->GetAnimDefsCount(); i++) {
+				if (!AnimMng->IsAnimValid(i)) { continue; }
 				char cbuf[256] = { '\0' };
 				sprintf(cbuf, "%s", AnimMng->GetAnimName(i).c_str());
-				SendDlgItemMessage(hWnd, IDC_COMBO_TDPCHANGEOVERANIM, CB_INSERTSTRING, i, (LPARAM)cbuf);
-				SendDlgItemMessage(hWnd, IDC_COMBO_TDPCHANGEOVERANIM, CB_SETITEMDATA, i, i);
+				int index = SendDlgItemMessage(hWnd, IDC_COMBO_TDPCHANGEOVERANIM, CB_ADDSTRING, 0, (LPARAM)cbuf);
+				SendDlgItemMessage(hWnd, IDC_COMBO_TDPCHANGEOVERANIM, CB_SETITEMDATA, index, i);
 			}
 			UINT changeoveranim = TdpMng->GetChangeOverAnimation();
 			if (changeoveranim != (UINT)-1) {

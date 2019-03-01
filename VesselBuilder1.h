@@ -216,6 +216,7 @@ public:
  
  string WriteVectorUINT(vector<UINT> v);
  vector<UINT> readVectorUINT(string s);
+ bool IsUintInVector(UINT u, vector<UINT>v);
 
  bool UsingD3D9();
  bool wD3D9;
