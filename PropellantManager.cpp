@@ -135,3 +135,8 @@ void PropellantManager::WriteCfg(FILEHANDLE fh) {
 	}
 	return;
 }
+void PropellantManager::Clear() {
+	VB1->ClearPropellantResources();
+	tanks.clear();
+	return;
+}

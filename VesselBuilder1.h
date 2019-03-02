@@ -93,7 +93,7 @@ class ParticleManager;
 class TouchdownPointsManager;
 class AirfoilsManager;
 class ControlSurfacesManager;
-
+class CameraManager;
 
 
 class VesselBuilder1 :public VESSEL4{
@@ -124,7 +124,7 @@ public:
  TouchdownPointsManager *TdpMng;
  AirfoilsManager *AirfoilMng;
  ControlSurfacesManager *CtrSurfMng;
-
+ CameraManager *CamMng;
 
  VISHANDLE visual;
  

@@ -136,6 +136,7 @@
     <ClInclude Include="AirfoilsManager.h" />
     <ClInclude Include="AnimationManager.h" />
     <ClInclude Include="AttachmentManager.h" />
+    <ClInclude Include="CameraManager.h" />
     <ClInclude Include="ControlSurfacesManager.h" />
     <ClInclude Include="DialogControl.h" />
     <ClInclude Include="FollowMeDlg.h" />
@@ -156,6 +157,7 @@
     <ClCompile Include="AnimDlgProc.cpp" />
     <ClCompile Include="AttachmentManager.cpp" />
     <ClCompile Include="AttDlgProc.cpp" />
+    <ClCompile Include="CameraManager.cpp" />
     <ClCompile Include="ControlSurfacesManager.cpp" />
     <ClCompile Include="CtrlSurfDlgProc.cpp" />
     <ClCompile Include="DialogControl.cpp" />

@@ -123,6 +123,7 @@ BOOL CALLBACK CtrlSurfDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 
 DialogControl::DialogControl(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;
+	MshMng = VB1->MshMng;
 	AnimMng = VB1->AnimMng;
 	AttMng = VB1->AttMng;
 	PrpMng = VB1->PrpMng;
@@ -153,6 +154,7 @@ DialogControl::DialogControl(VesselBuilder1 *_VB1) {
 }
 DialogControl::~DialogControl() {
 	VB1 = NULL;
+	MshMng = NULL;
 	AnimMng = NULL;
 	AttMng = NULL;
 	PrpMng = NULL;
@@ -202,7 +204,7 @@ bool DialogControl::IsOpen() {
 void DialogControl::InitDialog(HWND hWnd) {
 	InitTree(hWnd);
 	ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_HIDE);
-	VB1->MshMng->md_restore = VB1->MshMng->GetAllDefs();
+	MshMng->md_restore = MshMng->GetAllDefs();
 	hwnd_Mesh = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_MESH), hWnd, MeshDlgProcHook, (LPARAM)this);
 	hWnd_Dock = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_DOCK), hWnd, DockDlgProcHook, (LPARAM)this);
 	hWnd_Anim = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_ANIM), hWnd, AnimDlgProcHook, (LPARAM)this);
@@ -279,11 +281,11 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		insertstruct.item.mask = TVIF_TEXT;
 		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
 
-		for (UINT i = 0; i < VB1->MshMng->GetMeshCount(); i++) {
+		for (UINT i = 0; i < MshMng->GetMeshCount(); i++) {
 			insertstruct.hParent = hrootMeshes;
-			if (VB1->MshMng->GetMeshName(i).size() > 0) {
+			if (MshMng->GetMeshName(i).size() > 0) {
 				char cbuf[256] = { '\0' };
-				sprintf(cbuf, VB1->MshMng->GetMeshName(i).c_str());
+				sprintf(cbuf, MshMng->GetMeshName(i).c_str());
 				insertstruct.item.pszText = (LPSTR)cbuf;
 				insertstruct.item.cchTextMax = ARRAYSIZE(cbuf);
 				//insertstruct.item.pszText = (LPSTR)SB1->MshMng->GetMeshName(i).c_str();

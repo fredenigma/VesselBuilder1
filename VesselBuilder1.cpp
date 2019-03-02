@@ -19,6 +19,7 @@
 #include "TouchdownPointsManager.h"
 #include "AirfoilsManager.h"
 #include "ControlSurfacesManager.h"
+#include "CameraManager.h"
 #define _CRT_SECURE_NO_WARNINGS
 #define _CRT_NONSTDC_NO_DEPRECATE
 
@@ -43,7 +44,7 @@ VesselBuilder1::VesselBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
 	TdpMng = new TouchdownPointsManager(this);
 	AirfoilMng = new AirfoilsManager(this);
 	CtrSurfMng = new ControlSurfacesManager(this);
-
+	CamMng = new CameraManager(this);
 	dock_definitions.clear();
 	extex_defs.clear();
 	
@@ -108,7 +109,8 @@ VesselBuilder1::~VesselBuilder1(){
 	AirfoilMng = NULL;
 	delete CtrSurfMng;
 	CtrSurfMng = NULL;
-
+	delete CamMng;
+	CamMng = NULL;
 	CloseSBLog();
 	
 	//ClearDelete(mgr);
@@ -182,7 +184,7 @@ void VesselBuilder1::clbkSetClassCaps(FILEHANDLE cfg){
 	SetNosewheelSteering(true);
 	SetMaxWheelbrakeForce(2e5);
 	//SetCW(0.09, 0.09, 2, 1.4);
-	SetRotDrag(_V(0.10, 0.13, 0.04));
+	
 	return;
 }
 void VesselBuilder1::clbkLoadStateEx(FILEHANDLE scn,void *vs)
@@ -211,7 +213,11 @@ void VesselBuilder1::clbkLoadStateEx(FILEHANDLE scn,void *vs)
 				AnimMng->SetAnimationBackward(seq, true);
 			}
 		}
-		
+		else if (!_strnicmp(line, "CURRENT_CAM",11)) {
+			UINT cam = 0;
+			sscanf(line + 11, "%i", &cam);
+			CamMng->SetCurrentCamera(cam);
+		}
 		else{ 
 			ParseScenarioLineEx(line, vs); 
 		}	
@@ -238,7 +244,11 @@ void VesselBuilder1::clbkSaveState(FILEHANDLE scn)
 		oapiWriteScenario_string(scn, buff, buff2);
 		//oapiWriteScenario_float(scn, buff, AnimMng->GetAnimationState(i));
 	}
-	
+	if (CamMng->GetCamCount() > 0) {
+		char buf[256] = { '\0' };
+		sprintf(buf, "CURRENT_CAM");
+		oapiWriteScenario_int(scn, buf, CamMng->GetCurrentCamera());
+	}
 
 	if (follow_me) {
 		DeleteFollowMe();
@@ -425,7 +435,7 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 	if (!Dlg->IsOpen()) {
 		AnimMng->ConsumeAnimBufferedKey(key, down, kstate);
 	}
-	
+	CamMng->ConsumeCameraBufferedKey(key, down, kstate);
 	//}
 	
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == OAPI_KEY_SPACE) {
@@ -471,8 +481,10 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 			oapiWriteLogV("Mu:%.3f Mu_lng:%.3f", tdvtx.mu, tdvtx.mu_lng);
 		}
 		*/
-
-
+		SetCameraOffset(_V(0, 20, 0));
+		SetCameraDefaultDirection(_V(0, 0, 1), 125 * RAD);
+		SendBufferedKey(OAPI_KEY_HOME, true, 0);
+		
 
 
 	
@@ -653,31 +665,9 @@ void VesselBuilder1::ResetVehicle() {
 void VesselBuilder1::ParseCfgFile(FILEHANDLE fh) {
 	SBLog("Parsing Configuration File");
 	if (fh == NULL) { SBLog("WARNING: cfg file handle NULL!"); }
-	//FILEHANDLE fh = oapiOpenFile(filename.c_str(), FILE_IN_ZEROONFAIL, CONFIG);
-	//if (fh == NULL) { 
-	//	SBLog("ERROR: Failed To Open Config File!");
-	//	return; }
-	UINT mesh_counter = 0;
 	char cbuf[256] = { '\0' };
-	char item[256] = { '\0' };
-	sprintf_s(cbuf, "MESH_%i_NAME", mesh_counter);
-	while (oapiReadItem_string(fh, cbuf, item)) {
-		string mn(item);
-		VECTOR3 pos = _V(0, 0, 0);
-		VECTOR3 dir = _V(0, 0, 1);
-		VECTOR3 rot = _V(0, 1, 0);
-		sprintf_s(cbuf, "MESH_%i_POS", mesh_counter);
-		oapiReadItem_vec(fh, cbuf, pos);
-		sprintf_s(cbuf, "MESH_%i_DIR", mesh_counter);
-		oapiReadItem_vec(fh, cbuf, dir);
-		sprintf_s(cbuf, "MESH_%i_ROT", mesh_counter);
-		oapiReadItem_vec(fh, cbuf, rot);
-		MshMng->AddMeshDef(mn, pos, dir, rot);
-		mesh_counter++;
-		sprintf_s(cbuf, "MESH_%i_NAME", mesh_counter);
-	}
-	SBLog("Found %i Mesh Definitions", MshMng->GetMeshCount());
-	
+
+	MshMng->ParseCfgFile(fh);
 	UINT dock_counter = 0;
 	VECTOR3 dpos = _V(0, 0, 0);
 	sprintf_s(cbuf, "DOCK_%i_POS", dock_counter);
@@ -724,6 +714,7 @@ void VesselBuilder1::ParseCfgFile(FILEHANDLE fh) {
 	TdpMng->ParseCfgFile(fh);
 	AirfoilMng->ParseCfgFile(fh);
 	CtrSurfMng->ParseCfgFile(fh);
+	CamMng->ParseCfgFile(fh);
 
 	if (!oapiReadItem_bool(fh, "NOEDITOR", NoEditor)) { NoEditor = false; }
 	SBLog("Parsing Completed");
@@ -749,6 +740,9 @@ void VesselBuilder1::WriteCfgFile(string filename) {
 	GetCrossSections(cs);
 	oapiWriteItem_vec(fh, "CrossSections", cs);
 	oapiWriteItem_float(fh, "GravityGradientDamping", GetGravityGradientDamping());
+	VECTOR3 rd;
+	GetRotDrag(rd);
+	oapiWriteItem_vec(fh, "RotResistance", rd);
 	oapiWriteLine(fh, " ");
 
 	MshMng->WriteCfg(fh);
@@ -791,6 +785,9 @@ void VesselBuilder1::WriteCfgFile(string filename) {
 	TdpMng->WriteCfg(fh);
 	AirfoilMng->WriteCfg(fh);
 	CtrSurfMng->WriteCfg(fh);
+	CamMng->WriteCfg(fh);
+
+
 	oapiCloseFile(fh, FILE_OUT);
 	return;
 }

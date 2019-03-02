@@ -229,3 +229,10 @@ def_idx ParticleManager::IdxID2Def(UINT _id) {
 	}
 	return (UINT)-1;
 }
+
+void ParticleManager::Clear() {
+	particle_defs.clear();
+	AddParticleDef(DefaultContrail);
+	AddParticleDef(DefaultExhaust);
+	return;
+}

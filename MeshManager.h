@@ -10,6 +10,7 @@ struct MSH_DEF {
 	DEVMESHHANDLE devmsh_h;
 	VECTOR3 dir;
 	VECTOR3 rot;
+	WORD visibility;
 	UINT ngrps;
 	//vector<UINT>animated_grps;
 	bool Highlighted;
@@ -28,6 +29,7 @@ struct MSH_DEF {
 		Highlighted = false;
 		ngrps = 0;
 		HighlightedGrps = NULL;
+		visibility = 0x01;
 		//	animated_grps.clear();
 		//HighlightedGrps.clear();
 	}
@@ -55,7 +57,7 @@ public:
 	bool DeleteMeshDef(def_idx idx);
 	void AddMeshDef();
 	void AddMeshDef(MSH_DEF md);
-	void AddMeshDef(string meshname, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot);
+	void AddMeshDef(string meshname, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot,WORD visibility);
 	UINT nMeshes;
 	bool ChangeMeshFile(def_idx idx, string newmeshname);
 	void VisualCreated(VISHANDLE vis, int refcount);
@@ -87,5 +89,8 @@ public:
 	bool MeshGroupIsHighlighted(msh_idx msh_idx, UINT grp_idx);
 	void ResetMeshGroupHighlights(msh_idx msh_idx);
 	msh_idx GetMeshIdx(def_idx d_idx);
-	
+	void ParseCfgFile(FILEHANDLE fh);
+	WORD GetMeshVisibility(def_idx d_idx);
+	void SetMeshVisibility(def_idx d_idx, WORD visibility);
+	void Clear();
 };

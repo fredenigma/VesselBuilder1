@@ -6,31 +6,49 @@
 
 void DialogControl::DlgRotateMesh(UINT msh_idx, VECTOR3 axis, double angle) {
 
-	UINT index = VB1->MshMng->IdxMsh2Def(msh_idx);
+	UINT index = MshMng->IdxMsh2Def(msh_idx);
 	VECTOR3 rotated_axis = mul(VB1->MshMng->GetMeshDefRM(index), axis);
 
 
 	MATRIX3 rm = rotm(rotated_axis, angle);
 
 	//SB1->MshMng->RotateMesh(SB1->MshMng->GetMeshDefMH(index), SB1->MshMng->GetMeshDefDMH(index), rm);
-	MATRIX3 oldrm = VB1->MshMng->GetMeshDefRM(index);
+	MATRIX3 oldrm = MshMng->GetMeshDefRM(index);
 	MATRIX3 newrm = mul(rm, oldrm);
 	//SB1->MshMng->msh_defs[index].rm = mul(rm, oldrm);
-	VB1->MshMng->SetMeshDefRM(index, newrm);
+	MshMng->SetMeshDefRM(index, newrm);
 	
 	return;
 }
 void DialogControl::UpdateMeshDialog(HWND hWnd) {
 	if (CurrentSelection.Type != MESH) { return; }
 	UINT idx = CurrentSelection.idx;
-	if (idx >= VB1->MshMng->GetMeshCount()) { return; }
-	SetDlgItemText(hwnd_Mesh, IDC_EDIT_MESHNAME, (LPCSTR)VB1->MshMng->GetMeshDefName(idx).c_str());
-	SetDlgItemsTextVector3(hwnd_Mesh, IDC_EDIT_POSX, IDC_EDIT_POSY, IDC_EDIT_POSZ, VB1->MshMng->GetMeshDefPos(idx));
-	SetDlgItemsTextVector3(hwnd_Mesh, IDC_EDIT_DIRX, IDC_EDIT_DIRY, IDC_EDIT_DIRZ, VB1->MshMng->GetMeshDefDir(idx));
-	SetDlgItemsTextVector3(hwnd_Mesh, IDC_EDIT_ROTX, IDC_EDIT_ROTY, IDC_EDIT_ROTZ, VB1->MshMng->GetMEshDefRot(idx));
+	if (idx >= MshMng->GetMeshCount()) { return; }
+	SetDlgItemText(hwnd_Mesh, IDC_EDIT_MESHNAME, (LPCSTR)MshMng->GetMeshDefName(idx).c_str());
+	SetDlgItemsTextVector3(hwnd_Mesh, IDC_EDIT_POSX, IDC_EDIT_POSY, IDC_EDIT_POSZ, MshMng->GetMeshDefPos(idx));
+	SetDlgItemsTextVector3(hwnd_Mesh, IDC_EDIT_DIRX, IDC_EDIT_DIRY, IDC_EDIT_DIRZ, MshMng->GetMeshDefDir(idx));
+	SetDlgItemsTextVector3(hwnd_Mesh, IDC_EDIT_ROTX, IDC_EDIT_ROTY, IDC_EDIT_ROTZ, MshMng->GetMEshDefRot(idx));
 	char cbuf[128] = { '\0' };
 	sprintf_s(cbuf, "%.1f", speedrotation*DEG);
 	SetDlgItemText(hwnd_Mesh, IDC_EDIT_GETANGLE, (LPCSTR)cbuf);
+	WORD vis = MshMng->GetMeshVisibility(idx);
+	if (vis == MESHVIS_ALWAYS) {
+		SendDlgItemMessage(hWnd, IDC_CHECK_MSHVISCOC, BM_SETCHECK, BST_CHECKED, 0);
+		SendDlgItemMessage(hWnd, IDC_CHECK_MSHVISEXT, BM_SETCHECK, BST_CHECKED, 0);
+	}
+	else if (vis == MESHVIS_COCKPIT) {
+		SendDlgItemMessage(hWnd, IDC_CHECK_MSHVISCOC, BM_SETCHECK, BST_CHECKED, 0);
+		SendDlgItemMessage(hWnd, IDC_CHECK_MSHVISEXT, BM_SETCHECK, BST_UNCHECKED, 0);
+	}
+	else if (vis == MESHVIS_EXTERNAL) {
+		SendDlgItemMessage(hWnd, IDC_CHECK_MSHVISCOC, BM_SETCHECK, BST_UNCHECKED, 0);
+		SendDlgItemMessage(hWnd, IDC_CHECK_MSHVISEXT, BM_SETCHECK, BST_CHECKED, 0);
+	}
+	else if (vis == MESHVIS_NEVER) {
+		SendDlgItemMessage(hWnd, IDC_CHECK_MSHVISCOC, BM_SETCHECK, BST_UNCHECKED, 0);
+		SendDlgItemMessage(hWnd, IDC_CHECK_MSHVISEXT, BM_SETCHECK, BST_UNCHECKED, 0);
+	}
+	return;
 }
 void DialogControl::MeshNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) {
 	UINT idx = CurrentSelection.idx;
@@ -219,8 +237,8 @@ BOOL DialogControl::MeshDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 		case IDC_BUTTON_POS_SET:
 		{
 			VECTOR3 newpos = GetDlgItemsVector3(hWnd, IDC_EDIT_POSX, IDC_EDIT_POSY, IDC_EDIT_POSZ);
-			VECTOR3 offset = newpos - VB1->MshMng->GetMeshDefPos(CurrentSelection.idx);
-			VB1->MshMng->MoveMeshDef(CurrentSelection.idx, offset);
+			VECTOR3 offset = newpos - MshMng->GetMeshDefPos(CurrentSelection.idx);
+			MshMng->MoveMeshDef(CurrentSelection.idx, offset);
 			UpdateMeshDialog(hWnd);
 
 			break;
@@ -232,19 +250,42 @@ BOOL DialogControl::MeshDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
 				LRESULT getcheck = SendDlgItemMessage(hWnd, IDC_CHECK_HIGHLIGHT_MSH, BM_GETCHECK, 0, 0);
 				if (getcheck == BST_CHECKED) {
-					VB1->MshMng->HighlightMesh(VB1->MshMng->IdxDef2Msh(CurrentSelection.idx), true);
+					MshMng->HighlightMesh(MshMng->IdxDef2Msh(CurrentSelection.idx), true);
 				}
 				else {
-					VB1->MshMng->HighlightMesh(VB1->MshMng->IdxDef2Msh(CurrentSelection.idx), false);
+					MshMng->HighlightMesh(MshMng->IdxDef2Msh(CurrentSelection.idx), false);
 				}
 			}
 			break;
 		}
+		case IDC_CHECK_MSHVISEXT:
+		case IDC_CHECK_MSHVISCOC:
+		{
+			if (HIWORD(wParam) == BN_CLICKED) {
+				LRESULT getcheck_ext = SendDlgItemMessage(hWnd, IDC_CHECK_MSHVISEXT, BM_GETCHECK, 0, 0);
+				LRESULT getcheck_coc = SendDlgItemMessage(hWnd, IDC_CHECK_MSHVISCOC, BM_GETCHECK, 0, 0);
+				if ((getcheck_ext == BST_CHECKED) && (getcheck_coc == BST_CHECKED)) {
+					MshMng->SetMeshVisibility(CurrentSelection.idx, MESHVIS_ALWAYS);
+				}
+				else if ((getcheck_ext == BST_UNCHECKED) && (getcheck_coc == BST_CHECKED)) {
+					MshMng->SetMeshVisibility(CurrentSelection.idx, MESHVIS_COCKPIT);
+				}
+				else if ((getcheck_ext == BST_CHECKED) && (getcheck_coc == BST_UNCHECKED)) {
+					MshMng->SetMeshVisibility(CurrentSelection.idx, MESHVIS_EXTERNAL);
+				}
+				else if ((getcheck_ext == BST_UNCHECKED) && (getcheck_coc == BST_UNCHECKED)) {
+					MshMng->SetMeshVisibility(CurrentSelection.idx, MESHVIS_NEVER);
+				}
+			}
+			break;
+		}
+		
+		
 		case IDC_BUTTON_DIR_SET:
 		{
 			VECTOR3 dir = GetDlgItemsVector3(hWnd, IDC_EDIT_DIRX, IDC_EDIT_DIRY, IDC_EDIT_DIRZ);
 			normalise(dir);
-			VB1->MshMng->SetMeshDefDirRot(CurrentSelection.idx, dir, VB1->MshMng->GetMEshDefRot(CurrentSelection.idx));
+			MshMng->SetMeshDefDirRot(CurrentSelection.idx, dir, MshMng->GetMEshDefRot(CurrentSelection.idx));
 			UpdateMeshDialog(hWnd);
 			break;
 		}
@@ -252,21 +293,29 @@ BOOL DialogControl::MeshDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 		{
 			VECTOR3 rot = GetDlgItemsVector3(hWnd, IDC_EDIT_ROTX, IDC_EDIT_ROTY, IDC_EDIT_ROTZ);
 			normalise(rot);
-			VB1->MshMng->SetMeshDefDirRot(CurrentSelection.idx, VB1->MshMng->GetMeshDefDir(CurrentSelection.idx), rot); 
+			MshMng->SetMeshDefDirRot(CurrentSelection.idx, MshMng->GetMeshDefDir(CurrentSelection.idx), rot); 
 			UpdateMeshDialog(hWnd);
 			break;
 		}
 		case IDC_BUTTON_DELETEMESHDEF:
 		{
-			bool test = VB1->MshMng->DeleteMeshDef(CurrentSelection.idx);
+			bool test = MshMng->DeleteMeshDef(CurrentSelection.idx);
 			UpdateTree(hDlg, MESH,hrootMeshes);
 			break;
 		}
 		case IDC_BUTTON_LOADMESH:
 		{
 
-			string meshdir = VB1->OrbiterRoot;
-			meshdir += "\\Meshes\\";
+			//string meshdir = VB1->OrbiterRoot;
+			//meshdir += "\\Meshes\\";
+			string meshdir = VB1->meshdir;
+			char absmeshdir_c[MAX_PATH];
+			char currentdir1[MAX_PATH];
+			GetCurrentDirectory(sizeof(currentdir1) / sizeof(char), currentdir1);
+			SetCurrentDirectory(meshdir.c_str());
+			GetCurrentDirectory(sizeof(absmeshdir_c) / sizeof(char), absmeshdir_c);
+			string absmeshdir(absmeshdir_c);
+			SetCurrentDirectory(currentdir1);
 
 			OPENFILENAME ofn;       // common dialog box structure
 			char szFile[260] = { '\0' };       // buffer for file name
@@ -310,10 +359,10 @@ BOOL DialogControl::MeshDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
 				//sprintf(test, szFile);
 				string result(szFile);
-				string filename = result.substr(meshdir.size(), ofn.nFileExtension - 1 - meshdir.size());//result.size()-meshdir.size()-
-
+				string filename = result.substr(absmeshdir.size()+1, ofn.nFileExtension - 2 - absmeshdir.size());//result.size()-meshdir.size()-
+				oapiWriteLogV("filename:%s", filename.c_str());
 				SetWindowText(GetDlgItem(hWnd, IDC_EDIT_MESHNAME), filename.c_str());
-				bool changed = VB1->MshMng->ChangeMeshFile(CurrentSelection.idx, filename);
+				bool changed = MshMng->ChangeMeshFile(CurrentSelection.idx, filename);
 				if (changed) {
 					TVITEM tvi;
 					tvi.mask = TVIF_TEXT;

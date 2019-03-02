@@ -175,3 +175,8 @@ void ControlSurfacesManager::WriteCfg(FILEHANDLE fh) {
 	}
 	return;
 }
+void ControlSurfacesManager::Clear() {
+	VB1->ClearControlSurfaceDefinitions();
+	ctrlsurf_defs.clear();
+	return;
+}

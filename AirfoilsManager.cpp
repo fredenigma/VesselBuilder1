@@ -574,3 +574,8 @@ void AirfoilsManager::SetAirfoilDefModel(def_idx d_idx, AIRFOILS_DEFAULTS adf) {
 	airfoil_defs[d_idx].LCD->SetDefModel(adf);
 	return;
 }
+void AirfoilsManager::Clear() {
+	VB1->ClearAirfoilDefinitions();
+	airfoil_defs.clear();
+	return;
+}

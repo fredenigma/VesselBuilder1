@@ -168,3 +168,8 @@ void AttachmentManager::SetAttDefRange(def_idx d_idx, double newrange) {
 double AttachmentManager::GetAttDefRange(def_idx d_idx) {
 	return att_defs[d_idx].range;
 }
+void AttachmentManager::Clear() {
+	VB1->ClearAttachments();
+	att_defs.clear();
+	return;
+}

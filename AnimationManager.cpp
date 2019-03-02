@@ -989,3 +989,14 @@ int AnimationManager::AnimationRunStatus(anim_idx a_idx) {
 	else if ((IsAnimRunning(a_idx)) && (IsAnimBackward(a_idx))) { return -1; }
 	else { return 0; }
 }
+
+void AnimationManager::Clear() {
+	ANIMATION* anims;
+	UINT nanims = VB1->GetAnimPtr(&anims);
+	for (UINT i = 0; i < nanims; i++) {
+		VB1->DelAnimation(i);
+	}
+	anim_defs.clear();
+	animcomp_defs.clear();
+	return;
+}

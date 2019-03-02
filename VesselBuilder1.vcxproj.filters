@@ -46,6 +46,9 @@
     <ClInclude Include="AnimationManager.h">
       <Filter>Vessel\Managers</Filter>
     </ClInclude>
+    <ClInclude Include="CameraManager.h">
+      <Filter>Vessel\Managers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\Orbitersdk\lib\orbiter.lib">
@@ -158,6 +161,9 @@
       <Filter>Dialog</Filter>
     </ClCompile>
     <ClCompile Include="AnimationManager.cpp">
+      <Filter>Vessel\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="CameraManager.cpp">
       <Filter>Vessel\Managers</Filter>
     </ClCompile>
   </ItemGroup>

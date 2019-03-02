@@ -384,7 +384,10 @@ void ThrusterManager::AddThrParticles(def_idx d_idx, def_idx particle_idx) {
 	
 	return;
 }
-
+void ThrusterManager::Clear() {
+	VB1->ClearThrusterDefinitions();
+	thr_defs.clear();
+}
 
 
 
@@ -860,5 +863,24 @@ void ThrusterGroupManager::WriteCfg(FILEHANDLE fh) {
 	thr_s.clear();
 
 
+	return;
+}
+
+void ThrusterGroupManager::ResetDefine() {
+	Defined[THGROUP_MAIN] = false;
+	Defined[THGROUP_RETRO] = false;
+	Defined[THGROUP_HOVER] = false;
+	Defined[THGROUP_ATT_PITCHUP] = false;
+	Defined[THGROUP_ATT_PITCHDOWN] = false;
+	Defined[THGROUP_ATT_YAWLEFT] = false;
+	Defined[THGROUP_ATT_YAWRIGHT] = false;
+	Defined[THGROUP_ATT_BANKLEFT] = false;
+	Defined[THGROUP_ATT_BANKRIGHT] = false;
+	Defined[THGROUP_ATT_RIGHT] = false;
+	Defined[THGROUP_ATT_LEFT] = false;
+	Defined[THGROUP_ATT_UP] = false;
+	Defined[THGROUP_ATT_DOWN] = false;
+	Defined[THGROUP_ATT_FORWARD] = false;
+	Defined[THGROUP_ATT_BACK] = false;
 	return;
 }

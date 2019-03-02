@@ -74,6 +74,7 @@ public:
 	void SetThrParticles(def_idx d_idx, vector<UINT> _ids);
 	void AddThrParticles(def_idx d_idx, def_idx particle_idx);
 	void ClearThrParticles(def_idx d_idx);
+	void Clear();
 };
 
 class ThrusterGroupManager {
@@ -90,4 +91,5 @@ public:
 	vector<THRUSTER_HANDLE> GetThrustersfromIdx(vector<UINT> idx);
 	void ParseCfgFile(FILEHANDLE fh);
 	void WriteCfg(FILEHANDLE fh);
+	void ResetDefine();
 };

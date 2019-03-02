@@ -229,3 +229,9 @@ UINT TouchdownPointsManager::GetPointsCount(UINT set) {
 		return set2.size();
 	}
 }
+
+void TouchdownPointsManager::Clear() {
+	ClearSet(1);
+	ClearSet(2);
+	return;
+}

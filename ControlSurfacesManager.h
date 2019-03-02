@@ -44,4 +44,5 @@ public:
 	void SetCtrlSurfDefParams(def_idx d_idx, AIRCTRL_TYPE type, double area, double dCl, VECTOR3 ref, int axis, double delay, UINT anim);
 	void ParseCfgFile(FILEHANDLE fh);
 	void WriteCfg(FILEHANDLE fh);
+	void Clear();
 };

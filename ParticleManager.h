@@ -38,4 +38,5 @@ public:
 	UINT _id_counter;
 	UINT GetParticleDefID(def_idx d_idx);
 	def_idx IdxID2Def(UINT _id);
+	void Clear();
 };

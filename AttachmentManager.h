@@ -54,5 +54,5 @@ public:
 	def_idx IdxAtt2Def(UINT att_idx);
 	void SetAttDefRange(def_idx d_idx, double newrange);
 	double GetAttDefRange(def_idx d_idx);
-	
+	void Clear();
 };

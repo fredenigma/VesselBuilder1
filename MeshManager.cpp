@@ -161,12 +161,13 @@ void MeshManager::AddMeshDef(MSH_DEF md) {
 	nMeshes = msh_defs.size();
 	return;
 }
-void MeshManager::AddMeshDef(string meshname, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot) {
+void MeshManager::AddMeshDef(string meshname, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot,WORD visibility) {
 	MSH_DEF md = MSH_DEF();
 	md.meshname = meshname;
 	md.ofs = pos;
 	md.dir = dir;
 	md.rot = rot;
+	md.visibility = visibility;
 	return AddMeshDef(md);
 }
 
@@ -188,6 +189,7 @@ void MeshManager::LoadMeshes() {
 		msh_defs[i].msh_h = oapiLoadMeshGlobal(msh_defs[i].meshname.c_str(), LoadMeshClbk);
 		msh_defs[i].ngrps = oapiMeshGroupCount(msh_defs[i].msh_h);
 		msh_defs[i].msh_idx = VB1->AddMesh(msh_defs[i].msh_h, &msh_defs[i].ofs);
+		VB1->SetMeshVisibilityMode(msh_defs[i].msh_idx, msh_defs[i].visibility);
 		msh_defs[i].template_msh_h = VB1->CopyMeshFromTemplate(msh_defs[i].msh_idx);
 		if (msh_defs[i].ngrps > 0) {
 			msh_defs[i].HighlightedGrps = new bool[msh_defs[i].ngrps];
@@ -511,6 +513,8 @@ void MeshManager::WriteCfg(FILEHANDLE fh) {
 		oapiWriteItem_vec(fh, cbuf, msh_defs[i].dir);
 		sprintf(cbuf, "MESH_%i_ROT", i);
 		oapiWriteItem_vec(fh, cbuf, msh_defs[i].rot);
+		sprintf(cbuf, "MESH_%i_VIS", i);
+		oapiWriteItem_int(fh, cbuf, msh_defs[i].visibility);
 		oapiWriteLine(fh, " ");
 	}
 	return;
@@ -590,4 +594,46 @@ void MeshManager::ResetMeshGroupHighlights(msh_idx msh_idx) {
 
 msh_idx MeshManager::GetMeshIdx(def_idx d_idx) {
 	return msh_defs[d_idx].msh_idx;
+}
+WORD MeshManager::GetMeshVisibility(def_idx d_idx) {
+	return msh_defs[d_idx].visibility;
+}
+void MeshManager::SetMeshVisibility(def_idx d_idx, WORD visibility) {
+	msh_defs[d_idx].visibility = visibility;
+	VB1->SetMeshVisibilityMode(msh_defs[d_idx].msh_idx, visibility);
+	return;
+}
+void MeshManager::ParseCfgFile(FILEHANDLE fh) {
+	UINT mesh_counter = 0;
+	char cbuf[256] = { '\0' };
+	char item[256] = { '\0' };
+	sprintf_s(cbuf, "MESH_%i_NAME", mesh_counter);
+	while (oapiReadItem_string(fh, cbuf, item)) {
+		string mn(item);
+		VECTOR3 pos = _V(0, 0, 0);
+		VECTOR3 dir = _V(0, 0, 1);
+		VECTOR3 rot = _V(0, 1, 0);
+		WORD visibility;
+		sprintf_s(cbuf, "MESH_%i_POS", mesh_counter);
+		oapiReadItem_vec(fh, cbuf, pos);
+		sprintf_s(cbuf, "MESH_%i_DIR", mesh_counter);
+		oapiReadItem_vec(fh, cbuf, dir);
+		sprintf_s(cbuf, "MESH_%i_ROT", mesh_counter);
+		oapiReadItem_vec(fh, cbuf, rot);
+		sprintf(cbuf, "MESH_%i_VIS", mesh_counter);
+		int vis;
+		if (!oapiReadItem_int(fh, cbuf, vis)) { vis = 1; }
+		visibility = (WORD)vis;
+		AddMeshDef(mn, pos, dir, rot,visibility);
+		mesh_counter++;
+		sprintf_s(cbuf, "MESH_%i_NAME", mesh_counter);
+	}
+	//SBLog("Found %i Mesh Definitions", GetMeshCount());
+	return;
+}
+
+void MeshManager::Clear() {
+	VB1->ClearMeshes();
+	msh_defs.clear();
+	nMeshes = 0;
 }

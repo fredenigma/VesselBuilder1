@@ -149,4 +149,6 @@ public:
 	void ParseCfgFile(FILEHANDLE fh);
 	void WriteCfg(FILEHANDLE fh);
 	int AnimationRunStatus(anim_idx a_idx);
+
+	void Clear();
 };

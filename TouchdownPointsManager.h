@@ -30,4 +30,5 @@ public:
 	void SetCurrentSet(UINT set);
 	UINT GetCurrentSet();
 	UINT GetPointsCount(UINT set);
+	void Clear();
 };

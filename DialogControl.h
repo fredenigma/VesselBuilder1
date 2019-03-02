@@ -114,6 +114,7 @@ public:
 
 	HWND GetDlg() { return hDlg; }
 	map<DWORD, string> oapi_keys;
+	MeshManager *MshMng;
 	AnimationManager *AnimMng;
 	AttachmentManager *AttMng;
 	PropellantManager *PrpMng;

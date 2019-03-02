@@ -13,6 +13,9 @@ void DialogControl::UpdateSettingsDialog(HWND hWnd) {
 	VECTOR3 cs;
 	VB1->GetCrossSections(cs);
 	SetDlgItemsTextVector3(hWnd, IDC_EDIT_SETCSX, IDC_EDIT_SETCSY, IDC_EDIT_SETCSZ, cs);
+	VECTOR3 rd;
+	VB1->GetRotDrag(rd);
+	SetDlgItemsTextVector3(hWnd, IDC_EDIT_SETRDX, IDC_EDIT_SETRDY, IDC_EDIT_SETRDZ, rd);
 	return;
 }
 BOOL DialogControl::SettingsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -53,6 +56,12 @@ BOOL DialogControl::SettingsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 		{
 			VECTOR3 cs = GetDlgItemsVector3(hWnd, IDC_EDIT_SETCSX, IDC_EDIT_SETCSY, IDC_EDIT_SETCSZ);
 			VB1->SetCrossSections(cs);
+			break;
+		}
+		case IDC_BUTTON_SETRDSET:
+		{
+			VECTOR3 rd = GetDlgItemsVector3(hWnd, IDC_EDIT_SETRDX, IDC_EDIT_SETRDY, IDC_EDIT_SETRDZ);
+			VB1->SetRotDrag(rd);
 			break;
 		}
 		}

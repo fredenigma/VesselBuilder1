@@ -87,4 +87,5 @@ public:
 	void WriteCfg(FILEHANDLE fh);
 	AIRFOILS_DEFAULTS GetAirfoilDefModel(def_idx d_idx);
 	void SetAirfoilDefModel(def_idx d_idx, AIRFOILS_DEFAULTS adf);
+	void Clear();
 };

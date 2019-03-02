@@ -310,6 +310,9 @@
 #define IDC_EDIT_SETCSZ                 1270
 #define IDC_EDIT_SETSIZE                1271
 #define IDC_EDIT_SETGGD                 1272
+#define IDC_EDIT_SETRDX                 1273
+#define IDC_EDIT_SETRDY                 1274
+#define IDC_EDIT_SETRDZ                 1275
 #define IDC_STATIC_VESSELNAME           1278
 #define IDC_BUTTON_SETEMSET             1279
 #define IDC_BUTTON_SETSIZESET           1280
@@ -321,6 +324,8 @@
 #define IDC_BUTTON_SETGGDSET            1283
 #define IDC_EDIT_AIRFOILS               1283
 #define IDC_EDIT_AIRFOILA               1284
+#define IDC_BUTTON_SETCSSET2            1284
+#define IDC_BUTTON_SETRDSET             1284
 #define IDC_EDIT_AIRFOILREFY            1285
 #define IDC_EDIT_AIRFOILREFZ            1286
 #define IDC_BUTTON_AIRFOILREFSET        1287
@@ -351,8 +356,9 @@
 #define IDC_BUTTON_CSAMESET             1312
 #define IDC_BUTTON_CSDELETE             1313
 #define IDC_BUTTON_CSDEFUNDEF           1314
-#define IDC_BUTTON2                     1315
 #define IDC_BUTTON_CSPASTEV             1315
+#define IDC_CHECK_MSHVISEXT             1317
+#define IDC_CHECK_MSHVISCOC             1318
 
 // Next default values for new objects
 // 
@@ -360,7 +366,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1316
+#define _APS_NEXT_CONTROL_VALUE         1319
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
