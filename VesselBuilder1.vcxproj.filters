@@ -49,6 +49,15 @@
     <ClInclude Include="CameraManager.h">
       <Filter>Vessel\Managers</Filter>
     </ClInclude>
+    <ClInclude Include="DockManager.h">
+      <Filter>Vessel\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="ExTexManager.h">
+      <Filter>Vessel\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="VCManager.h">
+      <Filter>Vessel\Managers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\Orbitersdk\lib\orbiter.lib">
@@ -165,6 +174,21 @@
     </ClCompile>
     <ClCompile Include="CameraManager.cpp">
       <Filter>Vessel\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="DockManager.cpp">
+      <Filter>Vessel\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="CamDlgProc.cpp">
+      <Filter>Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="ExTexManager.cpp">
+      <Filter>Vessel\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="VCManager.cpp">
+      <Filter>Vessel\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="VCPosDlgProc.cpp">
+      <Filter>Dialog</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

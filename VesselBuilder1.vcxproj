@@ -139,12 +139,15 @@
     <ClInclude Include="CameraManager.h" />
     <ClInclude Include="ControlSurfacesManager.h" />
     <ClInclude Include="DialogControl.h" />
+    <ClInclude Include="DockManager.h" />
+    <ClInclude Include="ExTexManager.h" />
     <ClInclude Include="FollowMeDlg.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="MeshManager.h" />
     <ClInclude Include="ParticleManager.h" />
     <ClInclude Include="PropellantManager.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="VCManager.h" />
     <ClInclude Include="VesselBuilder1.h" />
     <ClInclude Include="ThrusterManager.h" />
     <ClInclude Include="TouchdownPointsManager.h" />
@@ -157,12 +160,15 @@
     <ClCompile Include="AnimDlgProc.cpp" />
     <ClCompile Include="AttachmentManager.cpp" />
     <ClCompile Include="AttDlgProc.cpp" />
+    <ClCompile Include="CamDlgProc.cpp" />
     <ClCompile Include="CameraManager.cpp" />
     <ClCompile Include="ControlSurfacesManager.cpp" />
     <ClCompile Include="CtrlSurfDlgProc.cpp" />
     <ClCompile Include="DialogControl.cpp" />
     <ClCompile Include="DockDlgProc.cpp" />
+    <ClCompile Include="DockManager.cpp" />
     <ClCompile Include="ExTexDlgProc.cpp" />
+    <ClCompile Include="ExTexManager.cpp" />
     <ClCompile Include="FollowMeDlg.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="MeshDialogProc.cpp" />
@@ -172,6 +178,8 @@
     <ClCompile Include="PropellantManager.cpp" />
     <ClCompile Include="PrpDlgProc.cpp" />
     <ClCompile Include="SettingsDlgProc.cpp" />
+    <ClCompile Include="VCManager.cpp" />
+    <ClCompile Include="VCPosDlgProc.cpp" />
     <ClCompile Include="VesselBuilder1.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>

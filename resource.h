@@ -18,6 +18,8 @@
 #define IDD_DIALOG_SETTINGS             116
 #define IDD_DIALOG_AIRFOILS             117
 #define IDD_DIALOG_CTRLSURF             118
+#define IDD_DIALOG_CAMERA               119
+#define IDD_DIALOG_VCPOS                120
 #define IDC_TREE1                       1001
 #define IDC_SPIN_POSZ_S                 1005
 #define IDC_SPIN_POSZ_L                 1006
@@ -139,6 +141,7 @@
 #define IDC_BUTTON_DOCKROT_SET          1100
 #define IDC_CHECK_HIGHLIGHT_DOCK        1101
 #define IDC_EDIT_DOCKNAME               1102
+#define IDC_BUTTON_DOCKNAMESET          1103
 #define IDC_COMBO_ANIMTYPE              1108
 #define IDC_EDIT_ANIMDURATION           1109
 #define IDC_EDIT_ANIMDEFSTATE           1110
@@ -324,7 +327,6 @@
 #define IDC_BUTTON_SETGGDSET            1283
 #define IDC_EDIT_AIRFOILS               1283
 #define IDC_EDIT_AIRFOILA               1284
-#define IDC_BUTTON_SETCSSET2            1284
 #define IDC_BUTTON_SETRDSET             1284
 #define IDC_EDIT_AIRFOILREFY            1285
 #define IDC_EDIT_AIRFOILREFZ            1286
@@ -349,16 +351,54 @@
 #define IDC_EDIT_CSREFY                 1305
 #define IDC_EDIT_CSREFZ                 1306
 #define IDC_COMBO_CSAXIS                1307
+#define IDC_EDIT_VCPOSDIRX              1307
 #define IDC_EDIT_CSDELAY                1308
+#define IDC_EDIT_VCPOSDIRY              1308
 #define IDC_COMBO_CSANIM                1309
+#define IDC_EDIT_VCPOSDIRZ              1309
 #define IDC_COMBO_CSTYPE                1310
 #define IDC_EDIT_CSNAME                 1311
 #define IDC_BUTTON_CSAMESET             1312
 #define IDC_BUTTON_CSDELETE             1313
 #define IDC_BUTTON_CSDEFUNDEF           1314
 #define IDC_BUTTON_CSPASTEV             1315
+#define IDC_BUTTON_VCPOSOFSSET          1316
 #define IDC_CHECK_MSHVISEXT             1317
+#define IDC_BUTTON_CSAMESET3            1317
+#define IDC_BUTTON_VCPOSDIRSET          1317
 #define IDC_CHECK_MSHVISCOC             1318
+#define IDC_CHECK_DOCKJETT              1319
+#define IDC_CHECK_MSHVISVC              1319
+#define IDC_BUTTON_CAMXP                1320
+#define IDC_BUTTON_CAMXM                1321
+#define IDC_BUTTON_CAMYP                1322
+#define IDC_BUTTON_CAMYM                1323
+#define IDC_BUTTON_CAMZP                1324
+#define IDC_BUTTON_CAMZM                1325
+#define IDC_EDIT_CAMNAME                1326
+#define IDC_BUTTON_CAMNAMESET           1327
+#define IDC_EDIT_CAMPOSX                1328
+#define IDC_EDIT_CAMPOSY                1329
+#define IDC_EDIT_CAMPOSZ                1330
+#define IDC_BUTTON_CAMPOSSET            1331
+#define IDC_EDIT_CAMDIRX                1332
+#define IDC_EDIT_CAMDIRY                1333
+#define IDC_EDIT_CAMDIRZ                1334
+#define IDC_BUTTON_CAMDIRSET            1335
+#define IDC_EDIT_CAMTILT                1336
+#define IDC_BUTTON_CAMTILTSET           1337
+#define IDC_BTN_CAMPASTEV               1338
+#define IDC_BUTTON_DELETECAM            1339
+#define IDC_BUTTON_CAMTEST              1340
+#define IDC_CHECK_FOLLWOMESUPERPREC     1341
+#define IDC_EDIT_VCPOSNAME              1342
+#define IDC_BUTTON_VCPOSNAMESET         1343
+#define IDC_EDIT_VCPOSOFSX              1344
+#define IDC_EDIT_VCPOSOFSY              1345
+#define IDC_EDIT_VCPOSOFSZ              1346
+#define IDC_BUTTON_VCPOSPASTEV          1347
+#define IDC_BUTTON_VCPOSCHECK           1348
+#define IDC_BUTTON_VCPOSDELETE          1349
 
 // Next default values for new objects
 // 
@@ -366,7 +406,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1319
+#define _APS_NEXT_CONTROL_VALUE         1350
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

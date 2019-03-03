@@ -117,7 +117,7 @@ void AttachmentManager::ParseCfgFile(FILEHANDLE fh) {
 	return;
 }
 void AttachmentManager::WriteCfg(FILEHANDLE fh) {
-
+	oapiWriteLine(fh, " ");
 	oapiWriteLine(fh, ";<-------------------------ATTACHMENTS DEFINITIONS------------------------->");
 	oapiWriteLine(fh, " ");
 

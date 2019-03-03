@@ -52,38 +52,15 @@ struct V_CLIPBOARD {
 
 
 
-struct DCK_DEF {
-	VECTOR3 pos;
-	VECTOR3 dir;
-	VECTOR3 rot;
-	VECTOR3 antidir;
-	VECTOR3 antirot;
-	DOCKHANDLE dh;
-	DCK_DEF() {
-		pos = _V(0, 0, 0);
-		dir = _V(0, 0, 1);
-		antidir = _V(0, 0, -1);
-		rot = _V(0, 1, 0);
-		antirot = _V(0, -1, 0);
-		dh = NULL;
-	}
-};
 
-struct EXTEX_DEF {
-	string TexName;
-	SURFHANDLE tex;
-	bool created;
-	EXTEX_DEF() {
-		TexName.clear();
-		tex = NULL;
-		created = false;
-	}
-};
+
+
 
 class DialogControl;
 class FollowMeDlg;
 class AnimCompDef;
 class MeshManager;
+class DockManager;
 class AttachmentManager;
 class AnimationManager;
 class PropellantManager;
@@ -94,7 +71,8 @@ class TouchdownPointsManager;
 class AirfoilsManager;
 class ControlSurfacesManager;
 class CameraManager;
-
+class ExTexManager;
+class VCManager;
 
 class VesselBuilder1 :public VESSEL4{
 public:
@@ -111,10 +89,12 @@ public:
  void clbkVisualCreated(VISHANDLE  vis, int  refcount);
  void clbkVisualDestroyed(VISHANDLE  vis, int  refcount);
  bool clbkLoadVC(int id);
- 
- void CreateDocks();
+ bool clbkVCMouseEvent(int id, int event, VECTOR3 &p);
+ void clbkDockEvent(int dock, OBJHANDLE mate);
+
 
  MeshManager* MshMng;
+ DockManager* DckMng;
  AttachmentManager* AttMng;
  AnimationManager* AnimMng;
  PropellantManager* PrpMng;
@@ -125,20 +105,14 @@ public:
  AirfoilsManager *AirfoilMng;
  ControlSurfacesManager *CtrSurfMng;
  CameraManager *CamMng;
+ ExTexManager *ExTMng;
+ VCManager *VCMng;
+
+
 
  VISHANDLE visual;
  
- vector <DCK_DEF> dock_definitions;
- vector <EXTEX_DEF> extex_defs;
- void AddExTexDef();
- void AddExTexDef(string texname);
- bool StoreExTexDef(string texname,def_idx d_idx);
- void DelExTedDef(def_idx d_idx);
- SURFHANDLE GetExTexSurf(def_idx d_idx);
- string GetExTexName(def_idx d_idx);
- UINT GetExTexCount();
- bool IsExTexCreated(def_idx d_idx);
- int GetExTexIdx(SURFHANDLE tex);
+
 
  void WriteCfgFile(string filename);
  void WriteBackupFile();
@@ -171,8 +145,8 @@ public:
  V_CLIPBOARD vclip;
  string cfgfilename;
  void ConsumeFollowMeKey(char *kstate);
-
- 
+ void ToggleFollowMeSuprePrecision();
+ bool FollowMeSuperPrecision;
 
  DialogControl *Dlg;
  FollowMeDlg *FMDlg;
@@ -185,11 +159,9 @@ public:
  string texture2dir;
  string scenariodir;
  
-
- void AddDockDef();
- void AddDockDef(DCK_DEF dd);
- bool DeleteDockDef(int idx);
- 
+ VECTOR3* es_dck_dir;
+ VECTOR3* es_dck_pos;
+ VECTOR3* es_dck_rot;
  bool DockExhaustsActive;
  vector<UINT> DockExhaustsID;
  SURFHANDLE greenL, redL, blueL, whiteL;

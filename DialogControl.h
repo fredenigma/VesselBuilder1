@@ -1,7 +1,7 @@
 #pragma once
 #include <CommCtrl.h>
 
-enum ItemType { MESH, DOCK, ATTACHMENT, LIGHT, CAMERA, SPECIAL, SETTINGS,ROOTS,NONE,ANIMATIONS,ANIM_COMP,PROPELLANT,EXTEX,THRUSTERS,THRUSTERGROUPS,PARTICLES,TOUCHDOWNPOINTS,AIRFOILS,CTRLSURFACES };
+enum ItemType { MESH, DOCK, ATTACHMENT, LIGHT, CAMERA, SPECIAL, SETTINGS,ROOTS,NONE,ANIMATIONS,ANIM_COMP,PROPELLANT,EXTEX,THRUSTERS,THRUSTERGROUPS,PARTICLES,TOUCHDOWNPOINTS,AIRFOILS,CTRLSURFACES,VCPOS,VCMFD,VCHUD };
 struct TREE_ITEM_REF {
 	ItemType Type;
 	UINT idx;
@@ -33,6 +33,8 @@ public:
 	BOOL SettingsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL AirfoilsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL CtrlSurfDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	BOOL CamDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	BOOL VCPosDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	map<HTREEITEM, TREE_ITEM_REF> TreeItem;
 	TREE_ITEM_REF CurrentSelection;
@@ -63,8 +65,11 @@ public:
 	HTREEITEM hrootAirfoils;
 	HTREEITEM hrootControlSurfaces;
 	HTREEITEM hrootVC;
+	HTREEITEM hrootVCPositions;
+	HTREEITEM hrootVCMFDs;
+	HTREEITEM hrootVCHud;
 
-	void SetDlgItemsTextVector3(HWND hWnd, int id1, int id2, int id3, VECTOR3 v3);
+	void SetDlgItemsTextVector3(HWND hWnd, int id1, int id2, int id3, VECTOR3 v3, int precision = 3);
 	VECTOR3 GetDlgItemsVector3(HWND hWnd, int id1, int id2, int id3);
 	void DlgRotateMesh(UINT msh_idx,VECTOR3 axis, double angle );
 	double speedrotation;
@@ -83,6 +88,8 @@ public:
 	void UpdateSettingsDialog(HWND hWnd);
 	void UpdateAirfoilDialog(HWND hWnd);
 	void UpdateCtrlSurfDialog(HWND hWnd);
+	void UpdateCamDialog(HWND hWnd);
+	void UpdateVCPosDialog(HWND hWnd);
 
 	HTREEITEM FindHtreeItem(ItemType type, UINT idx);
 	void InitAnimKeyCombo(HWND hWnd);
@@ -111,10 +118,13 @@ public:
 	HWND hWnd_Settings;
 	HWND hWnd_Airfoils;
 	HWND hWnd_CtrlSurfaces;
+	HWND hWnd_Cam;
+	HWND hWnd_VCPos;
 
 	HWND GetDlg() { return hDlg; }
 	map<DWORD, string> oapi_keys;
 	MeshManager *MshMng;
+	DockManager *DckMng;
 	AnimationManager *AnimMng;
 	AttachmentManager *AttMng;
 	PropellantManager *PrpMng;
@@ -124,6 +134,9 @@ public:
 	TouchdownPointsManager *TdpMng;
 	AirfoilsManager *AirfoilMng;
 	ControlSurfacesManager *CtrSurfMng;
+	CameraManager *CamMng;
+	ExTexManager *ExTMng;
+	VCManager *VCMng;
 
 	bool ShowingThrGrp;
 	bool AnimTesting;

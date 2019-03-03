@@ -3,6 +3,7 @@
 #include "DialogControl.h"
 #include "PropellantManager.h"
 #include "ParticleManager.h"
+#include "ExTexManager.h"
 #include "ThrusterManager.h"
 #pragma comment(lib, "comctl32.lib")
 
@@ -66,12 +67,12 @@ void DialogControl::UpdateThrDialog(HWND hWnd) {
 		int index = SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_ADDSTRING, 0, (LPARAM)"DEFAULT");
 		SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_SETITEMDATA, index, (LPARAM)NULL);
 		int topick2 = -1;
-		for (UINT i = 0; i <VB1->GetExTexCount(); i++) {
-			if (!VB1->IsExTexCreated(i)) { continue; }
-			index = SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_ADDSTRING, 0, (LPARAM)VB1->GetExTexName(i).c_str());
-			SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_SETITEMDATA, index, (LPARAM)VB1->GetExTexSurf(i));
+		for (UINT i = 0; i <ExTMng->GetExTexCount(); i++) {
+			if (!ExTMng->IsExTexCreated(i)) { continue; }
+			index = SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_ADDSTRING, 0, (LPARAM)ExTMng->GetExTexName(i).c_str());
+			SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_SETITEMDATA, index, (LPARAM)ExTMng->GetExTexSurf(i));
 			if (ThrMng->ThrHasExhaust(idx)) {
-				if (ThrMng->GetThrExhaustTex(idx) == VB1->GetExTexSurf(i)) {
+				if (ThrMng->GetThrExhaustTex(idx) == ExTMng->GetExTexSurf(i)) {
 					topick2 = index;
 				}
 			}

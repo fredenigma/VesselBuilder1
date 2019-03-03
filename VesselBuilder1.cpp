@@ -11,6 +11,7 @@
 #include "DlgCtrl.h"
 #include "gcAPI.h"
 #include "MeshManager.h"
+#include "DockManager.h"
 #include "AttachmentManager.h"
 #include "AnimationManager.h"
 #include "PropellantManager.h"
@@ -20,6 +21,8 @@
 #include "AirfoilsManager.h"
 #include "ControlSurfacesManager.h"
 #include "CameraManager.h"
+#include "ExTexManager.h"
+#include "VCManager.h"
 #define _CRT_SECURE_NO_WARNINGS
 #define _CRT_NONSTDC_NO_DEPRECATE
 
@@ -35,6 +38,7 @@ VesselBuilder1::VesselBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
 	GetOrbiterDirs();
 	
 	MshMng = new MeshManager(this);
+	DckMng = new DockManager(this);
 	AttMng = new AttachmentManager(this);
 	AnimMng = new AnimationManager(this);
 	PrpMng = new PropellantManager(this);
@@ -45,9 +49,10 @@ VesselBuilder1::VesselBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
 	AirfoilMng = new AirfoilsManager(this);
 	CtrSurfMng = new ControlSurfacesManager(this);
 	CamMng = new CameraManager(this);
-	dock_definitions.clear();
-	extex_defs.clear();
-	
+	ExTMng = new ExTexManager(this);
+	VCMng = new VCManager(this);
+
+
 	cfgfilename.clear();
 	follow_me_pos = _V(0, 0, 0);
 	follow_me_dir = _V(0, 0, 1);
@@ -57,6 +62,7 @@ VesselBuilder1::VesselBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
 	h_follow_me = NULL;
 	follow_me_rotation_speed = 60*RAD;
 	follow_me_translation_speed = 6;
+	FollowMeSuperPrecision = false;
 	ResetSBLog();
 	follow_me_noteh = oapiCreateAnnotation(false, 1, _V(1, 1, 1));
 	Dlg = new DialogControl(this);
@@ -80,6 +86,9 @@ VesselBuilder1::VesselBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
 	currentGrabAtt = 0;
 	NoEditor = false;
 	level1 = 1.0;
+	es_dck_dir = NULL;
+	es_dck_pos = NULL;
+	es_dck_rot = NULL;
 	SBLog("Class Initialize");
 	return;
 }
@@ -91,6 +100,8 @@ VesselBuilder1::~VesselBuilder1(){
 	FMDlg = NULL;
 	delete MshMng;
 	MshMng = NULL;
+	delete DckMng;
+	DckMng = NULL;
 	delete AttMng;
 	AttMng = NULL;
 	delete AnimMng;
@@ -111,6 +122,11 @@ VesselBuilder1::~VesselBuilder1(){
 	CtrSurfMng = NULL;
 	delete CamMng;
 	CamMng = NULL;
+	delete ExTMng;
+	ExTMng = NULL;
+	delete VCMng;
+	VCMng = NULL;
+
 	CloseSBLog();
 	
 	//ClearDelete(mgr);
@@ -156,15 +172,7 @@ void VesselBuilder1::GetOrbiterDirs() {
 	return;
 }
 
-void VesselBuilder1::CreateDocks() {
-	SBLog("Creating Docks...");
-	for (UINT i = 0; i < dock_definitions.size(); i++) {
-		dock_definitions[i].dh = CreateDock(dock_definitions[i].pos, dock_definitions[i].dir, dock_definitions[i].rot);
-	}
-	SBLog("Creation of %i Docking ports completed", dock_definitions.size());
 
-	return;
-}
 void VesselBuilder1::clbkSetClassCaps(FILEHANDLE cfg){
 	SetEmptyMass(1000);
 	SetSize(10);
@@ -326,9 +334,11 @@ void VesselBuilder1::RotateFollowMe(VECTOR3 axis) {
 	return;
 }
 void VesselBuilder1::ConsumeFollowMeKey(char *kstate) {
+	double translation_speed = FollowMeSuperPrecision ? 0.06 : 6;
+	double rotation_speed = FollowMeSuperPrecision ? 0.6*RAD : 60 * RAD;
 	if (KEYDOWN(kstate, OAPI_KEY_UP)) {
 		if (KEYMOD_SHIFT(kstate)) {
-			double angle = 60*RAD*oapiGetSimStep();
+			double angle = rotation_speed*oapiGetSimStep();
 			VECTOR3 axis = _V(1, 0, 0);
 			MATRIX3 rot_m = rotm(axis, angle);
 			MATRIX3 early_rm = follow_me_rm;
@@ -336,17 +346,17 @@ void VesselBuilder1::ConsumeFollowMeKey(char *kstate) {
 			RESETKEY(kstate, OAPI_KEY_UP);
 		}
 		else if (KEYMOD_ALT(kstate)) {
-			follow_me_pos.y += 6*oapiGetSimStep();
+			follow_me_pos.y += translation_speed*oapiGetSimStep();
 			RESETKEY(kstate, OAPI_KEY_UP);
 		}
 		else {
-			follow_me_pos.z += 6*oapiGetSimStep();
+			follow_me_pos.z += translation_speed*oapiGetSimStep();
 			RESETKEY(kstate, OAPI_KEY_UP);
 		}
 	}
 	if (KEYDOWN(kstate, OAPI_KEY_RIGHT)) {
 		if (KEYMOD_SHIFT(kstate)) {
-			double angle = 60 * RAD*oapiGetSimStep();
+			double angle = rotation_speed*oapiGetSimStep();
 			VECTOR3 axis = _V(0, 1, 0);
 			MATRIX3 rot_m = rotm(axis, angle);
 			MATRIX3 early_rm = follow_me_rm;
@@ -354,14 +364,14 @@ void VesselBuilder1::ConsumeFollowMeKey(char *kstate) {
 			RESETKEY(kstate, OAPI_KEY_RIGHT);
 		}
 		else {
-			follow_me_pos.x += 6*oapiGetSimStep();
+			follow_me_pos.x += translation_speed*oapiGetSimStep();
 			RESETKEY(kstate, OAPI_KEY_RIGHT);
 		}
 
 	}
 	if (KEYDOWN(kstate, OAPI_KEY_LEFT)) {
 		if (KEYMOD_SHIFT(kstate)) {
-			double angle = -60 * RAD*oapiGetSimStep();
+			double angle = -rotation_speed*oapiGetSimStep();
 			VECTOR3 axis = _V(0, 1, 0);
 			MATRIX3 rot_m = rotm(axis, angle);
 			MATRIX3 early_rm = follow_me_rm;
@@ -369,13 +379,13 @@ void VesselBuilder1::ConsumeFollowMeKey(char *kstate) {
 			RESETKEY(kstate, OAPI_KEY_LEFT);
 		}
 		else {
-			follow_me_pos.x -= 6*oapiGetSimStep();
+			follow_me_pos.x -= translation_speed*oapiGetSimStep();
 			RESETKEY(kstate, OAPI_KEY_LEFT);
 		}
 	}
 	if (KEYDOWN(kstate, OAPI_KEY_DOWN)) {
 		if (KEYMOD_SHIFT(kstate)) {
-			double angle = -60 * RAD*oapiGetSimStep();
+			double angle = -rotation_speed*oapiGetSimStep();
 			VECTOR3 axis = _V(1, 0, 0);
 			MATRIX3 rot_m = rotm(axis, angle);
 			MATRIX3 early_rm = follow_me_rm;
@@ -383,17 +393,17 @@ void VesselBuilder1::ConsumeFollowMeKey(char *kstate) {
 			RESETKEY(kstate, OAPI_KEY_DOWN);
 		}
 		else if (KEYMOD_ALT(kstate)) {
-			follow_me_pos.y -= 6*oapiGetSimStep();
+			follow_me_pos.y -= translation_speed*oapiGetSimStep();
 			RESETKEY(kstate, OAPI_KEY_DOWN);
 		}
 		else {
-			follow_me_pos.z -= 6*oapiGetSimStep();
+			follow_me_pos.z -= translation_speed*oapiGetSimStep();
 			RESETKEY(kstate, OAPI_KEY_DOWN);
 		}
 	}
 	if (KEYDOWN(kstate, OAPI_KEY_NEXT)) {
 		if (KEYMOD_SHIFT(kstate)) {
-			double angle = -60 * RAD*oapiGetSimStep();
+			double angle = -rotation_speed*oapiGetSimStep();
 			VECTOR3 axis = _V(0, 0, 1);
 			MATRIX3 rot_m = rotm(axis, angle);
 			MATRIX3 early_rm = follow_me_rm;
@@ -404,7 +414,7 @@ void VesselBuilder1::ConsumeFollowMeKey(char *kstate) {
 	}
 	if (KEYDOWN(kstate, OAPI_KEY_PRIOR)) {
 		if (KEYMOD_SHIFT(kstate)) {
-			double angle = 60 * RAD*oapiGetSimStep();
+			double angle = rotation_speed*oapiGetSimStep();
 			VECTOR3 axis = _V(0, 0, 1);
 			MATRIX3 rot_m = rotm(axis, angle);
 			MATRIX3 early_rm = follow_me_rm;
@@ -481,12 +491,8 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 			oapiWriteLogV("Mu:%.3f Mu_lng:%.3f", tdvtx.mu, tdvtx.mu_lng);
 		}
 		*/
-		SetCameraOffset(_V(0, 20, 0));
-		SetCameraDefaultDirection(_V(0, 0, 1), 125 * RAD);
-		SendBufferedKey(OAPI_KEY_HOME, true, 0);
 		
-
-
+		
 	
 		return 1;
 	}
@@ -585,14 +591,20 @@ void VesselBuilder1::clbkVisualDestroyed(VISHANDLE vis, int refcount) {
 	return;
 }
 bool VesselBuilder1::clbkLoadVC(int id) {
+	VCMng->LoadVC(id);
 	return true;
 }
-
+bool VesselBuilder1::clbkVCMouseEvent(int id, int event, VECTOR3 &p) {
+	return VCMng->VCMouseEvent(id, event, p);	
+}
+void VesselBuilder1::clbkDockEvent(int dock, OBJHANDLE mate) {
+	DckMng->DockEvent(dock, mate);
+	return;
+}
 void VesselBuilder1::VehicleSetup() {
 	SBLog("Vehicle Setup Started...");
 //	ResetVehicle();
 	MshMng->LoadMeshes();
-	CreateDocks();
 	SBLog("Vehicle Setup Finished...");
 }
 MATRIX3 VesselBuilder1::FindRM(VECTOR3 dir2, VECTOR3 rot2) {
@@ -668,46 +680,11 @@ void VesselBuilder1::ParseCfgFile(FILEHANDLE fh) {
 	char cbuf[256] = { '\0' };
 
 	MshMng->ParseCfgFile(fh);
-	UINT dock_counter = 0;
-	VECTOR3 dpos = _V(0, 0, 0);
-	sprintf_s(cbuf, "DOCK_%i_POS", dock_counter);
-	while (oapiReadItem_vec(fh, cbuf, dpos)) {
-		VECTOR3 ddir = _V(0, 0, 1);
-		VECTOR3 drot = _V(0, 1, 0);
-		sprintf_s(cbuf, "DOCK_%i_DIR", dock_counter);
-		oapiReadItem_vec(fh, cbuf, ddir);
-		sprintf_s(cbuf, "DOCK_%i_ROT", dock_counter);
-		oapiReadItem_vec(fh, cbuf, drot);
-		DCK_DEF dd = DCK_DEF();
-		dd.pos = dpos;
-		dd.dir = ddir;
-		dd.rot = drot;
-		dd.antidir = ddir*(-1);
-		dd.antirot = drot*(-1);
-		dock_definitions.push_back(dd);
-		dock_counter++;
-		sprintf_s(cbuf, "DOCK_%i_POS", dock_counter);
-	}
-	SBLog("Found %i Dock Definitions", dock_definitions.size());
+	DckMng->ParseCfgFile(fh);
 	AttMng->ParseCfgFile(fh);
 	AnimMng->ParseCfgFile(fh);
 	PrpMng->ParseCfgFile(fh);
-
-	UINT extex_counter = 0;
-	int id;
-	sprintf(cbuf, "EXTEX_%i_ID", extex_counter);
-	while (oapiReadItem_int(fh, cbuf, id)) {
-		char namebuf[256] = { '\0' };
-		sprintf(cbuf, "EXTEX_%i_TEXNAME", extex_counter);
-		oapiReadItem_string(fh, cbuf, namebuf);
-		string name(namebuf);
-		AddExTexDef(name);
-		extex_counter++;
-		sprintf(cbuf, "EXTEX_%i_ID", extex_counter);
-	}
-
-	
-
+	ExTMng->ParseCfgFile(fh);
 	PartMng->ParseCfgFile(fh);
 	ThrMng->ParseCfgFile(fh);
 	ThrGrpMng->ParseCfgFile(fh);
@@ -715,6 +692,8 @@ void VesselBuilder1::ParseCfgFile(FILEHANDLE fh) {
 	AirfoilMng->ParseCfgFile(fh);
 	CtrSurfMng->ParseCfgFile(fh);
 	CamMng->ParseCfgFile(fh);
+	//Lights
+	VCMng->ParseCfgFile(fh);
 
 	if (!oapiReadItem_bool(fh, "NOEDITOR", NoEditor)) { NoEditor = false; }
 	SBLog("Parsing Completed");
@@ -746,39 +725,11 @@ void VesselBuilder1::WriteCfgFile(string filename) {
 	oapiWriteLine(fh, " ");
 
 	MshMng->WriteCfg(fh);
-
-	oapiWriteLine(fh, " ");
-	oapiWriteLine(fh, ";<-------------------------DOCKS DEFINITIONS------------------------->");
-	oapiWriteLine(fh, " ");
-	for (UINT i = 0; i < dock_definitions.size(); i++) {
-		sprintf_s(cbuf, "DOCK_%i_POS",i);
-		oapiWriteItem_vec(fh, cbuf, dock_definitions[i].pos);
-		sprintf_s(cbuf, "DOCK_%i_DIR",i);
-		oapiWriteItem_vec(fh, cbuf, dock_definitions[i].dir);
-		sprintf_s(cbuf, "DOCK_%i_ROT",i);
-		oapiWriteItem_vec(fh, cbuf, dock_definitions[i].rot);
-		oapiWriteLine(fh, " ");
-	}
+	DckMng->WriteCfg(fh);
 	AttMng->WriteCfg(fh);
 	AnimMng->WriteCfg(fh);
 	PrpMng->WriteCfg(fh);
-	
-	oapiWriteLine(fh, " ");
-	oapiWriteLine(fh, ";<-------------------------EXHAUST TEXTURES DEFINITIONS------------------------->");
-	oapiWriteLine(fh, " ");
-	UINT extex_counter = 0;
-	for (UINT i = 0; i < GetExTexCount(); i++) {
-		if (IsExTexCreated(i)) {
-			sprintf(cbuf, "EXTEX_%i_ID", extex_counter);
-			oapiWriteItem_int(fh, cbuf, extex_counter);
-			sprintf(cbuf, "EXTEX_%i_TEXNAME", extex_counter);
-			char namebuf[256] = { '\0' };
-			sprintf(namebuf, "%s", GetExTexName(i).c_str());
-			oapiWriteItem_string(fh, cbuf, namebuf);
-			extex_counter++;
-			oapiWriteLine(fh, " ");
-		}
-	}
+	ExTMng->WriteCfg(fh);	
 	PartMng->WriteCfg(fh);
 	ThrMng->WriteCfg(fh);
 	ThrGrpMng->WriteCfg(fh);
@@ -786,7 +737,8 @@ void VesselBuilder1::WriteCfgFile(string filename) {
 	AirfoilMng->WriteCfg(fh);
 	CtrSurfMng->WriteCfg(fh);
 	CamMng->WriteCfg(fh);
-
+	//Lights
+	VCMng->WriteCfg(fh);
 
 	oapiCloseFile(fh, FILE_OUT);
 	return;
@@ -836,6 +788,7 @@ void VesselBuilder1::DeleteFollowMe(bool reset) {
 		oapiDeleteVessel(h_follow_me, GetHandle());
 		h_follow_me = NULL;
 		follow_me = false;
+		FollowMeSuperPrecision = false;
 		if (reset) {
 			ResetFollowMe();
 		}
@@ -882,86 +835,19 @@ void VesselBuilder1::ResetFollowMe() {
 	follow_me_rm = _M(1, 0, 0, 0, 1, 0, 0, 0, 1);
 	return;
 }
-
-
-
-
-
-
-
-void VesselBuilder1::AddDockDef() {
-	DCK_DEF dd = DCK_DEF();
-	
-	dd.dh=CreateDock(dd.pos, dd.dir, dd.rot);
-	dock_definitions.push_back(dd);
-	return;
-}
-void VesselBuilder1::AddDockDef(DCK_DEF dd) {
-	dd.dh = CreateDock(dd.pos, dd.dir, dd.rot);
-	dock_definitions.push_back(dd);
-	return;
-}
-bool VesselBuilder1::DeleteDockDef(int idx) {
-	if ((dock_definitions.size() - 1 < idx) || (idx<0)) {
-		SBLog("WARNING: Called a Delete Dock Definition with out of range index");
-		return false;
+void VesselBuilder1::ToggleFollowMeSuprePrecision() {
+	if (oapiIsVessel(h_follow_me)) {
+		VESSEL3 *v = (VESSEL3*)oapiGetVesselInterface(h_follow_me);
+		v->clbkGeneric(VMSG_USER, 0);
 	}
-	DelDock(dock_definitions[idx].dh);
-	dock_definitions.erase(dock_definitions.begin() + idx);
-	return true;
-}
-void VesselBuilder1::AddExTexDef() {
-	EXTEX_DEF ex = EXTEX_DEF();
-	extex_defs.push_back(ex);
-	return;
-}
-void VesselBuilder1::AddExTexDef(string texname) {
-	EXTEX_DEF ex = EXTEX_DEF();
-	ex.TexName = texname;
-	char cbuf[256] = { '\0' };
-	sprintf(cbuf, "%s", texname.c_str());
-	ex.tex = oapiRegisterExhaustTexture(cbuf);
-	ex.created = true;
-	extex_defs.push_back(ex);
-	return;
-}
-bool VesselBuilder1::StoreExTexDef(string texname,def_idx d_idx) {
-	extex_defs[d_idx].TexName = texname;
-	char cbuf[256] = { '\0' };
-	sprintf(cbuf, "%s", texname.c_str());
-	extex_defs[d_idx].tex = oapiRegisterExhaustTexture(cbuf);
-	if (extex_defs[d_idx].tex != NULL) {
-		extex_defs[d_idx].created = true;
-		return true;
+	if (FollowMeSuperPrecision) {
+		FollowMeSuperPrecision = false;
 	}
 	else {
-		return false;
+		FollowMeSuperPrecision = true;
 	}
-}
-void VesselBuilder1::DelExTedDef(def_idx d_idx) {
-	extex_defs.erase(extex_defs.begin() + d_idx);
+
 	return;
-}
-SURFHANDLE VesselBuilder1::GetExTexSurf(def_idx d_idx) {
-	return extex_defs[d_idx].tex;
-}
-string VesselBuilder1::GetExTexName(def_idx d_idx) {
-	return extex_defs[d_idx].TexName;
-}
-UINT VesselBuilder1::GetExTexCount() {
-	return extex_defs.size();
-}
-bool VesselBuilder1::IsExTexCreated(def_idx d_idx) {
-	return extex_defs[d_idx].created;
-}
-int VesselBuilder1::GetExTexIdx(SURFHANDLE tex) {
-	if(tex==NULL){return -1; }
-	for (int i = 0; i < extex_defs.size(); i++) {
-		if (extex_defs[i].tex == tex) {
-			return i;
-		}
-	}
-	return -1;
 }
 
 
@@ -969,7 +855,27 @@ int VesselBuilder1::GetExTexIdx(SURFHANDLE tex) {
 void VesselBuilder1::CreateDockExhausts() {
 	EXHAUSTSPEC es;
 	double level = 1;
-	for (UINT i = 0; i < dock_definitions.size(); i++) {
+	UINT ndocks = DckMng->GetDockCount();
+	if (es_dck_pos) {
+		delete[] es_dck_pos;
+		es_dck_pos = NULL;
+	}
+	if (es_dck_dir) {
+		delete[] es_dck_dir;
+		es_dck_dir = NULL;
+	}
+	if (es_dck_rot) {
+		delete[] es_dck_rot;
+		es_dck_rot = NULL;
+	}
+	es_dck_pos = new VECTOR3[ndocks];
+	es_dck_dir = new VECTOR3[ndocks];
+	es_dck_rot = new VECTOR3[ndocks];
+
+	for (UINT i = 0; i < DckMng->GetDockCount(); i++) {
+		DckMng->GetDockParams(i, es_dck_pos[i], es_dck_dir[i], es_dck_rot[i]);
+		es_dck_dir[i] *= -1;
+		es_dck_rot[i] *= -1;
 		es.flags = EXHAUST_CONSTANTLEVEL;
 		es.th = NULL;
 		es.tex = greenL;
@@ -978,12 +884,12 @@ void VesselBuilder1::CreateDockExhausts() {
 		es.modulate = 0;
 		es.lofs = 0;
 		es.level = &level;
-		es.lpos = &dock_definitions[i].pos;
-		es.ldir = &dock_definitions[i].antidir;
+		es.lpos = &es_dck_pos[i];
+		es.ldir = &es_dck_dir[i];
 		UINT idx = AddExhaust(&es);
 		DockExhaustsID.push_back(idx);
 		es.tex = blueL;
-		es.ldir = &dock_definitions[i].antirot;
+		es.ldir = &es_dck_rot[i];
 		idx = AddExhaust(&es);
 		DockExhaustsID.push_back(idx);
 	}
@@ -993,6 +899,18 @@ void VesselBuilder1::CreateDockExhausts() {
 void VesselBuilder1::DeleteDockExhausts() {
 	for (UINT i = 0; i < DockExhaustsID.size(); i++) {
 		DelExhaust(DockExhaustsID[i]);
+		if (es_dck_pos) {
+			delete[] es_dck_pos;
+			es_dck_pos = NULL;
+		}
+		if (es_dck_dir) {
+			delete[] es_dck_dir;
+			es_dck_dir = NULL;
+		}
+		if (es_dck_rot) {
+			delete[] es_dck_rot;
+			es_dck_rot = NULL;
+		}
 	}
 	DockExhaustsID.clear();
 	DockExhaustsActive = false;

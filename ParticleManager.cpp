@@ -1,6 +1,8 @@
 #include "VesselBuilder1.h"
 #include "DialogControl.h"
+#include "ExTexManager.h"
 #include "ParticleManager.h"
+
 
 ParticleManager::ParticleManager(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;
@@ -142,7 +144,7 @@ void ParticleManager::ParseCfgFile(FILEHANDLE fh) {
 			pss.tex = NULL;
 		}
 		else {
-			pss.tex = VB1->GetExTexSurf(tex_int);
+			pss.tex = VB1->ExTMng->GetExTexSurf(tex_int);
 		}
 		AddParticleDef(name, pss);
 
@@ -194,7 +196,7 @@ void ParticleManager::WriteCfg(FILEHANDLE fh) {
 		sprintf(cbuf, "PARTICLE_%i_AMAX", i);
 		oapiWriteItem_float(fh, cbuf, particle_defs[i].pss.amax);
 		sprintf(cbuf, "PARTICLE_%i_TEX", i);
-		int extex_idx = VB1->GetExTexIdx(particle_defs[i].pss.tex);
+		int extex_idx = VB1->ExTMng->GetExTexIdx(particle_defs[i].pss.tex);
 		oapiWriteItem_int(fh, cbuf, extex_idx);
 		oapiWriteLine(fh, " ");
 	}

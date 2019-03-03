@@ -1,6 +1,7 @@
 #include "VesselBuilder1.h"
 #include "resource.h"
 #include "DialogControl.h"
+#include "ExTexManager.h"
 #include "ParticleManager.h"
 #pragma comment(lib, "comctl32.lib")
 
@@ -34,11 +35,11 @@ void DialogControl::UpdatePartDialog(HWND hWnd) {
 	int index = SendDlgItemMessage(hWnd, IDC_COMBO_PARTTEX, CB_ADDSTRING, 0, (LPARAM)"DEFAULT");
 	SendDlgItemMessage(hWnd, IDC_COMBO_PARTTEX, CB_SETITEMDATA, index, (LPARAM)NULL);
 	int topick = -1;
-	for (UINT i = 0; i <VB1->GetExTexCount(); i++) {
-		if (!VB1->IsExTexCreated(i)) { continue; }
-		index = SendDlgItemMessage(hWnd, IDC_COMBO_PARTTEX, CB_ADDSTRING, 0, (LPARAM)VB1->GetExTexName(i).c_str());
-		SendDlgItemMessage(hWnd, IDC_COMBO_PARTTEX, CB_SETITEMDATA, index, (LPARAM)VB1->GetExTexSurf(i));
-		if (pss.tex == VB1->GetExTexSurf(i)) {
+	for (UINT i = 0; i <ExTMng->GetExTexCount(); i++) {
+		if (!ExTMng->IsExTexCreated(i)) { continue; }
+		index = SendDlgItemMessage(hWnd, IDC_COMBO_PARTTEX, CB_ADDSTRING, 0, (LPARAM)ExTMng->GetExTexName(i).c_str());
+		SendDlgItemMessage(hWnd, IDC_COMBO_PARTTEX, CB_SETITEMDATA, index, (LPARAM)ExTMng->GetExTexSurf(i));
+		if (pss.tex == ExTMng->GetExTexSurf(i)) {
 			topick = index;
 		}
 	}

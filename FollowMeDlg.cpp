@@ -36,7 +36,7 @@ bool FollowMeDlg::IsOpen() {
 
 void FollowMeDlg::UpdatePosDirRot() {
 	char cbuf[256] = { '\0' };
-	sprintf(cbuf, "%.3f %.3f %.3f", VB1->follow_me_pos.x, VB1->follow_me_pos.y, VB1->follow_me_pos.z);
+	sprintf(cbuf, "%.5f %.5f %.5f", VB1->follow_me_pos.x, VB1->follow_me_pos.y, VB1->follow_me_pos.z);
 	SetDlgItemText(hDlg, IDC_EDIT_FMPOS, (LPCSTR)cbuf);
 	sprintf(cbuf, "%.3f %.3f %.3f", VB1->follow_me_dir.x, VB1->follow_me_dir.y, VB1->follow_me_dir.z);
 	SetDlgItemText(hDlg, IDC_EDIT_FMDIR, (LPCSTR)cbuf);
@@ -82,6 +82,13 @@ BOOL FollowMeDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 			VB1->vclip.dir = VB1->follow_me_dir;
 			VB1->vclip.rot = VB1->follow_me_rot;
 			VB1->vclip.valid = true;
+			break;
+		}
+		case IDC_CHECK_FOLLWOMESUPERPREC:
+		{
+			if (HIWORD(wParam) == BN_CLICKED) {
+				VB1->ToggleFollowMeSuprePrecision();
+			}
 			break;
 		}
 		

@@ -2,6 +2,7 @@
 #include "DialogControl.h"
 #include "PropellantManager.h"
 #include "ParticleManager.h"
+#include "ExTexManager.h"
 #include "ThrusterManager.h"
 
 ThrusterManager::ThrusterManager(VesselBuilder1 *_VB1) {
@@ -147,7 +148,7 @@ void ThrusterManager::ParseCfgFile(FILEHANDLE fh) {
 			sprintf(cbuf, "THR_%i_EX_TEX", thr_counter);
 			oapiReadItem_int(fh, cbuf, ex_idx);
 			if (ex_idx > -1) {
-				SetThrExhaust(thidx, ex_l, ex_w, VB1->GetExTexSurf(ex_idx));
+				SetThrExhaust(thidx, ex_l, ex_w, VB1->ExTMng->GetExTexSurf(ex_idx));
 			}
 			else {
 				SetThrExhaust(thidx, ex_l, ex_w, NULL);
@@ -207,7 +208,7 @@ void ThrusterManager::WriteCfg(FILEHANDLE fh) {
 		sprintf(cbuf, "THR_%i_EX_W", i);
 		oapiWriteItem_float(fh, cbuf, GetThrExhaustWidth(i));
 		sprintf(cbuf, "THR_%i_EX_TEX", i);
-		oapiWriteItem_int(fh, cbuf, VB1->GetExTexIdx(GetThrExhaustTex(i)));
+		oapiWriteItem_int(fh, cbuf, VB1->ExTMng->GetExTexIdx(GetThrExhaustTex(i)));
 		sprintf(cbuf, "THR_%i_PARTICLES", i);
 		vector<def_idx> part_defidxs;
 		part_defidxs.clear();

@@ -1,19 +1,20 @@
 #include "VesselBuilder1.h"
 #include "resource.h"
 #include "DialogControl.h"
+#include "ExTexManager.h"
 #pragma comment(lib, "comctl32.lib")
 
 void DialogControl::UpdateExTexDialog(HWND hWnd) {
 	UINT idx = CurrentSelection.idx;
-	if (idx >= VB1->GetExTexCount()) { return; }
-	if (VB1->IsExTexCreated(idx)) {
-		SetDlgItemText(hWnd, IDC_EDIT_EXTEXNAME, VB1->GetExTexName(idx).c_str());
+	if (idx >= ExTMng->GetExTexCount()) { return; }
+	if (ExTMng->IsExTexCreated(idx)) {
+		SetDlgItemText(hWnd, IDC_EDIT_EXTEXNAME, ExTMng->GetExTexName(idx).c_str());
 		SendDlgItemMessage(hWnd, IDC_EDIT_EXTEXNAME, EM_SETREADONLY, true, 0);
 		EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_EXTEXLOAD), false);
 		SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_DELETEEXTEX), "DELETE THIS EXHAUST TEXTURE");
 	}
 	else {
-		SetDlgItemText(hWnd, IDC_EDIT_EXTEXNAME, VB1->GetExTexName(idx).c_str());
+		SetDlgItemText(hWnd, IDC_EDIT_EXTEXNAME, ExTMng->GetExTexName(idx).c_str());
 		SendDlgItemMessage(hWnd, IDC_EDIT_EXTEXNAME, EM_SETREADONLY, false, 0);
 		EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_EXTEXLOAD), true);
 		SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_DELETEEXTEX), "SAVE THIS EXHAUST TEXTURE");
@@ -29,15 +30,15 @@ BOOL DialogControl::ExTexDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		switch (LOWORD(wParam)) {
 		case IDC_BUTTON_DELETEEXTEX:
 		{
-			if (VB1->IsExTexCreated(idx)) {
-				VB1->DelExTedDef(idx);
+			if (ExTMng->IsExTexCreated(idx)) {
+				ExTMng->DelExTedDef(idx);
 				UpdateTree(hDlg, EXTEX, 0);
 			}
 			else {
 				char cbuf[256] = { '\0' };
 				GetDlgItemText(hWnd, IDC_EDIT_EXTEXNAME, cbuf, 256);
 				string name(cbuf);
-				VB1->StoreExTexDef(name, idx);
+				ExTMng->StoreExTexDef(name, idx);
 				UpdateTree(hDlg, EXTEX, 0);
 			}
 			break;

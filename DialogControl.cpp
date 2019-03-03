@@ -2,6 +2,7 @@
 #include "resource.h"
 #include "DialogControl.h"
 #include "MeshManager.h"
+#include "DockManager.h"
 #include "AttachmentManager.h"
 #include "AnimationManager.h"
 #include "PropellantManager.h"
@@ -10,6 +11,9 @@
 #include "TouchdownPointsManager.h"
 #include "AirfoilsManager.h"
 #include "ControlSurfacesManager.h"
+#include "CameraManager.h"
+#include "ExTexManager.h"
+#include "VCManager.h"
 #pragma comment(lib, "comctl32.lib")
 
 
@@ -120,10 +124,25 @@ BOOL CALLBACK CtrlSurfDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
 	return DlgCtrl->CtrlSurfDlgProc(hWnd, uMsg, wParam, lParam);
 }
+BOOL CALLBACK CamDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	if (uMsg == WM_INITDIALOG) {
+		SetWindowLong(hWnd, GWL_USERDATA, (LONG)lParam);
+	}
+	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
+	return DlgCtrl->CamDlgProc(hWnd, uMsg, wParam, lParam);
+}
+BOOL CALLBACK VCPosDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	if (uMsg == WM_INITDIALOG) {
+		SetWindowLong(hWnd, GWL_USERDATA, (LONG)lParam);
+	}
+	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
+	return DlgCtrl->VCPosDlgProc(hWnd, uMsg, wParam, lParam);
+}
 
 DialogControl::DialogControl(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;
 	MshMng = VB1->MshMng;
+	DckMng = VB1->DckMng;
 	AnimMng = VB1->AnimMng;
 	AttMng = VB1->AttMng;
 	PrpMng = VB1->PrpMng;
@@ -133,6 +152,9 @@ DialogControl::DialogControl(VesselBuilder1 *_VB1) {
 	TdpMng = VB1->TdpMng;
 	AirfoilMng = VB1->AirfoilMng;
 	CtrSurfMng = VB1->CtrSurfMng;
+	CamMng = VB1->CamMng;
+	ExTMng = VB1->ExTMng;
+	VCMng = VB1->VCMng;
 
 	open = false;
 	hDlg = NULL;
@@ -155,6 +177,7 @@ DialogControl::DialogControl(VesselBuilder1 *_VB1) {
 DialogControl::~DialogControl() {
 	VB1 = NULL;
 	MshMng = NULL;
+	DckMng = NULL;
 	AnimMng = NULL;
 	AttMng = NULL;
 	PrpMng = NULL;
@@ -164,7 +187,9 @@ DialogControl::~DialogControl() {
 	TdpMng = NULL;
 	AirfoilMng = NULL;
 	CtrSurfMng = NULL;
-
+	CamMng=NULL;
+	ExTMng = NULL; 
+	VCMng = NULL;
 	hDlg = NULL;
 	DeleteObject(penblack);
 	DeleteObject(pengray);
@@ -219,6 +244,8 @@ void DialogControl::InitDialog(HWND hWnd) {
 	hWnd_Settings = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_SETTINGS), hWnd, SettingsDlgProcHook, (LPARAM)this);
 	hWnd_Airfoils = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_AIRFOILS), hWnd, AirfoilsDlgProcHook, (LPARAM)this);
 	hWnd_CtrlSurfaces = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_CTRLSURF), hWnd, CtrlSurfDlgProcHook, (LPARAM)this);
+	hWnd_Cam = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_CAMERA), hWnd, CamDlgProcHook, (LPARAM)this);
+	hWnd_VCPos = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_VCPOS), hWnd, VCPosDlgProcHook, (LPARAM)this);
 	SetWindowPos(hwnd_Mesh, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hwnd_Mesh, SW_HIDE);
 	SetWindowPos(hWnd_Dock, NULL, 255, 10, 0, 0, SWP_NOSIZE);
@@ -247,7 +274,10 @@ void DialogControl::InitDialog(HWND hWnd) {
 	ShowWindow(hWnd_Airfoils, SW_HIDE);
 	SetWindowPos(hWnd_CtrlSurfaces, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hWnd_CtrlSurfaces, SW_HIDE);
-
+	SetWindowPos(hWnd_Cam, NULL, 255, 10, 0, 0, SWP_NOSIZE);
+	ShowWindow(hWnd_Cam, SW_HIDE);
+	SetWindowPos(hWnd_VCPos, NULL, 255, 10, 0, 0, SWP_NOSIZE);
+	ShowWindow(hWnd_VCPos, SW_HIDE);
 
 	return;
 }
@@ -322,9 +352,9 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		insertstruct.item.mask = TVIF_TEXT;
 		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
 		insertstruct.hParent = hrootDocks;
-		for (UINT i = 0; i < VB1->dock_definitions.size(); i++) {
+		for (UINT i = 0; i < DckMng->GetDockCount(); i++) {
 			char cbuf[256] = { '\0' };
-			sprintf(cbuf, "Dock_%i", i);
+			sprintf(cbuf, "%s", DckMng->GetDockName(i).c_str());
 			insertstruct.item.pszText = (LPSTR)cbuf;
 			insertstruct.item.cchTextMax = 9;
 			TREE_ITEM_REF Tir = TREE_ITEM_REF();
@@ -475,14 +505,14 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		insertstruct.item.mask = TVIF_TEXT;
 		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
 		insertstruct.hParent = hrootExTex;
-		for (UINT i = 0; i < VB1->GetExTexCount(); i++) {
+		for (UINT i = 0; i < ExTMng->GetExTexCount(); i++) {
 			char cbuf[256] = { '\0' };
-			if (VB1->GetExTexName(i).size()> 0) {
-				if (VB1->IsExTexCreated(i)) {
-					sprintf(cbuf, "%s", VB1->GetExTexName(i).c_str());
+			if (ExTMng->GetExTexName(i).size()> 0) {
+				if (ExTMng->IsExTexCreated(i)) {
+					sprintf(cbuf, "%s", ExTMng->GetExTexName(i).c_str());
 				}
 				else {
-					sprintf(cbuf, "*%s", VB1->GetExTexName(i).c_str());
+					sprintf(cbuf, "*%s", ExTMng->GetExTexName(i).c_str());
 				}
 				
 			}
@@ -914,7 +944,62 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 
 		break;
 	}
+	case CAMERA:
+	{
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootCameras);
+		while (ht != NULL) {
+			TreeItem.erase(ht);
+			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootCameras);
+		}
+		TVINSERTSTRUCT insertstruct = { 0 };
 
+		insertstruct.hInsertAfter = TVI_ROOT;
+		insertstruct.item.mask = TVIF_TEXT;
+		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
+		insertstruct.hParent = hrootCameras;
+		for (UINT i = 0; i < CamMng->GetCamCount(); i++) {
+			char cbuf[256] = { '\0' };
+			sprintf(cbuf, "%s", CamMng->GetCamName(i).c_str());
+			insertstruct.item.pszText = (LPSTR)cbuf;
+			insertstruct.item.cchTextMax = strlen(cbuf);
+			TREE_ITEM_REF Tir = TREE_ITEM_REF();
+			Tir.Type = CAMERA;
+			Tir.idx = i;
+			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			TreeItem[Tir.hitem] = Tir;
+			TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootCameras, TVE_EXPAND);
+		}
+		break;
+	}
+	case VCPOS:
+	{
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootVCPositions);
+		while (ht != NULL) {
+			TreeItem.erase(ht);
+			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootVCPositions);
+		}
+		TVINSERTSTRUCT insertstruct = { 0 };
+
+		insertstruct.hInsertAfter = TVI_ROOT;
+		insertstruct.item.mask = TVIF_TEXT;
+		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
+		insertstruct.hParent = hrootVCPositions;
+		for (UINT i = 0; i < VCMng->GetPositionCount(); i++) {
+			char cbuf[256] = { '\0' };
+			sprintf(cbuf, "%s", VCMng->GetPositionName(i).c_str());
+			insertstruct.item.pszText = (LPSTR)cbuf;
+			insertstruct.item.cchTextMax = strlen(cbuf);
+			TREE_ITEM_REF Tir = TREE_ITEM_REF();
+			Tir.Type = VCPOS;
+			Tir.idx = i;
+			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			TreeItem[Tir.hitem] = Tir;
+			TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootVCPositions, TVE_EXPAND);
+		}
+		break;
+	}
 
 
 
@@ -1051,6 +1136,26 @@ void DialogControl::InitTree(HWND hWnd) {
 	hrootVC = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 	Tir.hitem = hrootVC;
 	TreeItem[Tir.hitem] = Tir;
+	insertstruct.hParent = hrootVC;
+	insertstruct.item.pszText = (LPSTR)TEXT("Positions\0");
+	insertstruct.item.cchTextMax = 11;
+	hrootVCPositions = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+	Tir.hitem = hrootVCPositions;
+	TreeItem[Tir.hitem] = Tir;
+	insertstruct.item.pszText = (LPSTR)TEXT("MFDs\0");
+	insertstruct.item.cchTextMax = 6;
+	hrootVCMFDs = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+	Tir.hitem = hrootVCMFDs;
+	TreeItem[Tir.hitem] = Tir;
+	insertstruct.item.pszText = (LPSTR)TEXT("HUD\0");
+	insertstruct.item.cchTextMax = 5;
+	hrootVCHud= TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+	Tir.hitem = hrootVCHud;
+	TreeItem[Tir.hitem] = Tir;
+
+
+
+
 	
 	UpdateTree(hWnd, MESH,0);
 	UpdateTree(hWnd, DOCK,0);
@@ -1064,6 +1169,8 @@ void DialogControl::InitTree(HWND hWnd) {
 	UpdateTree(hWnd, TOUCHDOWNPOINTS, 0);
 	UpdateTree(hWnd, AIRFOILS, 0);
 	UpdateTree(hWnd, CTRLSURFACES, 0);
+	UpdateTree(hWnd, CAMERA, 0);
+	UpdateTree(hWnd, VCPOS, 0);
 	return;
 }
 
@@ -1119,6 +1226,12 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 	}
 	if (type != CTRLSURFACES) {
 		ShowWindow(hWnd_CtrlSurfaces, SW_HIDE);
+	}
+	if (type != CAMERA) {
+		ShowWindow(hWnd_Cam, SW_HIDE);
+	}
+	if (type != VCPOS) {
+		ShowWindow(hWnd_VCPos, SW_HIDE);
 	}
 
 	switch (type) {
@@ -1185,7 +1298,18 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 		break;
 	}
 	case CTRLSURFACES:
-	{ShowWindow(hWnd_CtrlSurfaces, SW_SHOW);
+	{
+		ShowWindow(hWnd_CtrlSurfaces, SW_SHOW);
+		break;
+	}
+	case CAMERA:
+	{
+		ShowWindow(hWnd_Cam, SW_SHOW);
+		break;
+	}
+	case VCPOS:
+	{
+		ShowWindow(hWnd_VCPos, SW_SHOW);
 		break;
 	}
 	}
@@ -1213,7 +1337,7 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 				UpdateTree(hWnd, MESH,hrootMeshes);
 			}
 			else if (CurrentSelection.hitem == hrootDocks) {
-				VB1->AddDockDef();
+				DckMng->AddDockDef();
 				UpdateTree( hWnd, DOCK,hrootDocks);
 			}
 			else if (CurrentSelection.hitem == hrootAnimations) {
@@ -1229,7 +1353,7 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 				UpdateTree(hWnd, PROPELLANT, 0);
 			}
 			else if (CurrentSelection.hitem == hrootExTex) {
-				VB1->AddExTexDef();
+				ExTMng->AddExTexDef();
 				UpdateTree(hWnd, EXTEX, 0);
 			}
 			else if (CurrentSelection.hitem == hrootParticles) {
@@ -1248,6 +1372,17 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 			else if (CurrentSelection.hitem == hrootControlSurfaces) {
 				CtrSurfMng->CreateUndefinedCtrlSurfDef();
 				UpdateTree(hWnd, CTRLSURFACES, 0);
+			}
+			else if (CurrentSelection.hitem == hrootCameras) {
+				CamMng->AddCamDef();
+				UpdateTree(hWnd, CAMERA, 0);
+			}
+			else if (CurrentSelection.hitem == hrootVCPositions) {
+				VCMng->AddPosition();
+				UpdateTree(hWnd, VCPOS, 0);
+			}
+			else if (CurrentSelection.hitem == hrootVCMFDs) {
+
 			}
 			break;
 		}
@@ -1344,6 +1479,16 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD CONTROL SURFACE");
 					}
+					else if (CurrentSelection.hitem == hrootVCPositions) {
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
+						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD VIRTUAL COCKPIT POSITION");
+					}
+					else if (CurrentSelection.hitem == hrootVCMFDs) {
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
+						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD MFD DEFINITION");
+					}
 					else {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_HIDE);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
@@ -1429,6 +1574,16 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 						case CTRLSURFACES:
 						{
 							UpdateCtrlSurfDialog(hWnd_CtrlSurfaces);
+							break;
+						}
+						case CAMERA:
+						{
+							UpdateCamDialog(hWnd_Cam);
+							break;
+						}
+						case VCPOS:
+						{
+							UpdateVCPosDialog(hWnd_VCPos);
 							break;
 						}
 					}
@@ -1554,14 +1709,57 @@ void DialogControl::SetDlgItemDouble(HWND hWnd, int control_id, double val, UINT
 	SetDlgItemText(hWnd, control_id, cbuf);
 	return;
 }
-void DialogControl::SetDlgItemsTextVector3(HWND hWnd, int id1, int id2, int id3, VECTOR3 v3) {
+void DialogControl::SetDlgItemsTextVector3(HWND hWnd, int id1, int id2, int id3, VECTOR3 v3, int precision) {
 	char cbuf[256] = { '\0' };
-	sprintf(cbuf, "%.3f", v3.x);
-	SetDlgItemText(hWnd, id1, cbuf);
-	sprintf(cbuf, "%.3f", v3.y);
-	SetDlgItemText(hWnd, id2, cbuf);
-	sprintf(cbuf, "%.3f", v3.z);
-	SetDlgItemText(hWnd, id3, cbuf);
+	if (precision == 1) {
+		sprintf(cbuf, "%.1f", v3.x);
+		SetDlgItemText(hWnd, id1, cbuf);
+		sprintf(cbuf, "%.1f", v3.y);
+		SetDlgItemText(hWnd, id2, cbuf);
+		sprintf(cbuf, "%.1f", v3.z);
+		SetDlgItemText(hWnd, id3, cbuf);
+	}
+	else if (precision == 2) {
+		sprintf(cbuf, "%.2f", v3.x);
+		SetDlgItemText(hWnd, id1, cbuf);
+		sprintf(cbuf, "%.2f", v3.y);
+		SetDlgItemText(hWnd, id2, cbuf);
+		sprintf(cbuf, "%.2f", v3.z);
+		SetDlgItemText(hWnd, id3, cbuf);
+	}
+	else if (precision == 3) {
+		sprintf(cbuf, "%.3f", v3.x);
+		SetDlgItemText(hWnd, id1, cbuf);
+		sprintf(cbuf, "%.3f", v3.y);
+		SetDlgItemText(hWnd, id2, cbuf);
+		sprintf(cbuf, "%.3f", v3.z);
+		SetDlgItemText(hWnd, id3, cbuf);
+	}
+	else if (precision == 4) {
+		sprintf(cbuf, "%.4f", v3.x);
+		SetDlgItemText(hWnd, id1, cbuf);
+		sprintf(cbuf, "%.4f", v3.y);
+		SetDlgItemText(hWnd, id2, cbuf);
+		sprintf(cbuf, "%.4f", v3.z);
+		SetDlgItemText(hWnd, id3, cbuf);
+	}
+	else if (precision == 5) {
+		sprintf(cbuf, "%.5f", v3.x);
+		SetDlgItemText(hWnd, id1, cbuf);
+		sprintf(cbuf, "%.5f", v3.y);
+		SetDlgItemText(hWnd, id2, cbuf);
+		sprintf(cbuf, "%.5f", v3.z);
+		SetDlgItemText(hWnd, id3, cbuf);
+	}
+	else if (precision >= 6) {
+		sprintf(cbuf, "%.6f", v3.x);
+		SetDlgItemText(hWnd, id1, cbuf);
+		sprintf(cbuf, "%.6f", v3.y);
+		SetDlgItemText(hWnd, id2, cbuf);
+		sprintf(cbuf, "%.6f", v3.z);
+		SetDlgItemText(hWnd, id3, cbuf);
+	}
+	
 	return;
 }
 VECTOR3 DialogControl::GetDlgItemsVector3(HWND hWnd, int id1, int id2, int id3) {
