@@ -40,7 +40,7 @@ public:
 	VesselBuilder1 *VB1;
 	vector<VC_POS>vc_positions;
 	vector<VC_MFD>vc_mfds;
-	VCHUDSPEC vc_hud;
+	VCHUDSPEC *vc_hud;
 	int id_counter;
 	bool LoadVC(int id);
 	bool VCMouseEvent(int id, int event, VECTOR3 &p);
@@ -56,8 +56,11 @@ public:
 	void GetPositionParams(def_idx d_idx, VECTOR3 &ofs, VECTOR3 &dir);
 	void DeletePosition(def_idx d_idx);
 	UINT GetPositionCount();
+	int GetVCPosition();
+	int VCPosition;
 	UINT AddMFD();
 	UINT AddMFD(int mesh, int group, bool wPwrBtns, VECTOR3 pwr_btn, VECTOR3 mnu_btn, bool wColsBtns, VECTOR3 TopLeftBtn, VECTOR3 BottomLeftBtn, VECTOR3 TopRightBtn, VECTOR3 BottomRightBtn);
+	void DeleteMFD(def_idx d_idx);
 	void DefineMFDColumnButtons(def_idx d_idx, int col, VECTOR3 first, VECTOR3 last);
 	void DefineMFDPwrButtons(def_idx d_idx, VECTOR3 first, VECTOR3 last);
 	void SetMFDHasPwrBtns(def_idx d_idx, bool set);

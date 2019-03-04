@@ -190,6 +190,12 @@
     <ClCompile Include="VCPosDlgProc.cpp">
       <Filter>Dialog</Filter>
     </ClCompile>
+    <ClCompile Include="VCHUDDlgProc.cpp">
+      <Filter>Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="VCMFDDlgProc.cpp">
+      <Filter>Dialog</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="VesselBuilder1.rc">

@@ -9,11 +9,12 @@ VCManager::VCManager(VesselBuilder1 *_VB1) {
 	vc_positions.clear();
 	id_counter = 1000;
 	wHUD = false;
-	vc_hud.nmesh = 0;
-	vc_hud.ngroup = 0;
-	vc_hud.hudcnt = _V(0, 0, 0);
-	vc_hud.size = 0;
-
+	vc_hud = new VCHUDSPEC;
+	vc_hud->nmesh = 0;
+	vc_hud->ngroup = 0;
+	vc_hud->hudcnt = _V(0, 0, 0);
+	vc_hud->size = 0;
+	VCPosition = 0;
 
 	/*VC_POS vc_pos = VC_POS();
 	vc_pos.ofs= _V(0, 1.467, 6.782);
@@ -64,13 +65,17 @@ VCManager::VCManager(VesselBuilder1 *_VB1) {
 }
 VCManager::~VCManager() {
 	VB1 = NULL;
+	delete vc_hud;
+	vc_hud = NULL;
 	return;
 }
 bool VCManager::LoadVC(int id) {
+	VCPosition = id;
 	if (id >= vc_positions.size()) { return false; }
 	id_counter = 1000;
+	
 	if (wHUD) {
-		oapiVCRegisterHUD(&vc_hud);
+		oapiVCRegisterHUD(vc_hud);
 	}
 	
 	
@@ -219,10 +224,15 @@ void VCManager::DeletePosition(def_idx d_idx) {
 UINT VCManager::GetPositionCount() {
 	return vc_positions.size();
 }
+int VCManager::GetVCPosition() {
+	return VCPosition;
+}
 UINT VCManager::AddMFD() {
+	if (GetMFDCount() >= MAXMFD) { return (UINT)-1; }
 	return AddMFD(0, 0, false, _V(0, 0, 0), _V(0, 0, 0), false, _V(0, 0, 0), _V(0, 0, 0), _V(0, 0, 0), _V(0, 0, 0));
 }
 UINT VCManager::AddMFD(int mesh, int group, bool wPwrBtns, VECTOR3 pwr_btn, VECTOR3 mnu_btn, bool wColsBtns, VECTOR3 TopLeftBtn, VECTOR3 BottomLeftBtn, VECTOR3 TopRightBtn, VECTOR3 BottomRightBtn) {
+	if (GetMFDCount() >= MAXMFD) { return (UINT)-1; }
 	VC_MFD mfd = VC_MFD();
 	mfd.mfd_spec.nmesh = mesh;
 	mfd.mfd_spec.ngroup = group;
@@ -239,6 +249,10 @@ UINT VCManager::AddMFD(int mesh, int group, bool wPwrBtns, VECTOR3 pwr_btn, VECT
 	}
 	
 	return index;
+}
+void VCManager::DeleteMFD(def_idx d_idx) {
+	vc_mfds.erase(vc_mfds.begin() + d_idx);
+	return;
 }
 void VCManager::SetMFDMesh(def_idx d_idx, int newmesh) {
 	vc_mfds[d_idx].mfd_spec.nmesh = newmesh;
@@ -283,26 +297,26 @@ bool VCManager::IsHUDEnabled() {
 	return wHUD;
 }
 void VCManager::SetHUDMesh(DWORD nmesh) {
-	vc_hud.nmesh = nmesh;
+	vc_hud->nmesh = nmesh;
 	return;
 }
 void VCManager::SetHUDGroup(DWORD ngroup) {
-	vc_hud.ngroup = ngroup;
+	vc_hud->ngroup = ngroup;
 	return;
 }
 void VCManager::SetHUDCenter(VECTOR3 hudcnt) {
-	vc_hud.hudcnt = hudcnt;
+	vc_hud->hudcnt = hudcnt;
 	return;
 }
 void VCManager::SetHUDSize(double size) {
-	vc_hud.size = size;
+	vc_hud->size = size;
 	return;
 }
 void VCManager::GetHUDParams(DWORD &nmesh, DWORD &ngroup, VECTOR3 &hudcnt, double &size) {
-	nmesh = vc_hud.nmesh;
-	ngroup = vc_hud.ngroup;
-	hudcnt = vc_hud.hudcnt;
-	size = vc_hud.size;
+	nmesh = vc_hud->nmesh;
+	ngroup = vc_hud->ngroup;
+	hudcnt = vc_hud->hudcnt;
+	size = vc_hud->size;
 	return;
 }
 void VCManager::SetHUDParams(int mesh, int group, VECTOR3 hudcnt, double size) {
@@ -456,6 +470,9 @@ void VCManager::WriteCfg(FILEHANDLE fh) {
 void VCManager::Clear() {
 	vc_positions.clear();
 	vc_mfds.clear();
-	vc_hud = { 0 };
+	vc_hud->hudcnt = _V(0, 0, 0);
+	vc_hud->ngroup = 0;
+	vc_hud->nmesh = 0;
+	vc_hud->size = 0;
 	return;
 }

@@ -178,7 +178,9 @@
     <ClCompile Include="PropellantManager.cpp" />
     <ClCompile Include="PrpDlgProc.cpp" />
     <ClCompile Include="SettingsDlgProc.cpp" />
+    <ClCompile Include="VCHUDDlgProc.cpp" />
     <ClCompile Include="VCManager.cpp" />
+    <ClCompile Include="VCMFDDlgProc.cpp" />
     <ClCompile Include="VCPosDlgProc.cpp" />
     <ClCompile Include="VesselBuilder1.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>

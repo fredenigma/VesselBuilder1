@@ -20,6 +20,8 @@
 #define IDD_DIALOG_CTRLSURF             118
 #define IDD_DIALOG_CAMERA               119
 #define IDD_DIALOG_VCPOS                120
+#define IDD_DIALOG_VCHUD                121
+#define IDD_DIALOG_VCMFD                122
 #define IDC_TREE1                       1001
 #define IDC_SPIN_POSZ_S                 1005
 #define IDC_SPIN_POSZ_L                 1006
@@ -113,14 +115,28 @@
 #define IDC_STATIC_MSH35                1067
 #define ID_COPY                         1068
 #define ID_COPYVS                       1068
+#define IDC_STATIC_MSH39                1068
 #define ID_EXIT                         1069
+#define IDC_STATIC_MSH40                1069
 #define IDC_SPIN_FMPITCH                1070
+#define IDC_STATIC_MSH41                1070
 #define IDC_SPIN_FMROLL                 1071
+#define IDC_STATIC_MSH42                1071
+#define IDC_STATIC_MSH43                1072
 #define IDC_SPIN2                       1073
+#define IDC_STATIC_MSH44                1073
+#define IDC_STATIC_MSH45                1074
+#define IDC_STATIC_MSH46                1075
+#define IDC_STATIC_MSH47                1076
+#define IDC_STATIC_MSH48                1077
 #define IDC_FMRESET                     1078
+#define IDC_STATIC_MSH49                1078
 #define IDC_BTN_MESHPASTEV              1079
+#define IDC_STATIC_MSH50                1079
 #define IDC_EDIT_DOCKPOSX               1080
+#define IDC_STATIC_MSH51                1080
 #define IDC_EDIT_DOCKPOSY               1081
+#define IDC_STATIC_MSH52                1081
 #define IDC_EDIT_DOCKPOSZ               1082
 #define IDC_EDIT_DOCKDIRX               1083
 #define IDC_EDIT_DOCKDIRY               1084
@@ -364,12 +380,14 @@
 #define IDC_BUTTON_CSPASTEV             1315
 #define IDC_BUTTON_VCPOSOFSSET          1316
 #define IDC_CHECK_MSHVISEXT             1317
-#define IDC_BUTTON_CSAMESET3            1317
 #define IDC_BUTTON_VCPOSDIRSET          1317
+#define IDC_BUTTON_VCHUDSIZESET         1317
 #define IDC_CHECK_MSHVISCOC             1318
 #define IDC_CHECK_DOCKJETT              1319
 #define IDC_CHECK_MSHVISVC              1319
 #define IDC_BUTTON_CAMXP                1320
+#define IDC_CHECK_MSHVISVC2             1320
+#define IDC_CHECK_MSHVISEXTPASS         1320
 #define IDC_BUTTON_CAMXM                1321
 #define IDC_BUTTON_CAMYP                1322
 #define IDC_BUTTON_CAMYM                1323
@@ -399,6 +417,49 @@
 #define IDC_BUTTON_VCPOSPASTEV          1347
 #define IDC_BUTTON_VCPOSCHECK           1348
 #define IDC_BUTTON_VCPOSDELETE          1349
+#define IDC_CHECK_VCHUDENABLE           1350
+#define IDC_EDIT_VCHUDSIZE              1351
+#define IDC_CHECK_VCMFDBC               1351
+#define IDC_COMBO_VCHUDMESH             1352
+#define IDC_COMBO_VCHUDGRP              1353
+#define IDC_BUTTON_VCHUDCHECK           1354
+#define IDC_EDIT_VCHUDCX                1355
+#define IDC_EDIT_VCHUDCY                1356
+#define IDC_EDIT_VCHUDCZ                1357
+#define IDC_BUTTON_VCHUDCSET            1358
+#define IDC_BUTTON_VCHUDPASTEV          1359
+#define IDC_EDIT_VCMFDMNUX              1360
+#define IDC_EDIT_VCMFDMNUY              1361
+#define IDC_EDIT_VCMFDMNUZ              1362
+#define IDC_EDIT_VCMFDTLX               1363
+#define IDC_EDIT_VCMFDTLY               1364
+#define IDC_EDIT_VCMFDTLZ               1365
+#define IDC_BUTTON_VCMFDTLPASTEV        1367
+#define IDC_EDIT_VCMFDBLX               1368
+#define IDC_EDIT_VCMFDBLY               1369
+#define IDC_EDIT_VCMFDBLZ               1370
+#define IDC_EDIT_VCMFDTRX               1371
+#define IDC_EDIT_VCMFDTRY               1372
+#define IDC_EDIT_VCMFDTRZ               1373
+#define IDC_BUTTON_VCMFDCOLSET          1374
+#define IDC_BUTTON_VCMFDTRPASTEV        1375
+#define IDC_EDIT_VCMFDBRX               1376
+#define IDC_EDIT_VCMFDBRY               1377
+#define IDC_EDIT_VCMFDBRZ               1378
+#define IDC_BUTTON_VCMFDBLPASTEV        1379
+#define IDC_EDIT_VCMFDNAME              1380
+#define IDC_BUTTON_VCMFDDELETE          1381
+#define IDC_BUTTON_VCMFDCHECK           1382
+#define IDC_COMBO_VCMFDMESH             1383
+#define IDC_COMBO_VCMFDGRP              1384
+#define IDC_EDIT_VCMFDPWRX              1385
+#define IDC_EDIT_VCMFDPWRY              1386
+#define IDC_EDIT_VCMFDPWRZ              1387
+#define IDC_BUTTON_VCMFDPWRPASTEV       1388
+#define IDC_BUTTON_VCMFDPWRSET          1389
+#define IDC_CHECK_VCMFDPWRSET           1390
+#define IDC_BUTTON_VCMFDMNUPASTEV       1391
+#define IDC_BUTTON_VCMFDBRPASTEV        1392
 
 // Next default values for new objects
 // 
@@ -406,7 +467,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1350
+#define _APS_NEXT_CONTROL_VALUE         1391
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

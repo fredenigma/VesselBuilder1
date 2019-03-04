@@ -35,6 +35,8 @@ public:
 	BOOL CtrlSurfDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL CamDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL VCPosDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	BOOL VCHUDDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	BOOL VCMFDDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	map<HTREEITEM, TREE_ITEM_REF> TreeItem;
 	TREE_ITEM_REF CurrentSelection;
@@ -90,7 +92,8 @@ public:
 	void UpdateCtrlSurfDialog(HWND hWnd);
 	void UpdateCamDialog(HWND hWnd);
 	void UpdateVCPosDialog(HWND hWnd);
-
+	void UpdateVCHUDDialog(HWND hWnd);
+	void UpdateVCMFDDialog(HWND hWnd);
 	HTREEITEM FindHtreeItem(ItemType type, UINT idx);
 	void InitAnimKeyCombo(HWND hWnd);
 	void UpdateTree(HWND hWnd,ItemType type,HTREEITEM select);
@@ -103,7 +106,7 @@ public:
 	bool ShowingAFGraph;
 	void UpdateAirfoilFuncGraph(HWND hWnd);
 	void ShowAnimCompArmTip(HWND hWnd, bool show);
-	
+	void EnableVCHudWindows(HWND hWnd, bool enable);
 	HWND hwnd_Mesh;
 	HWND hWnd_Dock;
 	HWND hWnd_Anim;
@@ -120,6 +123,8 @@ public:
 	HWND hWnd_CtrlSurfaces;
 	HWND hWnd_Cam;
 	HWND hWnd_VCPos;
+	HWND hWnd_VCHud;
+	HWND hWnd_VCMFD;
 
 	HWND GetDlg() { return hDlg; }
 	map<DWORD, string> oapi_keys;

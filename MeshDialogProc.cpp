@@ -32,7 +32,25 @@ void DialogControl::UpdateMeshDialog(HWND hWnd) {
 	sprintf_s(cbuf, "%.1f", speedrotation*DEG);
 	SetDlgItemText(hwnd_Mesh, IDC_EDIT_GETANGLE, (LPCSTR)cbuf);
 	WORD vis = MshMng->GetMeshVisibility(idx);
-	switch (vis) {
+
+	SendDlgItemMessage(hWnd, IDC_CHECK_MSHVISCOC, BM_SETCHECK, BST_UNCHECKED, 0);
+	SendDlgItemMessage(hWnd, IDC_CHECK_MSHVISEXT, BM_SETCHECK, BST_UNCHECKED, 0);
+	SendDlgItemMessage(hWnd, IDC_CHECK_MSHVISVC, BM_SETCHECK, BST_UNCHECKED, 0);
+	SendDlgItemMessage(hWnd, IDC_CHECK_MSHVISEXTPASS, BM_SETCHECK, BST_UNCHECKED, 0);
+	
+	if (vis & MESHVIS_EXTERNAL) {
+		SendDlgItemMessage(hWnd, IDC_CHECK_MSHVISEXT, BM_SETCHECK, BST_CHECKED, 0);
+	}
+	if (vis & MESHVIS_COCKPIT) {
+		SendDlgItemMessage(hWnd, IDC_CHECK_MSHVISCOC, BM_SETCHECK, BST_CHECKED, 0);
+	}
+	if (vis & MESHVIS_VC) {
+		SendDlgItemMessage(hWnd, IDC_CHECK_MSHVISVC, BM_SETCHECK, BST_CHECKED, 0);
+	}
+	if (vis & MESHVIS_EXTPASS) {
+		SendDlgItemMessage(hWnd, IDC_CHECK_MSHVISEXTPASS, BM_SETCHECK, BST_CHECKED, 0);
+	}
+	/*switch (vis) {
 	case MESHVIS_NEVER:
 	{
 		SendDlgItemMessage(hWnd, IDC_CHECK_MSHVISCOC, BM_SETCHECK, BST_UNCHECKED, 0);
@@ -89,7 +107,7 @@ void DialogControl::UpdateMeshDialog(HWND hWnd) {
 		SendDlgItemMessage(hWnd, IDC_CHECK_MSHVISVC, BM_SETCHECK, BST_CHECKED, 0);
 		break;
 	}
-	}
+	}*/
 	return;
 }
 void DialogControl::MeshNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) {
@@ -303,36 +321,28 @@ BOOL DialogControl::MeshDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 		case IDC_CHECK_MSHVISEXT:
 		case IDC_CHECK_MSHVISCOC:
 		case IDC_CHECK_MSHVISVC:
+		case IDC_CHECK_MSHVISEXTPASS:
 		{
 			if (HIWORD(wParam) == BN_CLICKED) {
 				LRESULT getcheck_ext = SendDlgItemMessage(hWnd, IDC_CHECK_MSHVISEXT, BM_GETCHECK, 0, 0);
 				LRESULT getcheck_coc = SendDlgItemMessage(hWnd, IDC_CHECK_MSHVISCOC, BM_GETCHECK, 0, 0);
 				LRESULT getcheck_vc = SendDlgItemMessage(hWnd, IDC_CHECK_MSHVISVC, BM_GETCHECK, 0, 0);
-				if ((getcheck_ext == BST_CHECKED) && (getcheck_coc == BST_CHECKED)&&(getcheck_vc == BST_CHECKED)) {
-					MshMng->SetMeshVisibility(CurrentSelection.idx, MESHVIS_ALWAYS|MESHVIS_VC);
+				LRESULT getcheck_extpass = SendDlgItemMessage(hWnd, IDC_CHECK_MSHVISEXTPASS, BM_GETCHECK, 0, 0);
+				WORD visibility = MESHVIS_NEVER;
+				if (getcheck_ext == BST_CHECKED) {
+					visibility += MESHVIS_EXTERNAL;
 				}
-				else if ((getcheck_ext == BST_UNCHECKED) && (getcheck_coc == BST_CHECKED)&&(getcheck_vc == BST_CHECKED)) {
-					MshMng->SetMeshVisibility(CurrentSelection.idx, MESHVIS_COCKPIT|MESHVIS_VC);
+				if (getcheck_coc == BST_CHECKED) {
+					visibility += MESHVIS_COCKPIT;
 				}
-				else if ((getcheck_ext == BST_CHECKED) && (getcheck_coc == BST_UNCHECKED)&&(getcheck_vc==BST_CHECKED)) {
-					MshMng->SetMeshVisibility(CurrentSelection.idx, MESHVIS_EXTERNAL|MESHVIS_VC);
+				if (getcheck_vc == BST_CHECKED) {
+					visibility += MESHVIS_VC;
 				}
-				else if ((getcheck_ext == BST_UNCHECKED) && (getcheck_coc == BST_UNCHECKED)&&(getcheck_vc==BST_UNCHECKED)) {
-					MshMng->SetMeshVisibility(CurrentSelection.idx, MESHVIS_NEVER);
+				if (getcheck_extpass == BST_CHECKED) {
+					visibility += MESHVIS_EXTPASS;
 				}
-				else if ((getcheck_ext == BST_CHECKED) && (getcheck_coc == BST_UNCHECKED) && (getcheck_vc == BST_UNCHECKED)) {
-					MshMng->SetMeshVisibility(CurrentSelection.idx, MESHVIS_EXTERNAL);
-				}
-				else if ((getcheck_ext == BST_UNCHECKED) && (getcheck_coc == BST_CHECKED) && (getcheck_vc == BST_UNCHECKED)) {
-					MshMng->SetMeshVisibility(CurrentSelection.idx, MESHVIS_COCKPIT);
-				}
-				else if ((getcheck_ext == BST_UNCHECKED) && (getcheck_coc == BST_UNCHECKED) && (getcheck_vc == BST_CHECKED)) {
-					MshMng->SetMeshVisibility(CurrentSelection.idx, MESHVIS_VC);
-				}
-				else if ((getcheck_ext == BST_CHECKED) && (getcheck_coc == BST_CHECKED) && (getcheck_vc == BST_UNCHECKED)) {
-					MshMng->SetMeshVisibility(CurrentSelection.idx, MESHVIS_ALWAYS);
-				}
-
+				MshMng->SetMeshVisibility(CurrentSelection.idx, visibility);
+				
 
 			}
 			break;

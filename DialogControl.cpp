@@ -138,6 +138,20 @@ BOOL CALLBACK VCPosDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
 	return DlgCtrl->VCPosDlgProc(hWnd, uMsg, wParam, lParam);
 }
+BOOL CALLBACK VCHUDDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	if (uMsg == WM_INITDIALOG) {
+		SetWindowLong(hWnd, GWL_USERDATA, (LONG)lParam);
+	}
+	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
+	return DlgCtrl->VCHUDDlgProc(hWnd, uMsg, wParam, lParam);
+}
+BOOL CALLBACK VCMFDDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	if (uMsg == WM_INITDIALOG) {
+		SetWindowLong(hWnd, GWL_USERDATA, (LONG)lParam);
+	}
+	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
+	return DlgCtrl->VCMFDDlgProc(hWnd, uMsg, wParam, lParam);
+}
 
 DialogControl::DialogControl(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;
@@ -229,6 +243,7 @@ bool DialogControl::IsOpen() {
 void DialogControl::InitDialog(HWND hWnd) {
 	InitTree(hWnd);
 	ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_HIDE);
+	ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 	MshMng->md_restore = MshMng->GetAllDefs();
 	hwnd_Mesh = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_MESH), hWnd, MeshDlgProcHook, (LPARAM)this);
 	hWnd_Dock = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_DOCK), hWnd, DockDlgProcHook, (LPARAM)this);
@@ -246,6 +261,8 @@ void DialogControl::InitDialog(HWND hWnd) {
 	hWnd_CtrlSurfaces = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_CTRLSURF), hWnd, CtrlSurfDlgProcHook, (LPARAM)this);
 	hWnd_Cam = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_CAMERA), hWnd, CamDlgProcHook, (LPARAM)this);
 	hWnd_VCPos = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_VCPOS), hWnd, VCPosDlgProcHook, (LPARAM)this);
+	hWnd_VCHud = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_VCHUD), hWnd, VCHUDDlgProcHook, (LPARAM)this);
+	hWnd_VCMFD = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_VCMFD), hWnd, VCMFDDlgProcHook, (LPARAM)this);
 	SetWindowPos(hwnd_Mesh, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hwnd_Mesh, SW_HIDE);
 	SetWindowPos(hWnd_Dock, NULL, 255, 10, 0, 0, SWP_NOSIZE);
@@ -278,7 +295,10 @@ void DialogControl::InitDialog(HWND hWnd) {
 	ShowWindow(hWnd_Cam, SW_HIDE);
 	SetWindowPos(hWnd_VCPos, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hWnd_VCPos, SW_HIDE);
-
+	SetWindowPos(hWnd_VCHud, NULL, 255, 10, 0, 0, SWP_NOSIZE);
+	ShowWindow(hWnd_VCHud, SW_HIDE);
+	SetWindowPos(hWnd_VCMFD, NULL, 255, 10, 0, 0, SWP_NOSIZE);
+	ShowWindow(hWnd_VCMFD, SW_HIDE);
 	return;
 }
 
@@ -1000,8 +1020,44 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		}
 		break;
 	}
+	case VCMFD:
+	{
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootVCMFDs);
+		while (ht != NULL) {
+			TreeItem.erase(ht);
+			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootVCMFDs);
+		}
+		TVINSERTSTRUCT insertstruct = { 0 };
 
-
+		insertstruct.hInsertAfter = TVI_ROOT;
+		insertstruct.item.mask = TVIF_TEXT;
+		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
+		insertstruct.hParent = hrootVCMFDs;
+		for (UINT i = 0; i < VCMng->GetMFDCount(); i++) {
+			char cbuf[256] = { '\0' };
+			if (i == 0) {
+				sprintf(cbuf, "MFD_LEFT");
+			}
+			else if (i == 1) {
+				sprintf(cbuf, "MFD_RIGHT");
+			}
+			else {
+				sprintf(cbuf, "MFD_USER_%i", i-1);
+			}
+			
+			insertstruct.item.pszText = (LPSTR)cbuf;
+			insertstruct.item.cchTextMax = strlen(cbuf);
+			TREE_ITEM_REF Tir = TREE_ITEM_REF();
+			Tir.Type = VCMFD;
+			Tir.idx = i;
+			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			TreeItem[Tir.hitem] = Tir;
+			TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootVCMFDs, TVE_EXPAND);
+		}
+		break;
+	}
+	
 
 
 
@@ -1171,6 +1227,7 @@ void DialogControl::InitTree(HWND hWnd) {
 	UpdateTree(hWnd, CTRLSURFACES, 0);
 	UpdateTree(hWnd, CAMERA, 0);
 	UpdateTree(hWnd, VCPOS, 0);
+	UpdateTree(hWnd, VCMFD, 0);
 	return;
 }
 
@@ -1232,6 +1289,9 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 	}
 	if (type != VCPOS) {
 		ShowWindow(hWnd_VCPos, SW_HIDE);
+	}
+	if (type != VCMFD) {
+		ShowWindow(hWnd_VCMFD, SW_HIDE);
 	}
 
 	switch (type) {
@@ -1312,6 +1372,11 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 		ShowWindow(hWnd_VCPos, SW_SHOW);
 		break;
 	}
+	case VCMFD:
+	{
+		ShowWindow(hWnd_VCMFD, SW_SHOW);
+		break;
+	}
 	}
 
 	return;
@@ -1382,7 +1447,8 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 				UpdateTree(hWnd, VCPOS, 0);
 			}
 			else if (CurrentSelection.hitem == hrootVCMFDs) {
-
+				VCMng->AddMFD();
+				UpdateTree(hWnd, VCMFD, 0);
 			}
 			break;
 		}
@@ -1500,7 +1566,13 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 					else {
 						ShowWindow(hWnd_Settings, SW_HIDE);
 					}
-
+					if (CurrentSelection.hitem == hrootVCHud) {
+						ShowWindow(hWnd_VCHud, SW_SHOW);
+						UpdateVCHUDDialog(hWnd_VCHud);
+					}
+					else {
+						ShowWindow(hWnd_VCHud, SW_HIDE);
+					}
 
 					ShowTheRightDialog(CurrentSelection.Type);
 
@@ -1584,6 +1656,11 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 						case VCPOS:
 						{
 							UpdateVCPosDialog(hWnd_VCPos);
+							break;
+						}
+						case VCMFD:
+						{
+							UpdateVCMFDDialog(hWnd_VCMFD);
 							break;
 						}
 					}
