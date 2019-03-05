@@ -22,6 +22,7 @@
 #define IDD_DIALOG_VCPOS                120
 #define IDD_DIALOG_VCHUD                121
 #define IDD_DIALOG_VCMFD                122
+#define IDD_DIALOG_BEACONS              123
 #define IDC_TREE1                       1001
 #define IDC_SPIN_POSZ_S                 1005
 #define IDC_SPIN_POSZ_L                 1006
@@ -386,7 +387,6 @@
 #define IDC_CHECK_DOCKJETT              1319
 #define IDC_CHECK_MSHVISVC              1319
 #define IDC_BUTTON_CAMXP                1320
-#define IDC_CHECK_MSHVISVC2             1320
 #define IDC_CHECK_MSHVISEXTPASS         1320
 #define IDC_BUTTON_CAMXM                1321
 #define IDC_BUTTON_CAMYP                1322
@@ -459,7 +459,32 @@
 #define IDC_BUTTON_VCMFDPWRSET          1389
 #define IDC_CHECK_VCMFDPWRSET           1390
 #define IDC_BUTTON_VCMFDMNUPASTEV       1391
+#define IDC_EDIT_BCNNAME                1391
 #define IDC_BUTTON_VCMFDBRPASTEV        1392
+#define IDC_BUTTON_BCNNAMESET           1392
+#define IDC_COMBO_BCNSHAPE              1393
+#define IDC_EDIT_BCNPOSX                1394
+#define IDC_EDIT_BCNPOSY                1395
+#define IDC_EDIT_BCNPOSZ                1396
+#define IDC_BUTTON_BCNPOSSET            1397
+#define IDC_BUTTON_BCNPASTEV            1398
+#define IDC_EDIT_BCNCOLR                1399
+#define IDC_EDIT_BCNCOLG                1400
+#define IDC_EDIT_BCNCOLB                1401
+#define IDC_BUTTON_BCNCOLSET            1402
+#define IDC_EDIT_BCNSIZE                1403
+#define IDC_EDIT_BCNFALLOFF             1404
+#define IDC_EDIT_BCNPERIOD              1405
+#define IDC_EDIT_BCNDURATION            1406
+#define IDC_EDIT_BCNTOFS                1407
+#define IDC_BUTTON6                     1408
+#define IDC_BUTTON_BCNDEL               1408
+#define IDC_BUTTON_BCNTOGGLE            1409
+#define IDC_BUTTON_BCNSIZESET           1410
+#define IDC_BUTTON_BCNFALLOFFSET        1411
+#define IDC_BUTTON_BCNPERIODSET         1412
+#define IDC_BUTTON_BCNDURATIONSET       1413
+#define IDC_BUTTON_BCNTOFSSET           1414
 
 // Next default values for new objects
 // 
@@ -467,7 +492,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1391
+#define _APS_NEXT_CONTROL_VALUE         1410
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

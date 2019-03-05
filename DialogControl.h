@@ -1,7 +1,7 @@
 #pragma once
 #include <CommCtrl.h>
 
-enum ItemType { MESH, DOCK, ATTACHMENT, LIGHT, CAMERA, SPECIAL, SETTINGS,ROOTS,NONE,ANIMATIONS,ANIM_COMP,PROPELLANT,EXTEX,THRUSTERS,THRUSTERGROUPS,PARTICLES,TOUCHDOWNPOINTS,AIRFOILS,CTRLSURFACES,VCPOS,VCMFD,VCHUD };
+enum ItemType { MESH, DOCK, ATTACHMENT, LIGHT, CAMERA, SPECIAL, SETTINGS,ROOTS,NONE,ANIMATIONS,ANIM_COMP,PROPELLANT,EXTEX,THRUSTERS,THRUSTERGROUPS,PARTICLES,TOUCHDOWNPOINTS,AIRFOILS,CTRLSURFACES,VCPOS,VCMFD,VCHUD,BEACONS };
 struct TREE_ITEM_REF {
 	ItemType Type;
 	UINT idx;
@@ -37,6 +37,7 @@ public:
 	BOOL VCPosDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL VCHUDDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL VCMFDDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	BOOL BeaconsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	map<HTREEITEM, TREE_ITEM_REF> TreeItem;
 	TREE_ITEM_REF CurrentSelection;
@@ -70,7 +71,8 @@ public:
 	HTREEITEM hrootVCPositions;
 	HTREEITEM hrootVCMFDs;
 	HTREEITEM hrootVCHud;
-
+	HTREEITEM hrootBeacons;
+	
 	void SetDlgItemsTextVector3(HWND hWnd, int id1, int id2, int id3, VECTOR3 v3, int precision = 3);
 	VECTOR3 GetDlgItemsVector3(HWND hWnd, int id1, int id2, int id3);
 	void DlgRotateMesh(UINT msh_idx,VECTOR3 axis, double angle );
@@ -94,6 +96,10 @@ public:
 	void UpdateVCPosDialog(HWND hWnd);
 	void UpdateVCHUDDialog(HWND hWnd);
 	void UpdateVCMFDDialog(HWND hWnd);
+	void UpdateBeaconsDialog(HWND hWnd);
+
+
+
 	HTREEITEM FindHtreeItem(ItemType type, UINT idx);
 	void InitAnimKeyCombo(HWND hWnd);
 	void UpdateTree(HWND hWnd,ItemType type,HTREEITEM select);
@@ -125,6 +131,7 @@ public:
 	HWND hWnd_VCPos;
 	HWND hWnd_VCHud;
 	HWND hWnd_VCMFD;
+	HWND hWnd_Beacons;
 
 	HWND GetDlg() { return hDlg; }
 	map<DWORD, string> oapi_keys;
@@ -142,6 +149,7 @@ public:
 	CameraManager *CamMng;
 	ExTexManager *ExTMng;
 	VCManager *VCMng;
+	LightsManager *LightsMng;
 
 	bool ShowingThrGrp;
 	bool AnimTesting;

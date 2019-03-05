@@ -23,6 +23,8 @@
 #include "CameraManager.h"
 #include "ExTexManager.h"
 #include "VCManager.h"
+#include "LightsManager.h"
+
 #define _CRT_SECURE_NO_WARNINGS
 #define _CRT_NONSTDC_NO_DEPRECATE
 
@@ -51,7 +53,7 @@ VesselBuilder1::VesselBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
 	CamMng = new CameraManager(this);
 	ExTMng = new ExTexManager(this);
 	VCMng = new VCManager(this);
-
+	LightsMng = new LightsManager(this);
 
 	cfgfilename.clear();
 	follow_me_pos = _V(0, 0, 0);
@@ -126,7 +128,8 @@ VesselBuilder1::~VesselBuilder1(){
 	ExTMng = NULL;
 	delete VCMng;
 	VCMng = NULL;
-
+	delete LightsMng;
+	LightsMng = NULL;
 	CloseSBLog();
 	
 	//ClearDelete(mgr);
@@ -226,6 +229,16 @@ void VesselBuilder1::clbkLoadStateEx(FILEHANDLE scn,void *vs)
 			sscanf(line + 11, "%i", &cam);
 			CamMng->SetCurrentCamera(cam);
 		}
+		else if (!_strnicmp(line, "BEACONS", 7)) {
+			int active = 0;
+			sscanf(line + 7, "%i", &active);
+			if (active > 0) {
+				LightsMng->ActivateAllBeacons(true);
+			}
+			else {
+				LightsMng->ActivateAllBeacons(false);
+			}
+		}
 		else{ 
 			ParseScenarioLineEx(line, vs); 
 		}	
@@ -256,6 +269,11 @@ void VesselBuilder1::clbkSaveState(FILEHANDLE scn)
 		char buf[256] = { '\0' };
 		sprintf(buf, "CURRENT_CAM");
 		oapiWriteScenario_int(scn, buf, CamMng->GetCurrentCamera());
+	}
+	if (LightsMng->GetBeaconCount() > 0) {
+		char cbuf[256] = { '\0' };
+		sprintf(cbuf, "BEACONS");
+		oapiWriteScenario_int(scn, cbuf,(int)LightsMng->AreAllBeaconsActive());
 	}
 
 	if (follow_me) {
@@ -480,6 +498,10 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 		}
 		return 1;
 	}
+	if (KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == OAPI_KEY_B) {
+		LightsMng->ToggleAllBeaconsActive();
+		return 1;
+	}
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == OAPI_KEY_K) {
 	/*	DWORD td_count = this->GetTouchdownPointCount();
 		for (UINT i = 0; i < td_count; i++) {
@@ -493,10 +515,12 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 		*/
 		
 		
+		
 	
 		return 1;
 	}
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && KEYMOD_CONTROL(kstate) && key == OAPI_KEY_K) {
+		
 	/*	ResetVehicle();
 		MshMng->msh_defs.clear();
 		AttMng->att_defs.clear();
@@ -576,6 +600,7 @@ void VesselBuilder1::clbkPostStep(double simt, double simdt, double mjd) {
 	VECTOR3 rd;
 	GetRotDrag(rd);
 	sprintf(oapiDebugString(), "GGD:%.3f CS:%.3f %.3f %.3f RD:%.3f %.3f %.3f cw:%.3f %.3f %.3f %.3f", GetGravityGradientDamping(), CS.x, CS.y, CS.z, rd.x, rd.y, rd.z, cw_zp, cw_zm, cw_x, cw_y);*/
+	
 	return;
 }
 void VesselBuilder1::clbkVisualCreated(VISHANDLE vis, int refcount) {
@@ -694,6 +719,7 @@ void VesselBuilder1::ParseCfgFile(FILEHANDLE fh) {
 	CamMng->ParseCfgFile(fh);
 	//Lights
 	VCMng->ParseCfgFile(fh);
+	LightsMng->ParseCfgFile(fh);
 
 	if (!oapiReadItem_bool(fh, "NOEDITOR", NoEditor)) { NoEditor = false; }
 	SBLog("Parsing Completed");
@@ -739,6 +765,8 @@ void VesselBuilder1::WriteCfgFile(string filename) {
 	CamMng->WriteCfg(fh);
 	//Lights
 	VCMng->WriteCfg(fh);
+	LightsMng->WriteCfg(fh);
+
 
 	oapiCloseFile(fh, FILE_OUT);
 	return;

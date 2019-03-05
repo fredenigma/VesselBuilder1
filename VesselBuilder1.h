@@ -73,6 +73,8 @@ class ControlSurfacesManager;
 class CameraManager;
 class ExTexManager;
 class VCManager;
+class LightsManager;
+
 
 class VesselBuilder1 :public VESSEL4{
 public:
@@ -107,7 +109,7 @@ public:
  CameraManager *CamMng;
  ExTexManager *ExTMng;
  VCManager *VCMng;
-
+ LightsManager *LightsMng;
 
 
  VISHANDLE visual;

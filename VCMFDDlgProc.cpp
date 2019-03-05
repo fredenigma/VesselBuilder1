@@ -84,7 +84,7 @@ void DialogControl::UpdateVCMFDDialog(HWND hWnd) {
 	for (UINT i = 0; i < MshMng->GetMeshCount(); i++) {
 		WORD vis = MshMng->GetMeshVisibility(i);
 		UINT msh_counter = 0;
-		if (vis >= MESHVIS_VC) {
+		if (vis & MESHVIS_VC) {
 			char cbuf[256] = { '\0' };
 			sprintf(cbuf, MshMng->GetMeshName(i).c_str());
 			msh_idx mesh_index = MshMng->IdxDef2Msh(i);

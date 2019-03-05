@@ -58,6 +58,9 @@
     <ClInclude Include="VCManager.h">
       <Filter>Vessel\Managers</Filter>
     </ClInclude>
+    <ClInclude Include="LightsManager.h">
+      <Filter>Vessel\Managers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\Orbitersdk\lib\orbiter.lib">
@@ -194,6 +197,12 @@
       <Filter>Dialog</Filter>
     </ClCompile>
     <ClCompile Include="VCMFDDlgProc.cpp">
+      <Filter>Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="LightsManager.cpp">
+      <Filter>Vessel\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="BeaconDlgProc.cpp">
       <Filter>Dialog</Filter>
     </ClCompile>
   </ItemGroup>

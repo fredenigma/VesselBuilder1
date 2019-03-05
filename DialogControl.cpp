@@ -14,6 +14,7 @@
 #include "CameraManager.h"
 #include "ExTexManager.h"
 #include "VCManager.h"
+#include "LightsManager.h"
 #pragma comment(lib, "comctl32.lib")
 
 
@@ -152,6 +153,14 @@ BOOL CALLBACK VCMFDDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
 	return DlgCtrl->VCMFDDlgProc(hWnd, uMsg, wParam, lParam);
 }
+BOOL CALLBACK BeaconsDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	if (uMsg == WM_INITDIALOG) {
+		SetWindowLong(hWnd, GWL_USERDATA, (LONG)lParam);
+	}
+	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
+	return DlgCtrl->BeaconsDlgProc(hWnd, uMsg, wParam, lParam);
+}
+
 
 DialogControl::DialogControl(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;
@@ -169,6 +178,7 @@ DialogControl::DialogControl(VesselBuilder1 *_VB1) {
 	CamMng = VB1->CamMng;
 	ExTMng = VB1->ExTMng;
 	VCMng = VB1->VCMng;
+	LightsMng = VB1->LightsMng;
 
 	open = false;
 	hDlg = NULL;
@@ -204,6 +214,8 @@ DialogControl::~DialogControl() {
 	CamMng=NULL;
 	ExTMng = NULL; 
 	VCMng = NULL;
+	LightsMng = NULL;
+
 	hDlg = NULL;
 	DeleteObject(penblack);
 	DeleteObject(pengray);
@@ -263,6 +275,7 @@ void DialogControl::InitDialog(HWND hWnd) {
 	hWnd_VCPos = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_VCPOS), hWnd, VCPosDlgProcHook, (LPARAM)this);
 	hWnd_VCHud = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_VCHUD), hWnd, VCHUDDlgProcHook, (LPARAM)this);
 	hWnd_VCMFD = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_VCMFD), hWnd, VCMFDDlgProcHook, (LPARAM)this);
+	hWnd_Beacons = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_BEACONS), hWnd, BeaconsDlgProcHook, (LPARAM)this);
 	SetWindowPos(hwnd_Mesh, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hwnd_Mesh, SW_HIDE);
 	SetWindowPos(hWnd_Dock, NULL, 255, 10, 0, 0, SWP_NOSIZE);
@@ -299,6 +312,9 @@ void DialogControl::InitDialog(HWND hWnd) {
 	ShowWindow(hWnd_VCHud, SW_HIDE);
 	SetWindowPos(hWnd_VCMFD, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hWnd_VCMFD, SW_HIDE);
+	SetWindowPos(hWnd_Beacons, NULL, 255, 10, 0, 0, SWP_NOSIZE);
+	ShowWindow(hWnd_Beacons, SW_HIDE);
+
 	return;
 }
 
@@ -382,9 +398,9 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			Tir.idx = i;
 			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 			TreeItem[Tir.hitem] = Tir;
-			TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootDocks, TVE_EXPAND);
 		}
-		
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootDocks, TVE_EXPAND);
+
 
 		break;
 	}
@@ -418,8 +434,8 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			Tir.idx = i;
 			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 			TreeItem[Tir.hitem] = Tir;
-			TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootAttachments, TVE_EXPAND);
 		}
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootAttachments, TVE_EXPAND);
 
 
 		break;
@@ -506,8 +522,9 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			Tir.idx = i;
 			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 			TreeItem[Tir.hitem] = Tir;
-			TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootPropellant, TVE_EXPAND);
 		}
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootPropellant, TVE_EXPAND);
+
 		break;
 	}
 
@@ -546,8 +563,9 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			Tir.idx = i;
 			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 			TreeItem[Tir.hitem] = Tir;
-			TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootExTex, TVE_EXPAND);
 		}
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootExTex, TVE_EXPAND);
+
 		break;
 	}
 
@@ -575,8 +593,9 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			Tir.idx = i;
 			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 			TreeItem[Tir.hitem] = Tir;
-			TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootParticles, TVE_EXPAND);
 		}
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootParticles, TVE_EXPAND);
+
 		break;
 	}
 	
@@ -611,8 +630,9 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			Tir.idx = i;
 			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 			TreeItem[Tir.hitem] = Tir;
-			TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootThrusters, TVE_EXPAND);
 		}
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootThrusters, TVE_EXPAND);
+
 		break;
 	}
 	case THRUSTERGROUPS:
@@ -924,8 +944,8 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			Tir.idx = i;
 			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 			TreeItem[Tir.hitem] = Tir;
-			TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootAirfoils, TVE_EXPAND);
 		}
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootAirfoils, TVE_EXPAND);
 
 		break;
 	}
@@ -959,8 +979,8 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			Tir.idx = i;
 			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 			TreeItem[Tir.hitem] = Tir;
-			TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootControlSurfaces, TVE_EXPAND);
 		}
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootControlSurfaces, TVE_EXPAND);
 
 		break;
 	}
@@ -988,8 +1008,9 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			Tir.idx = i;
 			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 			TreeItem[Tir.hitem] = Tir;
-			TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootCameras, TVE_EXPAND);
 		}
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootCameras, TVE_EXPAND);
+
 		break;
 	}
 	case VCPOS:
@@ -1016,8 +1037,8 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			Tir.idx = i;
 			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 			TreeItem[Tir.hitem] = Tir;
-			TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootVCPositions, TVE_EXPAND);
 		}
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootVCPositions, TVE_EXPAND);
 		break;
 	}
 	case VCMFD:
@@ -1053,11 +1074,38 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			Tir.idx = i;
 			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 			TreeItem[Tir.hitem] = Tir;
-			TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootVCMFDs, TVE_EXPAND);
 		}
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootVCMFDs, TVE_EXPAND);
 		break;
 	}
-	
+	case BEACONS:
+	{
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootBeacons);
+		while (ht != NULL) {
+			TreeItem.erase(ht);
+			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootBeacons);
+		}
+		TVINSERTSTRUCT insertstruct = { 0 };
+
+		insertstruct.hInsertAfter = TVI_ROOT;
+		insertstruct.item.mask = TVIF_TEXT;
+		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
+		insertstruct.hParent = hrootBeacons;
+		for (UINT i = 0; i < LightsMng->GetBeaconCount(); i++) {
+			char cbuf[256] = { '\0' };
+			sprintf(cbuf, "%s", LightsMng->GetBeaconName(i).c_str());
+			insertstruct.item.pszText = (LPSTR)cbuf;
+			insertstruct.item.cchTextMax = strlen(cbuf);
+			TREE_ITEM_REF Tir = TREE_ITEM_REF();
+			Tir.Type = BEACONS;
+			Tir.idx = i;
+			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			TreeItem[Tir.hitem] = Tir;
+		}
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootBeacons, TVE_EXPAND);
+		break;
+	}
 
 
 
@@ -1180,6 +1228,14 @@ void DialogControl::InitTree(HWND hWnd) {
 	hrootLights = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 	Tir.hitem = hrootLights;
 	TreeItem[Tir.hitem] = Tir;
+	insertstruct.hParent = hrootLights;
+	insertstruct.item.pszText = (LPSTR)TEXT("Beacons\0");
+	insertstruct.item.cchTextMax = 10;
+	hrootBeacons = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+	Tir.hitem = hrootBeacons;
+	TreeItem[Tir.hitem] = Tir;
+
+	insertstruct.hParent = hrootVessel;
 
 	insertstruct.item.pszText = (LPSTR)TEXT("Cameras\0");
 	insertstruct.item.cchTextMax = 8;
@@ -1228,6 +1284,7 @@ void DialogControl::InitTree(HWND hWnd) {
 	UpdateTree(hWnd, CAMERA, 0);
 	UpdateTree(hWnd, VCPOS, 0);
 	UpdateTree(hWnd, VCMFD, 0);
+	UpdateTree(hWnd, BEACONS, 0);
 	return;
 }
 
@@ -1292,6 +1349,9 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 	}
 	if (type != VCMFD) {
 		ShowWindow(hWnd_VCMFD, SW_HIDE);
+	}
+	if (type != BEACONS) {
+		ShowWindow(hWnd_Beacons, SW_HIDE);
 	}
 
 	switch (type) {
@@ -1377,6 +1437,11 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 		ShowWindow(hWnd_VCMFD, SW_SHOW);
 		break;
 	}
+	case BEACONS:
+	{
+		ShowWindow(hWnd_Beacons, SW_SHOW);
+		break;
+	}
 	}
 
 	return;
@@ -1449,6 +1514,10 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 			else if (CurrentSelection.hitem == hrootVCMFDs) {
 				VCMng->AddMFD();
 				UpdateTree(hWnd, VCMFD, 0);
+			}
+			else if (CurrentSelection.hitem == hrootBeacons) {
+				LightsMng->AddBeaconDef();
+				UpdateTree(hWnd, BEACONS, 0);
 			}
 			break;
 		}
@@ -1555,10 +1624,18 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD MFD DEFINITION");
 					}
+					else if (CurrentSelection.hitem == hrootBeacons) {
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
+						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD BEACON");
+					}
 					else {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_HIDE);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 					}
+
+
+					////NON CHILDREN
 					if (CurrentSelection.hitem == hrootSettings) {
 						ShowWindow(hWnd_Settings, SW_SHOW);
 						UpdateSettingsDialog(hWnd_Settings);
@@ -1661,6 +1738,11 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 						case VCMFD:
 						{
 							UpdateVCMFDDialog(hWnd_VCMFD);
+							break;
+						}
+						case BEACONS:
+						{
+							UpdateBeaconsDialog(hWnd_Beacons);
 							break;
 						}
 					}
