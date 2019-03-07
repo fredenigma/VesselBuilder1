@@ -30,6 +30,10 @@ void AttachmentManager::CreateAttDef(bool toparent, VECTOR3 pos, VECTOR3 dir, VE
 
 void AttachmentManager::CreateAttDef(ATT_DEF att_d) {
 	ATT_DEF att = att_d;
+	*att.pos_ptr = att.pos;
+	*att.dir_ptr = att.dir;
+	*att.antidir_ptr = att.dir*(-1);
+	*att.antirot_ptr = att.rot*(-1);
 	att.ah = VB1->CreateAttachment(att.toparent, att.pos, att.dir, att.rot, att.id.c_str(), att.loose);
 	//oapiWriteLogV("Attachment count:%i %i", SB1->AttachmentCount(true), SB1->AttachmentCount(false));
 	att.created = true;
@@ -38,12 +42,20 @@ void AttachmentManager::CreateAttDef(ATT_DEF att_d) {
 }
 void AttachmentManager::DeleteAttDef(def_idx d_idx) {
 	VB1->DelAttachment(att_defs[d_idx].ah);
+	delete att_defs[d_idx].pos_ptr;
+	delete att_defs[d_idx].dir_ptr;
+	delete att_defs[d_idx].antidir_ptr;
+	delete att_defs[d_idx].antirot_ptr;
 	att_defs.erase(att_defs.begin() + d_idx);
 	return;
 }
 void AttachmentManager::ModifyAttDef(def_idx d_idx, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot) {
 	VB1->SetAttachmentParams(att_defs[d_idx].ah, pos, dir, rot);
 	att_defs[d_idx].pos = pos;
+	*att_defs[d_idx].pos_ptr = pos;
+	*att_defs[d_idx].dir_ptr = dir;
+	*att_defs[d_idx].antidir_ptr = dir*(-1);
+	*att_defs[d_idx].antirot_ptr = rot*(-1);
 	att_defs[d_idx].dir = dir;
 	att_defs[d_idx].antidir = dir*(-1);
 	att_defs[d_idx].rot = rot;
@@ -80,12 +92,28 @@ void AttachmentManager::SetAttDefID(def_idx d_idx, string id) {
 }
 void AttachmentManager::SetAttDefCreated(def_idx d_idx) {
 	att_defs[d_idx].ah = VB1->CreateAttachment(att_defs[d_idx].toparent, att_defs[d_idx].pos, att_defs[d_idx].dir, att_defs[d_idx].rot, att_defs[d_idx].id.c_str(), att_defs[d_idx].loose);
+	*att_defs[d_idx].pos_ptr = att_defs[d_idx].pos;
+	*att_defs[d_idx].dir_ptr = att_defs[d_idx].dir;
+	*att_defs[d_idx].antidir_ptr = att_defs[d_idx].dir*(-1);
+	*att_defs[d_idx].antirot_ptr = att_defs[d_idx].rot*(-1);
 	att_defs[d_idx].created = true;
 	return;
 }
 void AttachmentManager::SetAttDefToParent(def_idx d_idx, bool toparent) {
 	att_defs[d_idx].toparent = toparent;
 	return;
+}
+VECTOR3* AttachmentManager::GetAttDefPosPtr(def_idx d_idx) {
+	return att_defs[d_idx].pos_ptr;
+}
+VECTOR3* AttachmentManager::GetAttDefDirPtr(def_idx d_idx) {
+	return att_defs[d_idx].dir_ptr;
+}
+VECTOR3* AttachmentManager::GetAttDefAntiDirPtr(def_idx d_idx) {
+	return att_defs[d_idx].antidir_ptr;
+}
+VECTOR3* AttachmentManager::GetAttDefAntiRotPtr(def_idx d_idx) {
+	return att_defs[d_idx].antirot_ptr;
 }
 void AttachmentManager::ParseCfgFile(FILEHANDLE fh) {
 	UINT att_counter = 0;
@@ -170,6 +198,12 @@ double AttachmentManager::GetAttDefRange(def_idx d_idx) {
 }
 void AttachmentManager::Clear() {
 	VB1->ClearAttachments();
+	for (UINT i = 0; i < att_defs.size(); i++) {
+		delete att_defs[i].pos_ptr;
+		delete att_defs[i].dir_ptr;
+		delete att_defs[i].antidir_ptr;
+		delete att_defs[i].antirot_ptr;
+	}
 	att_defs.clear();
 	return;
 }

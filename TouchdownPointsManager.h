@@ -8,6 +8,7 @@ public:
 	vector<TOUCHDOWNVTX> set1;
 	vector<TOUCHDOWNVTX> set2;
 	UINT change_anim_idx;
+	double *state_chk;
 	UINT GetSetPointsCount(UINT set);
 	vector<TOUCHDOWNVTX> GetSet(UINT set);
 	VECTOR3 GetPointPos(UINT set, UINT idx);
@@ -30,5 +31,6 @@ public:
 	void SetCurrentSet(UINT set);
 	UINT GetCurrentSet();
 	UINT GetPointsCount(UINT set);
+	void TouchDownPointsPreStep(double simt, double simdt, double mjd);
 	void Clear();
 };

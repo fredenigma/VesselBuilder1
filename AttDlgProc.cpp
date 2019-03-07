@@ -2,6 +2,7 @@
 #include "resource.h"
 #include "DialogControl.h"
 #include "AttachmentManager.h"
+#include "LaserManager.h"
 #pragma comment(lib, "comctl32.lib")
 
 void DialogControl::UpdateAttDialog(HWND hWnd) {
@@ -79,8 +80,11 @@ void DialogControl::UpdateAttDialog(HWND hWnd) {
 	SetDlgItemsTextVector3(hWnd, IDC_EDIT_ATTDIRX, IDC_EDIT_ATTDIRY, IDC_EDIT_ATTDIRZ, dir);
 	SetDlgItemsTextVector3(hWnd, IDC_EDIT_ATTROTX, IDC_EDIT_ATTROTY, IDC_EDIT_ATTROTZ, rot);
 
-	if (VB1->AttExhaustsActive) {
+	if (AttLaserMap[idx]!=NULL) {
 		SendDlgItemMessage(hWnd, IDC_CHECK_ATTHIGHLIGHT, BM_SETCHECK, BST_CHECKED, 0);
+	}
+	else {
+		SendDlgItemMessage(hWnd, IDC_CHECK_ATTHIGHLIGHT, BM_SETCHECK, BST_UNCHECKED, 0);
 	}
 
 	char cbuf[256] = { '\0' };
@@ -111,6 +115,9 @@ BOOL DialogControl::AttDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 		case IDC_BUTTON_CRDELATTDEF:
 		{
 			if (AttMng->AttIsCreated(idx)) {
+				if (AttLaserMap[idx] != NULL) {
+					VB1->Laser->DeleteLaser(AttLaserMap[idx]);
+				}
 				AttMng->DeleteAttDef(idx);
 				UpdateTree(hDlg, ATTACHMENT,0);
 			}
@@ -180,10 +187,10 @@ BOOL DialogControl::AttDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 			if (HIWORD(wParam) == BN_CLICKED) {
 				LRESULT getcheck = SendDlgItemMessage(hWnd, IDC_CHECK_ATTHIGHLIGHT, BM_GETCHECK, 0, 0);
 				if (getcheck == BST_CHECKED) {
-					VB1->CreateAttExhausts();
+					AttLaserMap[idx] = VB1->Laser->CreateLaserL(AttMng->GetAttDefPosPtr(idx), AttMng->GetAttDefAntiDirPtr(idx), AttMng->GetAttDefAntiRotPtr(idx), LASER_GREEN_TEX, LASER_BLUE_TEX);
 				}
 				else {
-					VB1->DeleteAttExhausts();
+					VB1->Laser->DeleteLaser(AttLaserMap[idx]);
 				}
 			}
 			break;

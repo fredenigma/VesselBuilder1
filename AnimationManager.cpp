@@ -2,7 +2,7 @@
 #include "DialogControl.h"
 #include "AnimationManager.h"
 #include "AttachmentManager.h"
-#include "TouchdownPointsManager.h"
+//#include "TouchdownPointsManager.h"
 
 AnimationManager::AnimationManager(VesselBuilder1* _VB1) {
 	VB1 = _VB1;
@@ -43,6 +43,7 @@ void AnimationManager::DeleteAnimDef(anim_idx a_idx) {
 		def_idx d_idx = GetAnimCompDefIdx(anims[a_idx].comp[i]);
 		InvalidateComponent(d_idx);
 	}
+	delete anim_defs[a_idx].state_ptr; //? not so sure it won't trigger issues
 	VB1->DelAnimation(a_idx);
 	anim_defs[a_idx].Valid = false;
 	
@@ -62,6 +63,7 @@ void AnimationManager::SetAnimDefState(anim_idx a_idx, double newdefstate) {
 	VB1->GetAnimPtr(&anims);
 	anims[a_idx].state = newdefstate;
 	anims[a_idx].defstate = newdefstate;
+	*anim_defs[a_idx].state_ptr = newdefstate;
 	return;
 }
 bool AnimationManager::IsAnimValid(anim_idx a_idx) {
@@ -111,19 +113,9 @@ void AnimationManager::GetAnimParams(anim_idx a_idx, double &duration, AnimCycle
 }
 void AnimationManager::SetAnimationState(anim_idx a_idx, double newstate) {
 	VB1->SetAnimation(a_idx, newstate);
-	//Touchdownpoints check for swap
-	if (a_idx == VB1->TdpMng->GetChangeOverAnimation()) {
-		if (newstate > 0.999) {
-			if (VB1->TdpMng->GetCurrentSet() == 1) {
-				VB1->TdpMng->SetCurrentSet(2);
-			}
-		}
-		else {
-			if (VB1->TdpMng->GetCurrentSet() == 2) {
-				VB1->TdpMng->SetCurrentSet(1);
-			}
-		}
-	}
+	*anim_defs[a_idx].state_ptr = newstate;
+	
+	
 	return;
 }
 double AnimationManager::GetAnimationState(anim_idx a_idx) {
@@ -558,7 +550,7 @@ def_idx AnimationManager::GetAnimCompDefAttTip(def_idx d_idx) {
 }
 
 
-void AnimationManager::ConsumeAnimBufferedKey(DWORD key, bool down, char *kstate) {
+int AnimationManager::ConsumeAnimBufferedKey(DWORD key, bool down, char *kstate) {
 	for (UINT i = 0; i < anim_defs.size(); i++) {
 		if (!KEYMOD_ALT(kstate) && KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == GetAnimKey(i)) {
 			if ((GetAnimCycle(i) == AnimCycleType::MANUAL) || (GetAnimCycle(i) == AnimCycleType::AUTOMATIC)) { continue; }
@@ -568,7 +560,7 @@ void AnimationManager::ConsumeAnimBufferedKey(DWORD key, bool down, char *kstate
 			else {
 				StartAnimationForward(i);
 			}
-
+			return 1;
 		}
 		if (!KEYMOD_ALT(kstate) && KEYMOD_SHIFT(kstate) && KEYMOD_CONTROL(kstate) && key == GetAnimKey(i)) {
 			if ((GetAnimCycle(i)== AnimCycleType::MANUAL) || (GetAnimCycle(i) == AnimCycleType::AUTOMATIC)) { continue; }
@@ -578,7 +570,7 @@ void AnimationManager::ConsumeAnimBufferedKey(DWORD key, bool down, char *kstate
 			else {
 				StartAnimationBackward(i);
 			}
-
+			return 1;
 		}
 	}
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && KEYMOD_CONTROL(kstate) && key == OAPI_KEY_SPACE) {
@@ -588,6 +580,7 @@ void AnimationManager::ConsumeAnimBufferedKey(DWORD key, bool down, char *kstate
 		else {
 			StartManualArm();
 		}
+		return 1;
 	}
 
 	if (!KEYMOD_ALT(kstate) && KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == OAPI_KEY_LEFT) {
@@ -608,6 +601,7 @@ void AnimationManager::ConsumeAnimBufferedKey(DWORD key, bool down, char *kstate
 				CurrentManualAnim = manualAnimsIdx[index - 1];
 			}
 		}
+		return 1;
 	}
 
 	if (!KEYMOD_ALT(kstate) && KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == OAPI_KEY_RIGHT) {
@@ -629,10 +623,11 @@ void AnimationManager::ConsumeAnimBufferedKey(DWORD key, bool down, char *kstate
 				CurrentManualAnim = manualAnimsIdx[index + 1];
 			}
 		}
+		return 1;
 	}
 
 
-	return;
+	return 0;
 }
 void AnimationManager::ConsumeAnimDirectKey(char *kstate) {
 	for (UINT i = 0; i < anim_defs.size(); i++) {
@@ -753,6 +748,11 @@ void AnimationManager::AnimationPreStep(double simt, double simdt, double mjd) {
 				def_idx attidx = GetAnimCompDefAttTip(i);
 				ATTACHMENTHANDLE ah = VB1->AttMng->GetAttDefAH(attidx);
 				VB1->SetAttachmentParams(ah, animcomp_defs[i].Tip[0], animcomp_defs[i].Tip[1] - animcomp_defs[i].Tip[0], animcomp_defs[i].Tip[2] - animcomp_defs[i].Tip[0]);
+				*VB1->AttMng->att_defs[attidx].pos_ptr = animcomp_defs[i].Tip[0];
+				*VB1->AttMng->att_defs[attidx].dir_ptr = animcomp_defs[i].Tip[1] - animcomp_defs[i].Tip[0];
+				*VB1->AttMng->att_defs[attidx].antidir_ptr = - animcomp_defs[i].Tip[1] + animcomp_defs[i].Tip[0];
+				*VB1->AttMng->att_defs[attidx].antirot_ptr = -animcomp_defs[i].Tip[2] + animcomp_defs[i].Tip[0];
+
 			}
 		}
 	}
@@ -995,7 +995,9 @@ void AnimationManager::Clear() {
 	UINT nanims = VB1->GetAnimPtr(&anims);
 	for (UINT i = 0; i < nanims; i++) {
 		VB1->DelAnimation(i);
+		delete anim_defs[i].state_ptr;
 	}
+	
 	anim_defs.clear();
 	animcomp_defs.clear();
 	return;

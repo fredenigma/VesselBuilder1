@@ -4,10 +4,16 @@ struct DCK_DEF {
 	string name;
 	bool IsDockJett;
 	DOCKHANDLE dh;
+	VECTOR3 *pos_ptr;
+	VECTOR3 *antidir_ptr;
+	VECTOR3 *antirot_ptr;
 	DCK_DEF() {
 		name.clear();
 		IsDockJett = false;
 		dh = NULL;
+		pos_ptr = new VECTOR3;
+		antidir_ptr = new VECTOR3;
+		antirot_ptr = new VECTOR3;
 	}
 };
 
@@ -36,5 +42,8 @@ public:
 	UINT GetDockCount();
 	void DockEvent(int dock, OBJHANDLE mate);
 	def_idx GetDockIdx(DOCKHANDLE dh);
+	VECTOR3* GetDockPosPtr(def_idx d_idx);
+	VECTOR3* GetDockAntiDirPtr(def_idx d_idx);
+	VECTOR3* GetDockAntiRotPtr(def_idx d_idx);
 	void Clear();
 };

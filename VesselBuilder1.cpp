@@ -5,6 +5,7 @@
 #include <math.h>
 #include <stdio.h>
 #include "VesselBuilder1.h"
+#include "LaserManager.h"
 #include "DialogControl.h"
 #include "FollowMeDlg.h"
 #include "resource.h"
@@ -24,6 +25,7 @@
 #include "ExTexManager.h"
 #include "VCManager.h"
 #include "LightsManager.h"
+#include "ExhaustManager.h"
 
 #define _CRT_SECURE_NO_WARNINGS
 #define _CRT_NONSTDC_NO_DEPRECATE
@@ -54,6 +56,8 @@ VesselBuilder1::VesselBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
 	ExTMng = new ExTexManager(this);
 	VCMng = new VCManager(this);
 	LightsMng = new LightsManager(this);
+	Laser = new LaserManager(this);
+	ExMng = new ExhaustManager(this);
 
 	cfgfilename.clear();
 	follow_me_pos = _V(0, 0, 0);
@@ -71,26 +75,14 @@ VesselBuilder1::VesselBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
 	FMDlg = new FollowMeDlg(this);
 	
 	vclip = V_CLIPBOARD();
-	DockExhaustsActive = false;
-	DockExhaustsID.clear();
-	AttExhaustsActive = false;
-	AttExhaustsID.clear();
-	ThGrpExhaustsID.clear();
-	thExhaustsActive = false;
-	ThExaustsID.clear();
 	
-	TDPCurExhaustsID.clear();
-	TDPSetExhaustsID.clear();
-	TdpCurExhaustsActive = false;
-	TdpSetExhaustsActive = false;
+	
+	
 
 	GrabMode = false;
 	currentGrabAtt = 0;
 	NoEditor = false;
 	level1 = 1.0;
-	es_dck_dir = NULL;
-	es_dck_pos = NULL;
-	es_dck_rot = NULL;
 	SBLog("Class Initialize");
 	return;
 }
@@ -130,6 +122,11 @@ VesselBuilder1::~VesselBuilder1(){
 	VCMng = NULL;
 	delete LightsMng;
 	LightsMng = NULL;
+	delete Laser;
+	Laser = NULL;
+	delete ExMng;
+	ExMng = NULL;
+
 	CloseSBLog();
 	
 	//ClearDelete(mgr);
@@ -230,13 +227,29 @@ void VesselBuilder1::clbkLoadStateEx(FILEHANDLE scn,void *vs)
 			CamMng->SetCurrentCamera(cam);
 		}
 		else if (!_strnicmp(line, "BEACONS", 7)) {
-			int active = 0;
+			char bcn_ons[256] = { '\0' };
+			sscanf(line + 7, "%s", bcn_ons);
+			string bnc(bcn_ons);
+			vector<UINT> bc = readVectorUINT(bnc);
+			for (UINT i = 0; i < bc.size(); i++) {
+				LightsMng->ActivateBeacon(bc[i], true);
+			}
+			/*int active = 0;
 			sscanf(line + 7, "%i", &active);
 			if (active > 0) {
 				LightsMng->ActivateAllBeacons(true);
 			}
 			else {
 				LightsMng->ActivateAllBeacons(false);
+			}*/
+		}
+		else if (!_strnicmp(line, "LIGHTS", 6)) {
+			char lgt_on[256] = { '\0' };
+			sscanf(line + 6, "%s", lgt_on);
+			string lnc(lgt_on);
+			vector<UINT>lc = readVectorUINT(lnc);
+			for (UINT i = 0; i < lc.size(); i++) {
+				LightsMng->ActivateLight(lc[i], true);
 			}
 		}
 		else{ 
@@ -273,7 +286,26 @@ void VesselBuilder1::clbkSaveState(FILEHANDLE scn)
 	if (LightsMng->GetBeaconCount() > 0) {
 		char cbuf[256] = { '\0' };
 		sprintf(cbuf, "BEACONS");
-		oapiWriteScenario_int(scn, cbuf,(int)LightsMng->AreAllBeaconsActive());
+		vector<UINT> v_bon = LightsMng->GetBeaconsOn();
+		if (v_bon.size() > 0) {
+			string bcn_on = WriteVectorUINT(v_bon, false);
+			char lbuf[256] = { '\0' };
+			sprintf(lbuf, "%s", bcn_on.c_str());
+			oapiWriteScenario_string(scn, cbuf, lbuf);
+		}
+		
+		//oapiWriteScenario_int(scn, cbuf,(int)LightsMng->AreAllBeaconsActive());
+	}
+	if (LightsMng->GetLightsCount() > 0) {
+		char cbuf[256] = { '\0' };
+		sprintf(cbuf, "LIGHTS");
+		vector<UINT> v_lon = LightsMng->GetLightsOn();
+		if (v_lon.size() > 0) {
+			string lights_on = WriteVectorUINT(v_lon, false);
+			char lbuf[256] = { '\0' };
+			sprintf(lbuf, "%s", lights_on.c_str());
+			oapiWriteScenario_string(scn, cbuf, lbuf);
+		}
 	}
 
 	if (follow_me) {
@@ -447,9 +479,9 @@ int VesselBuilder1::clbkConsumeDirectKey(char *kstate) {
 	if (follow_me) {
 		ConsumeFollowMeKey(kstate);
 	}
-	if (!Dlg->IsOpen()) {
+	//if (!Dlg->IsOpen()) {
 		AnimMng->ConsumeAnimDirectKey(kstate);
-	}
+	//}
 	
 	return 0;
 }
@@ -460,10 +492,11 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 	if (!down) return 0; 
 	if (Playback()) return 0; //
 	//if (!AnimEditingMode) {
-	if (!Dlg->IsOpen()) {
-		AnimMng->ConsumeAnimBufferedKey(key, down, kstate);
-	}
+	//if (!Dlg->IsOpen()) {
+	AnimMng->ConsumeAnimBufferedKey(key, down, kstate);
+	//}
 	CamMng->ConsumeCameraBufferedKey(key, down, kstate);
+	LightsMng->ConsumeLightsBufferedKey(key, down, kstate);
 	//}
 	
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == OAPI_KEY_SPACE) {
@@ -513,10 +546,26 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 			oapiWriteLogV("Mu:%.3f Mu_lng:%.3f", tdvtx.mu, tdvtx.mu_lng);
 		}
 		*/
-		
-		
-		
-	
+	/*	LightEmitter *LE = new LightEmitter();
+		COLOUR4 col_d, col_s, col_a;
+		col_d = LE->GetDiffuseColour();
+		col_s = LE->GetSpecularColour();
+		col_a = LE->GetAmbientColour();
+		LightEmitter::VISIBILITY vis = LE->GetVisibility();
+		VECTOR3 pos = LE->GetPosition();
+		VECTOR3 dir = LE->GetDirection();
+		LightEmitter::TYPE type = LE->GetType();
+
+		oapiWriteLogV("LIGHT EMITTER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+
+		oapiWriteLogV("Diffuse : %.3f %.3f %.3f %.3f", col_d.r, col_d.g, col_d.b, col_d.a);
+		oapiWriteLogV("Specular : %.3f %.3f %.3f %.3f", col_s.r, col_s.g, col_s.b, col_s.a);
+		oapiWriteLogV("Ambient : %.3f %.3f %.3f %.3f", col_a.r, col_a.g, col_a.b, col_a.a);
+		oapiWriteLogV("Visibility:%i", (int)vis);
+		oapiWriteLogV("Position: %.3f %.3f %.3f", pos.x, pos.y, pos.z);
+		oapiWriteLogV("Direction: %.3f %.3f %.3f", dir.x, dir.y, dir.z);
+		oapiWriteLogV("Type: %i", (int)type);
+		oapiWriteLogV("END LIGHT EMITTER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");*/
 		return 1;
 	}
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && KEYMOD_CONTROL(kstate) && key == OAPI_KEY_K) {
@@ -585,6 +634,7 @@ void VesselBuilder1::clbkPreStep(double simt, double simdt, double mjd) {
 		sprintf(oapiDebugString(), "Attachment ready for Grab: %i %s", currentGrabAtt, AttMng->GetAttDefId(attidx).c_str());
 	}
 	AnimMng->AnimationPreStep(simt, simdt, mjd);
+	TdpMng->TouchDownPointsPreStep(simt, simdt, mjd);
 	if (follow_me) {
 		UpdateFollowMe();
 	}
@@ -880,299 +930,6 @@ void VesselBuilder1::ToggleFollowMeSuprePrecision() {
 
 
 
-void VesselBuilder1::CreateDockExhausts() {
-	EXHAUSTSPEC es;
-	double level = 1;
-	UINT ndocks = DckMng->GetDockCount();
-	if (es_dck_pos) {
-		delete[] es_dck_pos;
-		es_dck_pos = NULL;
-	}
-	if (es_dck_dir) {
-		delete[] es_dck_dir;
-		es_dck_dir = NULL;
-	}
-	if (es_dck_rot) {
-		delete[] es_dck_rot;
-		es_dck_rot = NULL;
-	}
-	es_dck_pos = new VECTOR3[ndocks];
-	es_dck_dir = new VECTOR3[ndocks];
-	es_dck_rot = new VECTOR3[ndocks];
-
-	for (UINT i = 0; i < DckMng->GetDockCount(); i++) {
-		DckMng->GetDockParams(i, es_dck_pos[i], es_dck_dir[i], es_dck_rot[i]);
-		es_dck_dir[i] *= -1;
-		es_dck_rot[i] *= -1;
-		es.flags = EXHAUST_CONSTANTLEVEL;
-		es.th = NULL;
-		es.tex = greenL;
-		es.lsize = 100;
-		es.wsize = 0.002;
-		es.modulate = 0;
-		es.lofs = 0;
-		es.level = &level;
-		es.lpos = &es_dck_pos[i];
-		es.ldir = &es_dck_dir[i];
-		UINT idx = AddExhaust(&es);
-		DockExhaustsID.push_back(idx);
-		es.tex = blueL;
-		es.ldir = &es_dck_rot[i];
-		idx = AddExhaust(&es);
-		DockExhaustsID.push_back(idx);
-	}
-	DockExhaustsActive = true;
-	return;
-}
-void VesselBuilder1::DeleteDockExhausts() {
-	for (UINT i = 0; i < DockExhaustsID.size(); i++) {
-		DelExhaust(DockExhaustsID[i]);
-		if (es_dck_pos) {
-			delete[] es_dck_pos;
-			es_dck_pos = NULL;
-		}
-		if (es_dck_dir) {
-			delete[] es_dck_dir;
-			es_dck_dir = NULL;
-		}
-		if (es_dck_rot) {
-			delete[] es_dck_rot;
-			es_dck_rot = NULL;
-		}
-	}
-	DockExhaustsID.clear();
-	DockExhaustsActive = false;
-	return;
-}
-void VesselBuilder1::CreateAttExhausts() {
-	EXHAUSTSPEC es;
-	double level = 1;
-	for (UINT i = 0; i < AttMng->GetAttCount(); i++) {
-		es.flags = EXHAUST_CONSTANTLEVEL;
-		es.th = NULL;
-		es.tex = greenL;
-		es.lsize = 100;
-		es.wsize = 0.002;
-		es.modulate = 0;
-		es.lofs = 0;
-		es.level = &level;
-		es.lpos = &AttMng->att_defs[i].pos;
-		es.ldir = &AttMng->att_defs[i].antidir;
-		UINT idx = AddExhaust(&es);
-		AttExhaustsID.push_back(idx);
-		es.tex = blueL;
-		es.ldir = &AttMng->att_defs[i].antirot;
-		idx = AddExhaust(&es);
-		AttExhaustsID.push_back(idx);
-	}
-	AttExhaustsActive = true;
-	return;
-}
-void VesselBuilder1::DeleteAttExhausts() {
-	for (UINT i = 0; i < AttExhaustsID.size(); i++) {
-		DelExhaust(AttExhaustsID[i]);
-	}
-	AttExhaustsID.clear();
-	AttExhaustsActive = false;
-	return;
-}
-
-
-void VesselBuilder1::CreateThExhausts() {
-	EXHAUSTSPEC es;
-	double level = 1;
-	for (UINT i = 0; i < ThrMng->GetThrCount(); i++) {
-		es.flags = EXHAUST_CONSTANTLEVEL;
-		es.th = ThrMng->GetThrTH(i);//NULL;
-		es.tex = greenL;
-		es.lsize = 100;
-		es.wsize = 0.005;
-		es.modulate = 0;
-		es.lofs = 0;
-		es.level = &level;
-		es.lpos = NULL;//&ThrMng->thr_defs[i].pos;
-		es.ldir = &ThrMng->thr_defs[i].antidir;//NULL;//&ThrMng->thr_defs[i].antidir;
-		UINT idx = AddExhaust(&es);
-		ThExaustsID.push_back(idx);	
-	}
-	thExhaustsActive = true;
-}
-void VesselBuilder1::DeleteThExhausts() {
-	for (UINT i = 0; i < ThExaustsID.size(); i++) {
-		DelExhaust(ThExaustsID[i]);
-	}
-	ThExaustsID.clear();
-	thExhaustsActive = false;
-	return;
-}
-void VesselBuilder1::CreateThrGrpLaserExhausts(THGROUP_TYPE thgt) {
-	EXHAUSTSPEC es;
-	double level = 1;
-	es.flags = EXHAUST_CONSTANTLEVEL;
-	es.tex = greenL;
-	es.lsize = 100;
-	es.wsize = 0.005;
-	es.modulate = 0;
-	es.lofs = 0;
-	es.level = &level;
-	es.lpos = NULL;//&ThrMng->thr_defs[i].pos;
-	 //NULL;//&ThrMng->t
-	vector<THRUSTER_HANDLE>thrusters = ThrGrpMng->GetThrusters(thgt);
-	for (UINT i = 0; i < thrusters.size(); i++) {
-		es.th = thrusters[i];
-		def_idx th_idx = ThrMng->GetThrIdx(thrusters[i]);
-		es.ldir = &ThrMng->thr_defs[th_idx].antidir;
-		UINT idx = AddExhaust(&es);
-		ThGrpExhaustsID.push_back(idx);
-	}
-	return;
-}
-void VesselBuilder1::CreateThrusterLaserExhaust(THRUSTER_HANDLE th) {
-	EXHAUSTSPEC es;
-	double level = 1;
-	es.flags = EXHAUST_CONSTANTLEVEL;
-	es.tex = greenL;
-	es.lsize = 100;
-	es.wsize = 0.005;
-	es.modulate = 0;
-	es.lofs = 0;
-	es.level = &level;
-	es.lpos = NULL;//&ThrMng->thr_defs[i].pos;
-	def_idx th_idx = ThrMng->GetThrIdx(th);
-	es.ldir = &ThrMng->thr_defs[th_idx].antidir;
-	//es.ldir = NULL;//&ThrMng->t
-	es.th = th;
-	UINT idx = AddExhaust(&es);
-	ThGrpExhaustsID.push_back(idx);
-	
-	return;
-}
-void VesselBuilder1::DeleteThrGrpLaserExhausts() {
-	for (UINT i = 0; i < ThGrpExhaustsID.size(); i++) {
-		DelExhaust(ThGrpExhaustsID[i]);
-	}
-	ThGrpExhaustsID.clear();
-	return;
-}
-
-void VesselBuilder1::CreateTDPExhausts(bool Current, vector<TOUCHDOWNVTX> &tdvtx) {
-	EXHAUSTSPEC es;
-	double level = 1;
-	VECTOR3 zplus = _V(0, 0, 1);
-	VECTOR3 zminus = _V(0, 0, -1);
-	VECTOR3 xplus = _V(1, 0, 0);
-	VECTOR3 xminus = _V(-1, 0, 0);
-	VECTOR3 yplus = _V(0, 1, 0);
-	VECTOR3 yminus = _V(0, -1, 0);
-	es.flags = EXHAUST_CONSTANTLEVEL|EXHAUST_CONSTANTPOS|EXHAUST_CONSTANTDIR;
-	es.lsize = 1.5;
-	es.wsize = 0.005;
-	es.modulate = 0;
-	es.lofs = 0;
-	es.level = &level;
-	es.th = NULL;
-	if (Current) {
-		es.tex = greenL;
-		DWORD tdpcount = GetTouchdownPointCount();
-		tdvtx.clear();
-		for (DWORD i = 0; i < tdpcount; i++) {
-			TOUCHDOWNVTX td;
-			GetTouchdownPoint(td, i);
-			tdvtx.push_back(td);
-		}
-	}
-	else {
-		es.tex = redL;
-	}
-	for (UINT i = 0; i < tdvtx.size(); i++) {
-		es.lpos = &tdvtx[i].pos;
-		es.ldir = &zplus;
-		UINT idx = AddExhaust(&es);
-		if (Current) {
-			TDPCurExhaustsID.push_back(idx);
-		}
-		else {
-			TDPSetExhaustsID.push_back(idx);
-		}
-		
-		es.ldir = &zminus;
-		 idx = AddExhaust(&es);
-		 if (Current) {
-			 TDPCurExhaustsID.push_back(idx);
-		 }
-		 else {
-			 TDPSetExhaustsID.push_back(idx);
-		 }
-		es.ldir = &xplus;
-		 idx = AddExhaust(&es);
-		 if (Current) {
-			 TDPCurExhaustsID.push_back(idx);
-		 }
-		 else {
-			 TDPSetExhaustsID.push_back(idx);
-		 }
-		es.ldir = &xminus;
-		 idx = AddExhaust(&es);
-		 if (Current) {
-			 TDPCurExhaustsID.push_back(idx);
-		 }
-		 else {
-			 TDPSetExhaustsID.push_back(idx);
-		 }
-		es.ldir = &yplus;
-		 idx = AddExhaust(&es);
-		 if (Current) {
-			 TDPCurExhaustsID.push_back(idx);
-		 }
-		 else {
-			 TDPSetExhaustsID.push_back(idx);
-		 }
-		es.ldir = &yminus;
-		 idx = AddExhaust(&es);
-		 if (Current) {
-			 TDPCurExhaustsID.push_back(idx);
-		 }
-		 else {
-			 TDPSetExhaustsID.push_back(idx);
-		 }
-
-
-
-
-
-	}
-	if (Current) {
-		TdpCurExhaustsActive = true;
-	}
-	else {
-		TdpSetExhaustsActive = true;
-	}
-	
-	return;
-}
-void VesselBuilder1::DeleteTDPExhausts(bool Current) {
-	vector<UINT> IDs;
-	IDs.clear();
-	if (Current) {
-		IDs = TDPCurExhaustsID;
-		TDPCurExhaustsID.clear();
-		TdpCurExhaustsActive = false;
-	}
-	else {
-		IDs = TDPSetExhaustsID;
-		TDPSetExhaustsID.clear();
-		TdpSetExhaustsActive = false;
-	}
-	for (UINT i = 0; i < IDs.size(); i++) {
-		DelExhaust(IDs[i]);
-	}
-	
-	return;
-}
-
-
-
-
 
 
 bool VesselBuilder1::UsingD3D9() {
@@ -1205,7 +962,7 @@ bool VesselBuilder1::AreVector3Equal(VECTOR3 v1, VECTOR3 v2) {
 	}
 
 }
-string VesselBuilder1::WriteVectorUINT(vector<UINT> v) {
+string VesselBuilder1::WriteVectorUINT(vector<UINT> v,bool spaces) {
 	string line;
 	line.clear();
 	if (v.size() > 0) {
@@ -1215,7 +972,13 @@ string VesselBuilder1::WriteVectorUINT(vector<UINT> v) {
 				sprintf(add, "%i", v[i]);
 			}
 			else {
-				sprintf(add, "%i, ", v[i]);
+				if (spaces) {
+					sprintf(add, "%i, ", v[i]);
+				}
+				else {
+					sprintf(add, "%i,", v[i]);
+				}
+				
 			}
 			string add_s(add);
 			line += add_s;

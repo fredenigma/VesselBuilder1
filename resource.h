@@ -23,6 +23,8 @@
 #define IDD_DIALOG_VCHUD                121
 #define IDD_DIALOG_VCMFD                122
 #define IDD_DIALOG_BEACONS              123
+#define IDD_DIALOG_LIGHTCREATION        124
+#define IDD_DIALOG_LIGHTS               125
 #define IDC_TREE1                       1001
 #define IDC_SPIN_POSZ_S                 1005
 #define IDC_SPIN_POSZ_L                 1006
@@ -476,15 +478,68 @@
 #define IDC_EDIT_BCNFALLOFF             1404
 #define IDC_EDIT_BCNPERIOD              1405
 #define IDC_EDIT_BCNDURATION            1406
+#define IDC_EDIT_LGTDIRX                1406
 #define IDC_EDIT_BCNTOFS                1407
-#define IDC_BUTTON6                     1408
+#define IDC_EDIT_LGTDIRY                1407
 #define IDC_BUTTON_BCNDEL               1408
 #define IDC_BUTTON_BCNTOGGLE            1409
 #define IDC_BUTTON_BCNSIZESET           1410
 #define IDC_BUTTON_BCNFALLOFFSET        1411
+#define IDC_EDIT_DIFFG                  1411
+#define IDC_EDIT_LGTDIRZ                1411
 #define IDC_BUTTON_BCNPERIODSET         1412
+#define IDC_EDIT_DIFFB                  1412
 #define IDC_BUTTON_BCNDURATIONSET       1413
+#define IDC_EDIT_DIFFR                  1413
+#define IDC_BUTTON_LGTDIRSET            1413
 #define IDC_BUTTON_BCNTOFSSET           1414
+#define IDC_EDIT_SPECG                  1414
+#define IDC_EDIT_SPECB                  1415
+#define IDC_EDIT_BCNDURATION2           1415
+#define IDC_EDIT_BCNNOW                 1415
+#define IDC_EDIT_SPECR                  1416
+#define IDC_EDIT_AMBG                   1417
+#define IDC_EDIT_AMBB                   1418
+#define IDC_EDIT_AMBR                   1419
+#define IDC_STATIC_DIFF                 1421
+#define IDC_STATIC_SPEC                 1422
+#define IDC_STATIC_AMB                  1423
+#define IDC_BUTTON_ADDPOINT             1424
+#define IDC_BUTTON_ADDSPOT              1425
+#define IDC_EDIT_LGTNOW                 1426
+#define IDC_EDIT_LGTTYPE                1427
+#define IDC_COMBO_LGTVIS                1428
+#define IDC_EDIT_LGTNAME                1429
+#define IDC_BUTTON_LGTNAMESET           1430
+#define IDC_EDIT_LGTPOSX                1431
+#define IDC_EDIT_LGTPOSY                1432
+#define IDC_EDIT_LGTPOSZ                1433
+#define IDC_BUTTON_LGTPOSSET            1434
+#define IDC_BUTTON_LGTPASTEV            1435
+#define IDC_EDIT_LGTATT0                1436
+#define IDC_EDIT_LGTATT1                1437
+#define IDC_EDIT_LGTATT2                1438
+#define IDC_BUTTON_LGTATTSET            1439
+#define IDC_EDIT_LGTRANGE               1440
+#define IDC_BUTTON_LGTRANGESET          1441
+#define IDC_STATIC_LGTDIRGRP            1442
+#define IDC_STATIC_LGTDIRX              1443
+#define IDC_STATIC_LGTDIRY              1444
+#define IDC_STATIC_LGTDIRZ              1445
+#define IDC_STATIC_LGTAPGRP             1446
+#define IDC_STATIC_LGTUMB               1447
+#define IDC_EDIT_LGTUMB                 1448
+#define IDC_STATIC_LGTPEN               1449
+#define IDC_EDIT_LGTPEN                 1450
+#define IDC_BUTTON_LGTAPSET             1451
+#define IDC_BUTTON_LGTTOGGLE            1452
+#define IDC_BUTTON_LGTDEL               1453
+#define IDC_STATIC_LGTDIFF              1454
+#define IDC_STATIC_LGTSPEC              1455
+#define IDC_STATIC_LGTAMB               1456
+#define IDC_BUTTON_LGTATTACHSET         1457
+#define IDC_LIST_LGTATTLIST             1458
+#define IDC_CHECK_LGTUSEATT             1459
 
 // Next default values for new objects
 // 
@@ -492,7 +547,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1410
+#define _APS_NEXT_CONTROL_VALUE         1460
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

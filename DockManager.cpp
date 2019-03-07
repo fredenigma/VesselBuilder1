@@ -22,6 +22,9 @@ UINT DockManager::AddDockDef(string name, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot,
 	DCK_DEF dd = DCK_DEF();
 	dd.name = name;
 	dd.IsDockJett = dockjett;
+	*dd.pos_ptr = pos;
+	*dd.antidir_ptr = dir*(-1);
+	*dd.antirot_ptr = rot*(-1);
 	dd.dh = VB1->CreateDock(pos, dir, rot);
 	UINT index = dock_defs.size();
 	dock_defs.push_back(dd);
@@ -31,6 +34,9 @@ UINT DockManager::AddDockDef(string name, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot,
 bool DockManager::DeleteDockDef(def_idx d_idx) {
 	if (d_idx >= dock_defs.size()) { return false; }
 	VB1->DelDock(dock_defs[d_idx].dh);
+	delete dock_defs[d_idx].pos_ptr;
+	delete dock_defs[d_idx].antidir_ptr;
+	delete dock_defs[d_idx].antirot_ptr;
 	dock_defs.erase(dock_defs.begin() + d_idx);
 	return true;
 }
@@ -41,6 +47,9 @@ void DockManager::GetDockParams(def_idx d_idx, VECTOR3 &pos, VECTOR3 &dir, VECTO
 }
 void DockManager::SetDockParams(def_idx d_idx, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot) {
 	if (dock_defs[d_idx].dh == NULL) { return; }
+	*dock_defs[d_idx].pos_ptr = pos;
+	*dock_defs[d_idx].antidir_ptr = dir*(-1);
+	*dock_defs[d_idx].antirot_ptr = rot*(-1);
 	VB1->SetDockParams(dock_defs[d_idx].dh, pos, dir, rot);
 	return;
 }
@@ -165,6 +174,17 @@ def_idx DockManager::GetDockIdx(DOCKHANDLE dh) {
 	}
 	return (UINT)-1;
 }
+
+VECTOR3* DockManager::GetDockPosPtr(def_idx d_idx) {
+	return dock_defs[d_idx].pos_ptr;
+}
+VECTOR3* DockManager::GetDockAntiDirPtr(def_idx d_idx) {
+	return dock_defs[d_idx].antidir_ptr;
+}
+VECTOR3 *DockManager::GetDockAntiRotPtr(def_idx d_idx) {
+	return dock_defs[d_idx].antirot_ptr;
+}
+
 void DockManager::DockEvent(int dock, OBJHANDLE mate) {
 	if (mate != NULL) { return; }
 	DOCKHANDLE dh = VB1->GetDockHandle(dock);

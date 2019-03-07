@@ -105,14 +105,8 @@ void DialogControl::UpdateThrGrpDialog(HWND hWnd) {
 		EnableWindow(GetDlgItem(hWnd, IDC_LIST_THGRP), true);
 		SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_THRGRPDEFUNDEF), "DEFINE GROUP");
 	}
-	if (ShowingThrGrp) {
-		SendDlgItemMessage(hWnd, IDC_CHECK_THGRPSHOW, BM_SETCHECK, BST_CHECKED,0);
-		VB1->DeleteThrGrpLaserExhausts();
-		VB1->CreateThrGrpLaserExhausts(thgt);
-	}
-	else {
-		SendDlgItemMessage(hWnd, IDC_CHECK_THGRPSHOW, BM_SETCHECK, BST_UNCHECKED,0);
-	}
+	
+	
 	
 
 	return;
@@ -151,7 +145,7 @@ BOOL DialogControl::ThrGrpDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 			UpdateTree(hDlg, THRUSTERGROUPS, 0);
 			break;
 		}
-		case IDC_CHECK_THGRPSHOW:
+		/*case IDC_CHECK_THGRPSHOW:
 		{
 			if (HIWORD(wParam) == BN_CLICKED) {
 				LRESULT getcheck = SendDlgItemMessage(hWnd, IDC_CHECK_THGRPSHOW, BM_GETCHECK, 0, 0);
@@ -165,8 +159,8 @@ BOOL DialogControl::ThrGrpDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 				}
 			}
 			break;
-		}
-		case IDC_LIST_THGRP:
+		}*/
+		/*case IDC_LIST_THGRP:
 		{
 			switch (HIWORD(wParam)) {
 			case LBN_SELCHANGE:
@@ -188,7 +182,7 @@ BOOL DialogControl::ThrGrpDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 			}
 			}
 			break;
-		}
+		}*/
 
 
 		}

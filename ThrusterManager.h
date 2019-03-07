@@ -11,6 +11,8 @@ struct THR_DEF {
 	bool testing;
 	vector<UINT>particles_id;
 	vector<PSTREAM_HANDLE>particles_h;
+	VECTOR3* pos_ptr;
+	VECTOR3* antidir_ptr;
 	THR_DEF() {
 		th = NULL;
 		name.clear();
@@ -23,6 +25,8 @@ struct THR_DEF {
 		testing = false;
 		particles_id.clear();
 		particles_h.clear();
+		pos_ptr = new VECTOR3;
+		antidir_ptr = new VECTOR3;
 	}
 };
 
@@ -74,6 +78,8 @@ public:
 	void SetThrParticles(def_idx d_idx, vector<UINT> _ids);
 	void AddThrParticles(def_idx d_idx, def_idx particle_idx);
 	void ClearThrParticles(def_idx d_idx);
+	VECTOR3* GetThrPosPtr(def_idx d_idx);
+	VECTOR3* GetThrAntiDirPtr(def_idx d_idx);
 	void Clear();
 };
 

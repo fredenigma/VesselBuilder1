@@ -7,6 +7,10 @@ struct ATT_DEF {
 	VECTOR3 rot;
 	VECTOR3 antidir;
 	VECTOR3 antirot;
+	VECTOR3 *pos_ptr;
+	VECTOR3 *dir_ptr;
+	VECTOR3 *antidir_ptr;
+	VECTOR3 *antirot_ptr;
 	ATTACHMENTHANDLE ah;
 	string id;
 	bool loose;
@@ -14,6 +18,10 @@ struct ATT_DEF {
 	double range;
 	ATT_DEF() {
 		pos = _V(0, 0, 0);
+		pos_ptr = new VECTOR3;
+		dir_ptr = new VECTOR3;
+		antidir_ptr = new VECTOR3;
+		antirot_ptr = new VECTOR3;
 		dir = _V(0, 0, 1);
 		antidir = _V(0, 0, -1);
 		rot = _V(0, 1, 0);
@@ -54,5 +62,9 @@ public:
 	def_idx IdxAtt2Def(UINT att_idx);
 	void SetAttDefRange(def_idx d_idx, double newrange);
 	double GetAttDefRange(def_idx d_idx);
+	VECTOR3* GetAttDefPosPtr(def_idx d_idx);
+	VECTOR3* GetAttDefDirPtr(def_idx d_idx);
+	VECTOR3* GetAttDefAntiDirPtr(def_idx d_idx);
+	VECTOR3* GetAttDefAntiRotPtr(def_idx d_idx);
 	void Clear();
 };

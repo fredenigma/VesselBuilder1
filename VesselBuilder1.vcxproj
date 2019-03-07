@@ -140,8 +140,10 @@
     <ClInclude Include="ControlSurfacesManager.h" />
     <ClInclude Include="DialogControl.h" />
     <ClInclude Include="DockManager.h" />
+    <ClInclude Include="ExhaustManager.h" />
     <ClInclude Include="ExTexManager.h" />
     <ClInclude Include="FollowMeDlg.h" />
+    <ClInclude Include="LaserManager.h" />
     <ClInclude Include="LightsManager.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="MeshManager.h" />
@@ -169,9 +171,13 @@
     <ClCompile Include="DialogControl.cpp" />
     <ClCompile Include="DockDlgProc.cpp" />
     <ClCompile Include="DockManager.cpp" />
+    <ClCompile Include="ExhaustManager.cpp" />
     <ClCompile Include="ExTexDlgProc.cpp" />
     <ClCompile Include="ExTexManager.cpp" />
     <ClCompile Include="FollowMeDlg.cpp" />
+    <ClCompile Include="LaserManager.cpp" />
+    <ClCompile Include="LightCreationDlgProc.cpp" />
+    <ClCompile Include="LightsDlgProc.cpp" />
     <ClCompile Include="LightsManager.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="MeshDialogProc.cpp" />

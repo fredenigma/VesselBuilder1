@@ -3,6 +3,7 @@
 #include "DialogControl.h"
 #include "AnimationManager.h"
 #include "TouchdownPointsManager.h"
+#include "LaserManager.h"
 #pragma comment(lib, "comctl32.lib")
 
 void DialogControl::UpdateTdpDialog(HWND hWnd) {
@@ -142,11 +143,24 @@ BOOL DialogControl::TdpDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 		{
 			LRESULT getcheck = SendDlgItemMessage(hWnd, IDC_CHECK_TDPSHOWCUR, BM_GETCHECK, 0, 0);
 			if (getcheck == BST_CHECKED) {
-				vector<TOUCHDOWNVTX> tdvtx;
-				VB1->CreateTDPExhausts(true, tdvtx);
+				UINT curset = TdpMng->GetCurrentSet();
+				UINT set_ind = curset*10000;
+				UINT points_count = TdpMng->GetPointsCount(curset);
+				TdpCurOn[0] = curset;
+				TdpCurOn[1] = points_count;
+				for (UINT i = 0; i < points_count; i++) {
+					VECTOR3 pos = TdpMng->GetPointPos(curset, i);
+					set_ind += i;
+					TdpLaserMap[set_ind]=VB1->Laser->CreateFixedLaserStar(pos, LASER_GREEN_TEX, 1.5);
+				}
 			}
 			else {
-				VB1->DeleteTDPExhausts(true);
+				UINT set_ind = TdpCurOn[0] * 10000;
+				UINT points_count = TdpCurOn[1];
+				for (UINT i = 0; i < points_count; i++) {
+					set_ind += i;
+					VB1->Laser->DeleteLaser(TdpLaserMap[set_ind]);
+				}
 			}
 			break;
 		}
@@ -154,11 +168,23 @@ BOOL DialogControl::TdpDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 		{
 			LRESULT getcheck = SendDlgItemMessage(hWnd, IDC_CHECK_TDPSHOWSET, BM_GETCHECK, 0, 0);
 			if (getcheck == BST_CHECKED) {
-				vector<TOUCHDOWNVTX> tdvtx = TdpMng->GetSet(set);
-				VB1->CreateTDPExhausts(false, tdvtx);
+				UINT set_ind = set * 1000;
+				UINT points_count = TdpMng->GetPointsCount(set);
+				TdpSetOn[0] = set;
+				TdpSetOn[1] = points_count;
+				for (UINT i = 0; i < points_count; i++) {
+					VECTOR3 pos = TdpMng->GetPointPos(set, i);
+					set_ind += i;
+					TdpLaserMap[set_ind] = VB1->Laser->CreateFixedLaserStar(pos, LASER_RED_TEX, 1.5);
+				}
 			}
 			else {
-				VB1->DeleteTDPExhausts(false);
+				UINT set_ind = TdpSetOn[0] * 1000;
+				UINT points_count = TdpSetOn[1];
+				for (UINT i = 0; i < points_count; i++) {
+					set_ind += i;
+					VB1->Laser->DeleteLaser(TdpLaserMap[set_ind]);
+				}
 			}
 			break;
 		}
@@ -298,8 +324,9 @@ BOOL DialogControl::TdpDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 		{
 			if (HIWORD(wParam) == CBN_SELCHANGE) {
 				int index = SendDlgItemMessage(hWnd, IDC_COMBO_TDPCHANGEOVERANIM, CB_GETCURSEL, 0, 0);
-				if (index >= 0) {
-					TdpMng->SetChangeOverAnimation(index);
+				UINT anim_indx = (UINT)SendDlgItemMessage(hWnd, IDC_COMBO_TDPCHANGEOVERANIM, CB_GETITEMDATA, index, 0);
+				if (anim_indx >= 0) {
+					TdpMng->SetChangeOverAnimation(anim_indx);
 				}
 			}
 			break;

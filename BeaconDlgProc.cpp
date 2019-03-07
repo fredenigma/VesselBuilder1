@@ -22,6 +22,12 @@ void DialogControl::UpdateBeaconsDialog(HWND hWnd) {
 	SetDlgItemDouble(hWnd, IDC_EDIT_BCNPERIOD, period, 2);
 	SetDlgItemDouble(hWnd, IDC_EDIT_BCNDURATION, duration, 2);
 	SetDlgItemDouble(hWnd, IDC_EDIT_BCNTOFS, tofs, 2);
+	if (LightsMng->IsBeaconActive(idx)) {
+		SetDlgItemText(hWnd, IDC_EDIT_BCNNOW, "ON");
+	}
+	else {
+		SetDlgItemText(hWnd, IDC_EDIT_BCNNOW, "OFF");
+	}
 	return;
 }
 
@@ -36,6 +42,7 @@ BOOL DialogControl::BeaconsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		SendDlgItemMessage(hWnd, IDC_COMBO_BCNSHAPE, CB_SETITEMDATA, 1, (LPARAM)BEACONSHAPE_DIFFUSE);
 		SendDlgItemMessage(hWnd, IDC_COMBO_BCNSHAPE, CB_INSERTSTRING, 2, (LPARAM)"STAR");
 		SendDlgItemMessage(hWnd, IDC_COMBO_BCNSHAPE, CB_SETITEMDATA, 2, (LPARAM)BEACONSHAPE_STAR);
+		SendDlgItemMessage(hWnd, IDC_EDIT_BCNNOW, EM_SETREADONLY, true, 0);
 		break;
 	}
 	case WM_COMMAND:
@@ -118,6 +125,7 @@ BOOL DialogControl::BeaconsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		case IDC_BUTTON_BCNTOGGLE:
 		{
 			LightsMng->ToggleBeaconActive(idx);			
+			UpdateBeaconsDialog(hWnd);
 			break;
 		}
 		case IDC_BUTTON_BCNDEL:

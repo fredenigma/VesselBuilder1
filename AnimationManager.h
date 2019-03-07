@@ -12,6 +12,7 @@ struct ANIM_DEF {
 	bool running;
 	bool backward;
 	bool Valid;
+	double* state_ptr;
 	ANIM_DEF() {
 		idx = (UINT)-1;
 		name.clear();
@@ -22,6 +23,7 @@ struct ANIM_DEF {
 		Valid = true;
 		running = false;
 		backward = false;
+		state_ptr = new double;
 	}
 };
 
@@ -143,7 +145,7 @@ public:
 	def_idx GetAnimCompDefAttTip(def_idx d_idx);
 
 	void AnimationPreStep(double simt, double simdt, double mjd);
-	void ConsumeAnimBufferedKey(DWORD key, bool down, char *kstate);
+	int ConsumeAnimBufferedKey(DWORD key, bool down, char *kstate);
 	void ConsumeAnimDirectKey(char *kstate);
 
 	void ParseCfgFile(FILEHANDLE fh);

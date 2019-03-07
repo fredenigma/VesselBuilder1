@@ -1,5 +1,6 @@
 #include "VesselBuilder1.h"
 #include "DialogControl.h"
+#include "AnimationManager.h"
 #include "TouchdownPointsManager.h"
 
 TouchdownPointsManager::TouchdownPointsManager(VesselBuilder1 *_VB1) {
@@ -9,6 +10,7 @@ TouchdownPointsManager::TouchdownPointsManager(VesselBuilder1 *_VB1) {
 	change_anim_idx = (UINT)-1;
 	Set2Enabled = false;
 	CurrentSet = 0;
+	state_chk = NULL;
 	return;
 }
 TouchdownPointsManager::~TouchdownPointsManager() {
@@ -173,6 +175,8 @@ void TouchdownPointsManager::EnableSecondSet(bool enable) {
 }
 void TouchdownPointsManager::SetChangeOverAnimation(anim_idx a_idx) {
 	change_anim_idx = a_idx;
+	state_chk = VB1->AnimMng->anim_defs[a_idx].state_ptr;
+	return;
 }
 UINT TouchdownPointsManager::GetChangeOverAnimation() {
 	return change_anim_idx;
@@ -229,7 +233,21 @@ UINT TouchdownPointsManager::GetPointsCount(UINT set) {
 		return set2.size();
 	}
 }
-
+void TouchdownPointsManager::TouchDownPointsPreStep(double simt, double simdt, double mjd) {
+	if (!IsSecondSetEnabled()) { return; }
+	if (*state_chk> 0.999) {
+		if (GetCurrentSet() == 1) {
+			SetCurrentSet(2);
+		}
+	}
+	else {
+		if (GetCurrentSet() == 2) {
+			SetCurrentSet(1);
+		}
+	}
+	
+	return;
+}
 void TouchdownPointsManager::Clear() {
 	ClearSet(1);
 	ClearSet(2);

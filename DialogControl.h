@@ -1,7 +1,7 @@
 #pragma once
 #include <CommCtrl.h>
 
-enum ItemType { MESH, DOCK, ATTACHMENT, LIGHT, CAMERA, SPECIAL, SETTINGS,ROOTS,NONE,ANIMATIONS,ANIM_COMP,PROPELLANT,EXTEX,THRUSTERS,THRUSTERGROUPS,PARTICLES,TOUCHDOWNPOINTS,AIRFOILS,CTRLSURFACES,VCPOS,VCMFD,VCHUD,BEACONS };
+enum ItemType { MESH, DOCK, ATTACHMENT, LIGHTS, CAMERA, SPECIAL, SETTINGS,ROOTS,NONE,ANIMATIONS,ANIM_COMP,PROPELLANT,EXTEX,THRUSTERS,THRUSTERGROUPS,PARTICLES,TOUCHDOWNPOINTS,AIRFOILS,CTRLSURFACES,VCPOS,VCMFD,VCHUD,BEACONS };
 struct TREE_ITEM_REF {
 	ItemType Type;
 	UINT idx;
@@ -38,6 +38,8 @@ public:
 	BOOL VCHUDDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL VCMFDDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL BeaconsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	BOOL LightCreationDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	BOOL LightsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	map<HTREEITEM, TREE_ITEM_REF> TreeItem;
 	TREE_ITEM_REF CurrentSelection;
@@ -72,7 +74,8 @@ public:
 	HTREEITEM hrootVCMFDs;
 	HTREEITEM hrootVCHud;
 	HTREEITEM hrootBeacons;
-	
+	HTREEITEM hrootLightEmitters;
+
 	void SetDlgItemsTextVector3(HWND hWnd, int id1, int id2, int id3, VECTOR3 v3, int precision = 3);
 	VECTOR3 GetDlgItemsVector3(HWND hWnd, int id1, int id2, int id3);
 	void DlgRotateMesh(UINT msh_idx,VECTOR3 axis, double angle );
@@ -97,7 +100,8 @@ public:
 	void UpdateVCHUDDialog(HWND hWnd);
 	void UpdateVCMFDDialog(HWND hWnd);
 	void UpdateBeaconsDialog(HWND hWnd);
-
+	void UpdateLightsDialog(HWND hWnd);
+	
 
 
 	HTREEITEM FindHtreeItem(ItemType type, UINT idx);
@@ -113,6 +117,14 @@ public:
 	void UpdateAirfoilFuncGraph(HWND hWnd);
 	void ShowAnimCompArmTip(HWND hWnd, bool show);
 	void EnableVCHudWindows(HWND hWnd, bool enable);
+	void UpdateColorExamples(HWND hWnd,VECTOR3 col);
+	void UpdateAttachmentListBox(HWND hWnd, int id,UINT CurrAtt);
+	map<UINT, LASER_HANDLE>DockLaserMap;
+	map<UINT, LASER_HANDLE>AttLaserMap;
+	map<UINT, LASER_HANDLE>ThLaserMap;
+	map<UINT, LASER_HANDLE>TdpLaserMap;
+	UINT TdpCurOn[2];
+	UINT TdpSetOn[2];
 	HWND hwnd_Mesh;
 	HWND hWnd_Dock;
 	HWND hWnd_Anim;
@@ -132,6 +144,8 @@ public:
 	HWND hWnd_VCHud;
 	HWND hWnd_VCMFD;
 	HWND hWnd_Beacons;
+	HWND hWnd_LightCreation;
+	HWND hWnd_Lights;
 
 	HWND GetDlg() { return hDlg; }
 	map<DWORD, string> oapi_keys;
@@ -150,8 +164,8 @@ public:
 	ExTexManager *ExTMng;
 	VCManager *VCMng;
 	LightsManager *LightsMng;
-
-	bool ShowingThrGrp;
+	ExhaustManager *ExMng;
+	
 	bool AnimTesting;
 	double GetDlgItemDouble(HWND hWnd, int control_id);
 	void SetDlgItemDouble(HWND hWnd, int control_id, double val, UINT precision);
@@ -159,6 +173,7 @@ public:
 	HPEN penblack;
 	HPEN pengray;
 	HPEN penblue_l;
+	void ClearLasers(map<UINT, LASER_HANDLE> &m);
 //	HTREEITEM ItemToSelect;
 protected:
 	VesselBuilder1 *VB1;

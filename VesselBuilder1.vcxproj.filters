@@ -61,6 +61,12 @@
     <ClInclude Include="LightsManager.h">
       <Filter>Vessel\Managers</Filter>
     </ClInclude>
+    <ClInclude Include="LaserManager.h">
+      <Filter>Vessel\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="ExhaustManager.h">
+      <Filter>Vessel\Managers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\Orbitersdk\lib\orbiter.lib">
@@ -204,6 +210,18 @@
     </ClCompile>
     <ClCompile Include="BeaconDlgProc.cpp">
       <Filter>Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="LightCreationDlgProc.cpp">
+      <Filter>Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="LightsDlgProc.cpp">
+      <Filter>Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="LaserManager.cpp">
+      <Filter>Vessel\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="ExhaustManager.cpp">
+      <Filter>Vessel\Managers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

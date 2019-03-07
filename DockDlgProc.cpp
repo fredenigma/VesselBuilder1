@@ -1,7 +1,10 @@
 #include "VesselBuilder1.h"
 #include "resource.h"
+#include "LaserManager.h"
 #include "DialogControl.h"
 #include "DockManager.h"
+
+
 #pragma comment(lib, "comctl32.lib")
 
 void DialogControl::UpdateDockDialog(HWND hWnd) {
@@ -20,6 +23,13 @@ void DialogControl::UpdateDockDialog(HWND hWnd) {
 	}
 	else {
 		SendDlgItemMessage(hWnd, IDC_CHECK_DOCKJETT, BM_SETCHECK, BST_UNCHECKED, 0);
+	}
+
+	if (DockLaserMap[CurrentSelection.idx] != NULL) {
+		SendDlgItemMessage(hWnd, IDC_CHECK_HIGHLIGHT_DOCK, BM_SETCHECK, BST_CHECKED, 0);
+	}
+	else {
+		SendDlgItemMessage(hWnd, IDC_CHECK_HIGHLIGHT_DOCK, BM_SETCHECK, BST_UNCHECKED, 0);
 	}
 	//if (SB1->DockBeaconsActive) {
 	//	SB1->UpdateDockBeaconsPos();
@@ -127,9 +137,7 @@ BOOL DialogControl::DockDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 	case WM_INITDIALOG:
 	{
 		//EnableWindow(GetDlgItem(hWnd, IDC_EDIT_DOCKNAME), false);
-		if (VB1->DockExhaustsActive) {
-			SendDlgItemMessage(hWnd, IDC_CHECK_HIGHLIGHT_DOCK, BM_SETCHECK, BST_CHECKED, 0);
-		}
+		
 		SendDlgItemMessage(hWnd, IDC_SPIN_DOCKPITCH, UDM_SETRANGE32, -10000, 10000);
 		SendDlgItemMessage(hWnd, IDC_SPIN_DOCKROLL, UDM_SETRANGE32, -10000, 10000);
 		SendDlgItemMessage(hWnd, IDC_SPIN_DOCKYAW, UDM_SETRANGE32, -10000, 10000);
@@ -144,8 +152,8 @@ BOOL DialogControl::DockDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 		case IDC_BUTTON_DELETEDOCKDEF:
 		{
 			
-			if (VB1->DockExhaustsActive) { VB1->DeleteDockExhausts();
-			SendDlgItemMessage(hWnd, IDC_CHECK_HIGHLIGHT_DOCK, BM_SETCHECK, BST_UNCHECKED, 0);
+			if (DockLaserMap[CurrentSelection.idx] != NULL) {
+				VB1->Laser->DeleteLaser(DockLaserMap[CurrentSelection.idx]);
 			}
 			DckMng->DeleteDockDef(CurrentSelection.idx);
 			UpdateTree(hDlg, DOCK,hrootDocks);
@@ -203,11 +211,12 @@ BOOL DialogControl::DockDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 			if (HIWORD(wParam) == BN_CLICKED) {
 				LRESULT getcheck = SendDlgItemMessage(hWnd, IDC_CHECK_HIGHLIGHT_DOCK, BM_GETCHECK, 0, 0);
 				if (getcheck == BST_CHECKED) {
-					VB1->CreateDockExhausts();
+					DockLaserMap[CurrentSelection.idx] = VB1->Laser->CreateLaserL(DckMng->GetDockPosPtr(CurrentSelection.idx), DckMng->GetDockAntiDirPtr(CurrentSelection.idx), DckMng->GetDockAntiRotPtr(CurrentSelection.idx), LASER_GREEN_TEX, LASER_BLUE_TEX);
 				}
 				else {
-					VB1->DeleteDockExhausts();
+					VB1->Laser->DeleteLaser(DockLaserMap[CurrentSelection.idx]);
 				}
+			
 			}
 			break;
 		}

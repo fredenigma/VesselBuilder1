@@ -35,6 +35,8 @@ using namespace std;
 typedef UINT anim_idx;
 typedef UINT msh_idx;
 typedef UINT def_idx;
+class Laser;
+typedef Laser* LASER_HANDLE;
 
 struct V_CLIPBOARD {
 	VECTOR3 pos;
@@ -74,7 +76,8 @@ class CameraManager;
 class ExTexManager;
 class VCManager;
 class LightsManager;
-
+class LaserManager;
+class ExhaustManager;
 
 class VesselBuilder1 :public VESSEL4{
 public:
@@ -110,8 +113,8 @@ public:
  ExTexManager *ExTMng;
  VCManager *VCMng;
  LightsManager *LightsMng;
-
-
+ LaserManager *Laser;
+ ExhaustManager *ExMng;
  VISHANDLE visual;
  
 
@@ -160,35 +163,10 @@ public:
  string texturedir;
  string texture2dir;
  string scenariodir;
- 
- VECTOR3* es_dck_dir;
- VECTOR3* es_dck_pos;
- VECTOR3* es_dck_rot;
- bool DockExhaustsActive;
- vector<UINT> DockExhaustsID;
  SURFHANDLE greenL, redL, blueL, whiteL;
- void CreateDockExhausts();
- void DeleteDockExhausts();
- bool AttExhaustsActive;
- vector<UINT> AttExhaustsID;
- void CreateAttExhausts();
- void DeleteAttExhausts();
- bool thExhaustsActive;
- vector<UINT>ThExaustsID;
- void CreateThExhausts();
- void DeleteThExhausts();
- vector<UINT>ThGrpExhaustsID;
- void CreateThrGrpLaserExhausts(THGROUP_TYPE thgt);
- void CreateThrusterLaserExhaust(THRUSTER_HANDLE th);
- void DeleteThrGrpLaserExhausts();
- void CreateTDPExhausts(bool Current, vector<TOUCHDOWNVTX> &tdvtx);
- void DeleteTDPExhausts(bool Current);
- vector<UINT> TDPCurExhaustsID;
- vector<UINT> TDPSetExhaustsID;
- bool TdpCurExhaustsActive;
- bool TdpSetExhaustsActive;
  
- string WriteVectorUINT(vector<UINT> v);
+ 
+ string WriteVectorUINT(vector<UINT> v,bool spaces=true);
  vector<UINT> readVectorUINT(string s);
  bool IsUintInVector(UINT u, vector<UINT>v);
 

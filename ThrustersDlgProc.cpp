@@ -5,6 +5,7 @@
 #include "ParticleManager.h"
 #include "ExTexManager.h"
 #include "ThrusterManager.h"
+#include "LaserManager.h"
 #pragma comment(lib, "comctl32.lib")
 
 void DialogControl::UpdateThrDialog(HWND hWnd) {
@@ -120,6 +121,13 @@ void DialogControl::UpdateThrDialog(HWND hWnd) {
 	else {
 		SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_THTEST), "TEST THRUSTER");
 	}
+
+	if (ThLaserMap[idx] != NULL) {
+		SendDlgItemMessage(hWnd, IDC_CHECK_THSHOW, BM_SETCHECK, BST_CHECKED, 0);
+	}
+	else {
+		SendDlgItemMessage(hWnd, IDC_CHECK_THSHOW, BM_SETCHECK, BST_UNCHECKED, 0);
+	}
 	return;
 }
 BOOL DialogControl::ThrDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -189,6 +197,9 @@ BOOL DialogControl::ThrDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 		}
 		case IDC_BUTTON_DELETETH:
 		{
+			if (ThLaserMap[idx] != NULL) {
+				VB1->Laser->DeleteLaser(ThLaserMap[idx]);
+			}
 			ThrMng->DelThrDef(idx);
 			UpdateTree(hDlg, THRUSTERS, 0);
 			break;
@@ -251,10 +262,12 @@ BOOL DialogControl::ThrDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 			if (HIWORD(wParam) == BN_CLICKED) {
 				LRESULT getcheck = SendDlgItemMessage(hWnd, IDC_CHECK_THSHOW, BM_GETCHECK, 0, 0);
 				if (getcheck == BST_CHECKED) {
-					VB1->CreateThExhausts();
+					ThLaserMap[idx] = VB1->Laser->CreateLaser(ThrMng->GetThrPosPtr(idx), ThrMng->GetThrAntiDirPtr(idx), LASER_GREEN_TEX);
+					//VB1->CreateThExhausts();
 				}
 				else {
-					VB1->DeleteThExhausts();
+					VB1->Laser->DeleteLaser(ThLaserMap[idx]);
+					//VB1->DeleteThExhausts();
 				}
 			}
 			break;

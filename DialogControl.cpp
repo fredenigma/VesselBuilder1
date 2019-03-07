@@ -1,5 +1,6 @@
 #include "VesselBuilder1.h"
 #include "resource.h"
+#include "LaserManager.h"
 #include "DialogControl.h"
 #include "MeshManager.h"
 #include "DockManager.h"
@@ -15,6 +16,7 @@
 #include "ExTexManager.h"
 #include "VCManager.h"
 #include "LightsManager.h"
+#include "ExhaustManager.h"
 #pragma comment(lib, "comctl32.lib")
 
 
@@ -160,7 +162,20 @@ BOOL CALLBACK BeaconsDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
 	return DlgCtrl->BeaconsDlgProc(hWnd, uMsg, wParam, lParam);
 }
-
+BOOL CALLBACK LightCreationDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	if (uMsg == WM_INITDIALOG) {
+		SetWindowLong(hWnd, GWL_USERDATA, (LONG)lParam);
+	}
+	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
+	return DlgCtrl->LightCreationDlgProc(hWnd, uMsg, wParam, lParam);
+}
+BOOL CALLBACK LightsDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	if (uMsg == WM_INITDIALOG) {
+		SetWindowLong(hWnd, GWL_USERDATA, (LONG)lParam);
+	}
+	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
+	return DlgCtrl->LightsDlgProc(hWnd, uMsg, wParam, lParam);
+}
 
 DialogControl::DialogControl(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;
@@ -179,6 +194,7 @@ DialogControl::DialogControl(VesselBuilder1 *_VB1) {
 	ExTMng = VB1->ExTMng;
 	VCMng = VB1->VCMng;
 	LightsMng = VB1->LightsMng;
+	ExMng = VB1->ExMng;
 
 	open = false;
 	hDlg = NULL;
@@ -188,7 +204,6 @@ DialogControl::DialogControl(VesselBuilder1 *_VB1) {
 	test = 0;
 	InitOapiKeys();
 	AnimTesting = false;
-	ShowingThrGrp = false;
 	ShowingAFGraph = false;
 
 	penblack = CreatePen(PS_SOLID,2,RGB(0,0,0));
@@ -215,7 +230,7 @@ DialogControl::~DialogControl() {
 	ExTMng = NULL; 
 	VCMng = NULL;
 	LightsMng = NULL;
-
+	ExMng = NULL;
 	hDlg = NULL;
 	DeleteObject(penblack);
 	DeleteObject(pengray);
@@ -229,21 +244,11 @@ void DialogControl::Open(HINSTANCE hDLL) {
 void DialogControl::Close() {
 	open = false;
 	VB1->MshMng->ResetHighlights();
-	if (VB1->DockExhaustsActive) {
-		VB1->DeleteDockExhausts();
-	}
-	if (VB1->AttExhaustsActive) {
-		VB1->DeleteAttExhausts();
-	}
-	if (VB1->thExhaustsActive) {
-		VB1->DeleteThExhausts();
-	}
-	if (VB1->TdpCurExhaustsActive) {
-		VB1->DeleteTDPExhausts(true);
-	}
-	if (VB1->TdpSetExhaustsActive) {
-		VB1->DeleteTDPExhausts(false);
-	}
+	ClearLasers(DockLaserMap);
+	ClearLasers(AttLaserMap);
+	ClearLasers(ThLaserMap);
+	ClearLasers(TdpLaserMap);
+	
 
 	oapiCloseDialog(hDlg);
 	hDlg = NULL;
@@ -276,6 +281,8 @@ void DialogControl::InitDialog(HWND hWnd) {
 	hWnd_VCHud = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_VCHUD), hWnd, VCHUDDlgProcHook, (LPARAM)this);
 	hWnd_VCMFD = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_VCMFD), hWnd, VCMFDDlgProcHook, (LPARAM)this);
 	hWnd_Beacons = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_BEACONS), hWnd, BeaconsDlgProcHook, (LPARAM)this);
+	hWnd_LightCreation = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_LIGHTCREATION), hWnd, LightCreationDlgProcHook, (LPARAM)this);
+	hWnd_Lights= CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_LIGHTS), hWnd, LightsDlgProcHook, (LPARAM)this);
 	SetWindowPos(hwnd_Mesh, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hwnd_Mesh, SW_HIDE);
 	SetWindowPos(hWnd_Dock, NULL, 255, 10, 0, 0, SWP_NOSIZE);
@@ -314,6 +321,12 @@ void DialogControl::InitDialog(HWND hWnd) {
 	ShowWindow(hWnd_VCMFD, SW_HIDE);
 	SetWindowPos(hWnd_Beacons, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hWnd_Beacons, SW_HIDE);
+	SetWindowPos(hWnd_LightCreation, NULL, 255, 10, 0, 0, SWP_NOSIZE);
+	ShowWindow(hWnd_LightCreation, SW_HIDE);
+	SetWindowPos(hWnd_Lights, NULL, 255, 10, 0, 0, SWP_NOSIZE);
+	ShowWindow(hWnd_Lights, SW_HIDE);
+
+
 
 	return;
 }
@@ -1106,7 +1119,34 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootBeacons, TVE_EXPAND);
 		break;
 	}
+	case LIGHTS:
+	{
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootLightEmitters);
+		while (ht != NULL) {
+			TreeItem.erase(ht);
+			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootLightEmitters);
+		}
+		TVINSERTSTRUCT insertstruct = { 0 };
 
+		insertstruct.hInsertAfter = TVI_ROOT;
+		insertstruct.item.mask = TVIF_TEXT;
+		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
+		insertstruct.hParent = hrootLightEmitters;
+		for (UINT i = 0; i < LightsMng->GetLightsCount(); i++) {
+			char cbuf[256] = { '\0' };
+			sprintf(cbuf, "%s", LightsMng->GetLightName(i).c_str());
+			insertstruct.item.pszText = (LPSTR)cbuf;
+			insertstruct.item.cchTextMax = strlen(cbuf);
+			TREE_ITEM_REF Tir = TREE_ITEM_REF();
+			Tir.Type = LIGHTS;
+			Tir.idx = i;
+			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			TreeItem[Tir.hitem] = Tir;
+		}
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootLightEmitters, TVE_EXPAND);
+		break;
+	}
 
 
 
@@ -1234,6 +1274,12 @@ void DialogControl::InitTree(HWND hWnd) {
 	hrootBeacons = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 	Tir.hitem = hrootBeacons;
 	TreeItem[Tir.hitem] = Tir;
+	insertstruct.item.pszText = (LPSTR)TEXT("Light Emitters\0");
+	insertstruct.item.cchTextMax = 16;
+	hrootLightEmitters = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+	Tir.hitem = hrootLightEmitters;
+	TreeItem[Tir.hitem] = Tir;
+
 
 	insertstruct.hParent = hrootVessel;
 
@@ -1285,6 +1331,7 @@ void DialogControl::InitTree(HWND hWnd) {
 	UpdateTree(hWnd, VCPOS, 0);
 	UpdateTree(hWnd, VCMFD, 0);
 	UpdateTree(hWnd, BEACONS, 0);
+	UpdateTree(hWnd, LIGHTS, 0);
 	return;
 }
 
@@ -1296,10 +1343,6 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 	}
 	if (type != DOCK) {
 		ShowWindow(hWnd_Dock, SW_HIDE);
-		if (VB1->DockExhaustsActive) {
-			VB1->DeleteDockExhausts();
-			SendDlgItemMessage(hWnd_Dock, IDC_CHECK_HIGHLIGHT_DOCK, BM_SETCHECK, BST_UNCHECKED, 0);
-		}
 	}
 	if (type != ANIMATIONS) {
 		ShowWindow(hWnd_Anim, SW_HIDE);	
@@ -1324,10 +1367,6 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 	}
 	if (type != THRUSTERGROUPS) {
 		ShowWindow(hWnd_ThrGrp, SW_HIDE);
-		if (ShowingThrGrp) {
-			ShowingThrGrp = false;
-			VB1->DeleteThrGrpLaserExhausts();
-		}
 	}
 	if (type != TOUCHDOWNPOINTS) {
 		ShowWindow(hWnd_Tdp, SW_HIDE);
@@ -1353,6 +1392,11 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 	if (type != BEACONS) {
 		ShowWindow(hWnd_Beacons, SW_HIDE);
 	}
+	if (type != LIGHTS) {
+		ShowWindow(hWnd_Lights, SW_HIDE);
+	}
+
+
 
 	switch (type) {
 	case MESH:
@@ -1442,6 +1486,11 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 		ShowWindow(hWnd_Beacons, SW_SHOW);
 		break;
 	}
+	case LIGHTS:
+	{
+		ShowWindow(hWnd_Lights, SW_SHOW);
+		break;
+	}
 	}
 
 	return;
@@ -1519,6 +1568,7 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 				LightsMng->AddBeaconDef();
 				UpdateTree(hWnd, BEACONS, 0);
 			}
+			
 			break;
 		}
 		case IDC_BUTTON_ADD2:
@@ -1650,7 +1700,14 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 					else {
 						ShowWindow(hWnd_VCHud, SW_HIDE);
 					}
-
+					if (CurrentSelection.hitem == hrootLightEmitters) {
+						ShowWindow(hWnd_LightCreation, SW_SHOW);
+					}
+					else {
+						ShowWindow(hWnd_LightCreation, SW_HIDE);
+					}
+					
+					
 					ShowTheRightDialog(CurrentSelection.Type);
 
 
@@ -1743,6 +1800,11 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 						case BEACONS:
 						{
 							UpdateBeaconsDialog(hWnd_Beacons);
+							break;
+						}
+						case LIGHTS:
+						{
+							UpdateLightsDialog(hWnd_Lights);
 							break;
 						}
 					}
@@ -1943,4 +2005,15 @@ bool DialogControl::IsCheckBoxChecked(HWND hWnd, int control_id) {
 	else {
 		return false;
 	}
+}
+
+void DialogControl::ClearLasers(map<UINT, LASER_HANDLE> &m) {
+	map<UINT, LASER_HANDLE>::iterator it;
+	for (it = m.begin(); it != m.end(); it++) {
+		if (it->second != NULL) {
+			VB1->Laser->DeleteLaser(it->second);
+		}
+	}
+	m.clear();
+	return;
 }

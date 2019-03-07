@@ -13,22 +13,20 @@ struct BEACONS_DEF {
 	}
 };
 
-struct POINTLIGHTS_DEF {
+struct LIGHTS_DEF {
 	string name;
 	LightEmitter* LE;
-	COLOUR4 diffuse, specular, ambient;
-	POINTLIGHTS_DEF() {
+	bool AttachedtoAttachment;
+	def_idx Att_idx;
+	VECTOR3* pos_ptr;
+	VECTOR3* dir_ptr;
+	LIGHTS_DEF() {
 		name.clear();
 		LE = NULL;
-		diffuse.r = 0.9;
-		diffuse.g = 0.8;
-		diffuse.b = 1;
-		diffuse.a = 0;
-		specular = diffuse;
-		ambient.r = 0;
-		ambient.g = 0;
-		ambient.b = 0;
-		ambient.a = 0;
+		pos_ptr = new VECTOR3;
+		dir_ptr = new VECTOR3;
+		AttachedtoAttachment = false;
+		Att_idx = (UINT)-1;
 	}
 };
 class LightsManager {
@@ -63,55 +61,49 @@ public:
 	void ToggleAllBeaconsActive();
 	void ActivateAllBeacons(bool activate);
 	bool AreAllBeaconsActive();
+	void ActivateBeacon(def_idx d_idx, bool activate);
 	bool IsBeaconActive(def_idx d_idx);
 	void GetBeaconParams(def_idx d_idx, DWORD &shape, VECTOR3 &pos, VECTOR3 &col, double &size, double &falloff, double &period, double &duration, double &tofs);
 	UINT GetBeaconCount();
 	void ClearBeaconsDefs();
 	
-	vector<POINTLIGHTS_DEF> pointlights_def;
-	UINT AddPointLightDef();
-	UINT AddPointLightDef(string name, VECTOR3 position, VECTOR3 attenuation, double range, COLOUR4 diffuse, COLOUR4 specular, COLOUR4 ambient);
-	void DeletePointLight(def_idx d_idx);
-	void SetPointLightName(def_idx d_idx, string newname);
-	string GetPointLightName(def_idx d_idx);
-	double GetPointLightRange(def_idx d_idx);
-	void SetPointLightRange(def_idx d_idx, double newRange);
-	VECTOR3 GetPointLightAttenuation(def_idx d_idx);
-	void SetPointLightAttenuation(def_idx d_idx, VECTOR3 attenuation);
-	VECTOR3 GetPointLightPosition(def_idx d_idx);
-	void SetPointLightPosition(def_idx d_idx, VECTOR3 newPos);
-	UINT GetPointLightsCount();
+	vector<LIGHTS_DEF> lights_def;
+	UINT AddLightDef(LightEmitter::TYPE type);
+	UINT AddLightDef(LightEmitter::TYPE type, COLOUR4 diffuse, COLOUR4 specular, COLOUR4 ambient);
+	UINT AddLightDef(LightEmitter::TYPE type, string name, VECTOR3 position, LightEmitter::VISIBILITY vis, VECTOR3 direction, VECTOR3 attenuation, double range, double umbra, double penumbra, COLOUR4 diffuse, COLOUR4 specular, COLOUR4 ambient);
+	void DeleteLight(def_idx d_idx);
+	void SetLightName(def_idx d_idx, string newname);
+	string GetLightName(def_idx d_idx);
+	LightEmitter::TYPE GetLightType(def_idx d_idx);
+	double GetLightRange(def_idx d_idx);
+	void SetLightRange(def_idx d_idx, double newRange);
+	LightEmitter::VISIBILITY GetLightVisibility(def_idx d_idx);
+	void SetLightVisibility(def_idx d_idx, LightEmitter::VISIBILITY vis);
+	VECTOR3 GetLightAttenuation(def_idx d_idx);
+	void SetLightAttenuation(def_idx d_idx, VECTOR3 attenuation);
+	VECTOR3 GetLightPosition(def_idx d_idx);
+	void SetLightPosition(def_idx d_idx, VECTOR3 newPos);
+	COLOUR4 GetLightDiffuseColour(def_idx d_idx);
+	COLOUR4 GetLightAmbientColour(def_idx d_idx);
+	COLOUR4 GetLightSpecularColour(def_idx d_idx);
+	void GetLightColours(def_idx d_idx, COLOUR4 &diffuse, COLOUR4 &ambient, COLOUR4 &specular);
+	void SetLightDirection(def_idx d_idx, VECTOR3 newDirection);
+	VECTOR3 GetLightDirection(def_idx d_idx);
+	void SetLightAperture(def_idx d_idx, double umbra, double penumbra);
+	void GetLightAperture(def_idx d_idx, double &umbra, double &penumbra);
+	void SetLightToAttachment(def_idx d_idx, bool set, def_idx att_idx);
+	bool IsLightAttachedToAttachment(def_idx d_idx);
+	def_idx GetLigthAttachment(def_idx d_idx);
+	bool IsLightActive(def_idx d_idx);
+	void ActivateLight(def_idx d_idx, bool active);
+	void ToggleLight(def_idx d_idx);
+	UINT GetLightsCount();
 
-	
-
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	int ConsumeLightsBufferedKey(DWORD key, bool down, char *kstate);
 	void ParseCfgFile(FILEHANDLE fh);
 	void WriteCfg(FILEHANDLE fh);
-	
+	UINT CurrentLight;
+	vector<UINT>GetLightsOn();
+	vector<UINT>GetBeaconsOn();
+
 };
