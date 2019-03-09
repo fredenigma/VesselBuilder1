@@ -25,6 +25,7 @@
 #define IDD_DIALOG_BEACONS              123
 #define IDD_DIALOG_LIGHTCREATION        124
 #define IDD_DIALOG_LIGHTS               125
+#define IDD_DIALOG_VARDRAG              126
 #define IDC_TREE1                       1001
 #define IDC_SPIN_POSZ_S                 1005
 #define IDC_SPIN_POSZ_L                 1006
@@ -270,9 +271,12 @@
 #define IDC_BUTTON_THTEST               1208
 #define IDC_EDIT_EXTEXNAME              1209
 #define IDC_BUTTON_THPARTSET            1209
+#define IDC_BUTTON_THPARTADD            1209
 #define IDC_BUTTON_EXTEXLOAD            1210
+#define IDC_BUTTON_THPARTREM            1210
 #define IDC_BUTTON_DELETEEXTEX          1212
 #define IDC_LIST_THGRP                  1213
+#define IDC_BUTTON_VBDELETE             1213
 #define IDC_BUTTON_THRGRPDEFUNDEF       1215
 #define IDC_EDIT_THGRP                  1216
 #define IDC_CHECK_THGRPSHOW             1217
@@ -495,7 +499,6 @@
 #define IDC_BUTTON_BCNTOFSSET           1414
 #define IDC_EDIT_SPECG                  1414
 #define IDC_EDIT_SPECB                  1415
-#define IDC_EDIT_BCNDURATION2           1415
 #define IDC_EDIT_BCNNOW                 1415
 #define IDC_EDIT_SPECR                  1416
 #define IDC_EDIT_AMBG                   1417
@@ -540,6 +543,34 @@
 #define IDC_BUTTON_LGTATTACHSET         1457
 #define IDC_LIST_LGTATTLIST             1458
 #define IDC_CHECK_LGTUSEATT             1459
+#define IDC_BUTTON_TOGEXHWIN            1480
+#define IDC_EDIT_THEXPOSX               1481
+#define IDC_EDIT_THEXPOSY               1482
+#define IDC_EDIT_THEXPOSZ               1483
+#define IDC_EDIT_THEXDIRX               1484
+#define IDC_EDIT_THEXDIRY               1485
+#define IDC_EDIT_THEXDIRZ               1486
+#define IDC_LIST_THEXS                  1487
+#define IDC_EDIT_THPARTX                1488
+#define IDC_EDIT_THPARTY                1489
+#define IDC_EDIT_THPARTZ                1490
+#define IDC_BUTTON_THADDEX              1491
+#define IDC_BUTTON_THREMEX              1492
+#define IDC_LIST_THPARTADDED            1493
+#define IDC_CHECK_THCUSPOSDIR           1495
+#define IDC_BUTTON_THEXPASTEV           1496
+#define IDC_CHECK_THPARTCUS             1497
+#define IDC_BUTTON_CLOSE                1497
+#define IDC_EDIT_VBX                    1498
+#define IDC_EDIT_VBY                    1499
+#define IDC_EDIT_VBZ                    1500
+#define IDC_COMBO_VDANIM                1501
+#define IDC_EDIT_VBFACTOR               1502
+#define IDC_BUTTON_VDPASTEV             1503
+#define IDC_BUTTON_VBDEFUNDEF           1504
+#define IDC_EDIT_VDNAME                 1505
+#define IDC_BUTTON2                     1506
+#define IDC_BUTTON_VDNAMESET            1506
 
 // Next default values for new objects
 // 
@@ -547,7 +578,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1460
+#define _APS_NEXT_CONTROL_VALUE         1507
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

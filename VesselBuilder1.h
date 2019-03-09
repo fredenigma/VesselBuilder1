@@ -17,7 +17,7 @@
 #define DAY ((__DATE__ [4] == ' ' ? 0 : __DATE__ [4] - '0') * 10 \
 + (__DATE__ [5] - '0'))
 
-#define SBVERSION (((YEAR - 2000) * 100 + MONTH) * 100 + DAY)
+#define VBVERSION (((YEAR - 2000) * 100 + MONTH) * 100 + DAY)
 
 #define HIGHLIGHTCOLORGREEN 0
 #define HIGHLIGHTCOLORBLUE 1
@@ -54,7 +54,7 @@ struct V_CLIPBOARD {
 
 
 
-
+class Logger;
 
 
 
@@ -77,7 +77,7 @@ class ExTexManager;
 class VCManager;
 class LightsManager;
 class LaserManager;
-class ExhaustManager;
+class VariableDragManager;
 
 class VesselBuilder1 :public VESSEL4{
 public:
@@ -114,7 +114,8 @@ public:
  VCManager *VCMng;
  LightsManager *LightsMng;
  LaserManager *Laser;
- ExhaustManager *ExMng;
+ VariableDragManager *VardMng;
+ Logger* Log;
  VISHANDLE visual;
  
 
@@ -181,7 +182,7 @@ public:
  
  double level1;
  
- 
+ void AddDefaultRCS();
 };
 
 

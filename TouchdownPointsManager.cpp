@@ -3,6 +3,8 @@
 #include "AnimationManager.h"
 #include "TouchdownPointsManager.h"
 
+#define LogV(x,...) VB1->Log->Log(x,##__VA_ARGS__)
+
 TouchdownPointsManager::TouchdownPointsManager(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;
 	set1.clear();
@@ -18,7 +20,7 @@ TouchdownPointsManager::~TouchdownPointsManager() {
 	return;
 }
 void TouchdownPointsManager::ParseCfgFile(FILEHANDLE fh) {
-
+	LogV("Parsing TouchDown Points Section");
 	
 	
 	for (UINT set = 1; set < 3; set++) {
@@ -63,6 +65,7 @@ void TouchdownPointsManager::ParseCfgFile(FILEHANDLE fh) {
 	if (GetPointsCount(1) >= 3) {
 		SetCurrentSet(1);
 	}
+	LogV("Parsing TouchDown Points Section Completed");
 	return;
 }
 void TouchdownPointsManager::WriteCfg(FILEHANDLE fh) {
@@ -249,7 +252,9 @@ void TouchdownPointsManager::TouchDownPointsPreStep(double simt, double simdt, d
 	return;
 }
 void TouchdownPointsManager::Clear() {
+	LogV("Clearing TDP");
 	ClearSet(1);
 	ClearSet(2);
+	LogV("Clearing TDP Completed");
 	return;
 }

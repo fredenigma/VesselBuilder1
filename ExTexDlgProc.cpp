@@ -48,14 +48,14 @@ BOOL DialogControl::ExTexDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 			//string texdir = SB1->OrbiterRoot;
 			string texdir = VB1->texturedir;
 			
-			char abstexdir_c[MAX_PATH];
+			/*char abstexdir_c[MAX_PATH];
 			char currentdir1[MAX_PATH];
 			GetCurrentDirectory(sizeof(currentdir1) / sizeof(char), currentdir1);
 			SetCurrentDirectory(texdir.c_str());
 			GetCurrentDirectory(sizeof(abstexdir_c) / sizeof(char), abstexdir_c);
 			string abstexdir(abstexdir_c);
 			SetCurrentDirectory(currentdir1);
-
+			*/
 			//sprintf(oapiDebugString(), "AbsTexDir:%s", abstexdir.c_str());
 			OPENFILENAME ofn;       // common dialog box structure
 			char szFile[260] = { '\0' };       // buffer for file name
@@ -86,7 +86,7 @@ BOOL DialogControl::ExTexDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 				SetCurrentDirectory(currentdir);
 
 				string result(szFile);
-				string filename = result.substr(abstexdir.size()+1, ofn.nFileExtension-abstexdir.size()-2);
+				string filename = result.substr(texdir.size()+1, ofn.nFileExtension-texdir.size()-2);
 				char cbuf[256] = { '\0' };
 				sprintf(cbuf, "%s", filename.c_str());
 				SetWindowText(GetDlgItem(hWnd, IDC_EDIT_EXTEXNAME), cbuf);

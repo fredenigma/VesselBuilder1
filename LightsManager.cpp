@@ -3,6 +3,8 @@
 #include "AttachmentManager.h"
 #include "LightsManager.h"
 
+#define LogV(x,...) VB1->Log->Log(x,##__VA_ARGS__)
+
 LightsManager::LightsManager(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;
 	beacons_def.clear();
@@ -389,6 +391,7 @@ UINT LightsManager::GetLightsCount() {
 
 
 void LightsManager::ParseCfgFile(FILEHANDLE fh) {
+	LogV("Parsing Lights Section");
 	char cbuf[256] = { '\0' };
 	UINT beacon_counter = 0;
 	int id;
@@ -498,7 +501,7 @@ void LightsManager::ParseCfgFile(FILEHANDLE fh) {
 		sprintf(cbuf, "LIGHT_%i_ID", lights_counter);
 	}
 	
-	
+	LogV("Parsing Lights Section Completed, found %i beacons and %i light emitters",beacon_counter,lights_counter);
 
 	return;
 }

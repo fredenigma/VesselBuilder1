@@ -2,6 +2,8 @@
 #include "DialogControl.h"
 #include "AttachmentManager.h"
 
+#define LogV(x,...) VB1->Log->Log(x,##__VA_ARGS__)
+
 AttachmentManager::AttachmentManager(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;
 	att_defs.clear();
@@ -15,6 +17,7 @@ void AttachmentManager::CreateAttDef() {
 }
 
 void AttachmentManager::CreateAttDef(bool toparent, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot, string id,double range, bool loose) {
+	LogV("Creating Attachment: To Parent:%i pos:%.3f %.3f %.3f dir:%.3f %.3f %.3f rot:%.3f %.3f %.3f id:%s range:%.3f loose:%i", toparent, pos.x, pos.y, pos.z, dir.x, dir.y, dir.z, rot.x, rot.y, rot.z, id.c_str(), range, loose);
 	ATT_DEF attd = ATT_DEF();
 	attd.toparent = toparent;
 	attd.pos = pos;
@@ -41,12 +44,14 @@ void AttachmentManager::CreateAttDef(ATT_DEF att_d) {
 	return;
 }
 void AttachmentManager::DeleteAttDef(def_idx d_idx) {
+	LogV("Deleting Attachment definition: %i", d_idx);
 	VB1->DelAttachment(att_defs[d_idx].ah);
 	delete att_defs[d_idx].pos_ptr;
 	delete att_defs[d_idx].dir_ptr;
 	delete att_defs[d_idx].antidir_ptr;
 	delete att_defs[d_idx].antirot_ptr;
 	att_defs.erase(att_defs.begin() + d_idx);
+	LogV("Deleted");
 	return;
 }
 void AttachmentManager::ModifyAttDef(def_idx d_idx, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot) {
@@ -116,6 +121,7 @@ VECTOR3* AttachmentManager::GetAttDefAntiRotPtr(def_idx d_idx) {
 	return att_defs[d_idx].antirot_ptr;
 }
 void AttachmentManager::ParseCfgFile(FILEHANDLE fh) {
+	LogV("Parsing Attachment Section");
 	UINT att_counter = 0;
 	char cbuf[256] = { '\0' };
 	sprintf(cbuf, "ATT_%i_IDX", att_counter);
@@ -142,6 +148,8 @@ void AttachmentManager::ParseCfgFile(FILEHANDLE fh) {
 		att_counter++;
 		sprintf(cbuf, "ATT_%i_IDX", att_counter);
 	}
+	LogV("Parsing Attachment Section Completed");
+	LogV("Found %i Attachment Definitions", att_counter);
 	return;
 }
 void AttachmentManager::WriteCfg(FILEHANDLE fh) {
@@ -197,6 +205,7 @@ double AttachmentManager::GetAttDefRange(def_idx d_idx) {
 	return att_defs[d_idx].range;
 }
 void AttachmentManager::Clear() {
+	LogV("Clearing Attachments");
 	VB1->ClearAttachments();
 	for (UINT i = 0; i < att_defs.size(); i++) {
 		delete att_defs[i].pos_ptr;
@@ -205,5 +214,6 @@ void AttachmentManager::Clear() {
 		delete att_defs[i].antirot_ptr;
 	}
 	att_defs.clear();
+	LogV("Clearing Attachments Completed");
 	return;
 }

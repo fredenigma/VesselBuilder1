@@ -2,6 +2,7 @@
 #include "DialogControl.h"
 #include "AirfoilsManager.h"
 
+#define LogV(x,...) VB1->Log->Log(x,##__VA_ARGS__)
 
 /*void VLiftCoeff(VESSEL *v, double aoa, double M, double Re, void *context, double *cl, double *cm, double *cd) {
 	
@@ -375,6 +376,7 @@ AirfoilsManager::AirfoilsManager(VesselBuilder1 *_VB1) {
 AirfoilsManager::~AirfoilsManager() { VB1 = NULL; }
 
 UINT AirfoilsManager::CreateAirfoilDef(string name, AIRFOIL_ORIENTATION align, VECTOR3 ref, double c, double S, double A) {
+	LogV("Creating Airfoi:%s", name.c_str());
 	AIRFOIL_DEFS ad = AIRFOIL_DEFS();
 	ad.name = name;
 	ad.LCD = new LiftCoeffDef;
@@ -408,6 +410,7 @@ UINT AirfoilsManager::CreateAirfoilDef(AIRFOIL_ORIENTATION align) {
 	return CreateAirfoilDef(name,align, ref, c, S, A);
 }
 void AirfoilsManager::DeleteAirfoilDef(def_idx d_idx) {
+	LogV("Deleting Airfoil:%i", d_idx);
 	VB1->DelAirfoil(airfoil_defs[d_idx].airfoil_h);
 	delete airfoil_defs[d_idx].LCD;
 	airfoil_defs[d_idx].LCD = NULL;
@@ -458,6 +461,7 @@ AIRFOIL_ORIENTATION AirfoilsManager::GetAirfoilDefOrientation(def_idx d_idx) {
 	return airfoil_defs[d_idx].LCD->GetAlign();
 }
 void AirfoilsManager::ParseCfgFile(FILEHANDLE fh) {
+	LogV("Parsing Airfoil Section");
 	char cbuf[256] = { '\0' };
 	char namebuf[256] = { '\0' };
 	int id;
@@ -501,7 +505,7 @@ void AirfoilsManager::ParseCfgFile(FILEHANDLE fh) {
 	}
 	
 	
-	
+	LogV("Parsing Airfoil Section Completed, found %i definitions",airfoil_counter);
 	
 	
 	
@@ -575,7 +579,9 @@ void AirfoilsManager::SetAirfoilDefModel(def_idx d_idx, AIRFOILS_DEFAULTS adf) {
 	return;
 }
 void AirfoilsManager::Clear() {
+	LogV("Clearing Airfoils");
 	VB1->ClearAirfoilDefinitions();
 	airfoil_defs.clear();
+	LogV("Clearing Airfoils Completed");
 	return;
 }

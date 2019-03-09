@@ -14,6 +14,8 @@ struct PARTICLE_DEF {
 	}
 };
 
+
+
 class ParticleManager {
 public:
 	ParticleManager(VesselBuilder1 *_VB1);
@@ -39,4 +41,5 @@ public:
 	UINT GetParticleDefID(def_idx d_idx);
 	def_idx IdxID2Def(UINT _id);
 	void Clear();
+
 };

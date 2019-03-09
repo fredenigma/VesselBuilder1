@@ -1,7 +1,7 @@
 #pragma once
 #include <CommCtrl.h>
 
-enum ItemType { MESH, DOCK, ATTACHMENT, LIGHTS, CAMERA, SPECIAL, SETTINGS,ROOTS,NONE,ANIMATIONS,ANIM_COMP,PROPELLANT,EXTEX,THRUSTERS,THRUSTERGROUPS,PARTICLES,TOUCHDOWNPOINTS,AIRFOILS,CTRLSURFACES,VCPOS,VCMFD,VCHUD,BEACONS };
+enum ItemType { MESH, DOCK, ATTACHMENT, LIGHTS, CAMERA, SPECIAL, SETTINGS,ROOTS,NONE,ANIMATIONS,ANIM_COMP,PROPELLANT,EXTEX,THRUSTERS,THRUSTERGROUPS,PARTICLES,TOUCHDOWNPOINTS,AIRFOILS,CTRLSURFACES,VCPOS,VCMFD,VCHUD,BEACONS,VARIABLEDRAG };
 struct TREE_ITEM_REF {
 	ItemType Type;
 	UINT idx;
@@ -40,6 +40,8 @@ public:
 	BOOL BeaconsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL LightCreationDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL LightsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	BOOL VarDragDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	
 
 	map<HTREEITEM, TREE_ITEM_REF> TreeItem;
 	TREE_ITEM_REF CurrentSelection;
@@ -75,6 +77,8 @@ public:
 	HTREEITEM hrootVCHud;
 	HTREEITEM hrootBeacons;
 	HTREEITEM hrootLightEmitters;
+	HTREEITEM hrootVariableDrag;
+	
 
 	void SetDlgItemsTextVector3(HWND hWnd, int id1, int id2, int id3, VECTOR3 v3, int precision = 3);
 	VECTOR3 GetDlgItemsVector3(HWND hWnd, int id1, int id2, int id3);
@@ -101,7 +105,7 @@ public:
 	void UpdateVCMFDDialog(HWND hWnd);
 	void UpdateBeaconsDialog(HWND hWnd);
 	void UpdateLightsDialog(HWND hWnd);
-	
+	void UpdateVarDragDialog(HWND hWnd);
 
 
 	HTREEITEM FindHtreeItem(ItemType type, UINT idx);
@@ -119,6 +123,9 @@ public:
 	void EnableVCHudWindows(HWND hWnd, bool enable);
 	void UpdateColorExamples(HWND hWnd,VECTOR3 col);
 	void UpdateAttachmentListBox(HWND hWnd, int id,UINT CurrAtt);
+	bool ShowingExhausts;
+	void ShowExhaustsWin(HWND hWnd, bool show);
+	void UpdateExhaustWin(HWND hWnd, UINT idx);
 	map<UINT, LASER_HANDLE>DockLaserMap;
 	map<UINT, LASER_HANDLE>AttLaserMap;
 	map<UINT, LASER_HANDLE>ThLaserMap;
@@ -146,6 +153,8 @@ public:
 	HWND hWnd_Beacons;
 	HWND hWnd_LightCreation;
 	HWND hWnd_Lights;
+	HWND hWnd_VarDrag;
+	
 
 	HWND GetDlg() { return hDlg; }
 	map<DWORD, string> oapi_keys;
@@ -164,7 +173,7 @@ public:
 	ExTexManager *ExTMng;
 	VCManager *VCMng;
 	LightsManager *LightsMng;
-	ExhaustManager *ExMng;
+	VariableDragManager *VardMng;
 	
 	bool AnimTesting;
 	double GetDlgItemDouble(HWND hWnd, int control_id);

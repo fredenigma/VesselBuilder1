@@ -140,7 +140,6 @@
     <ClInclude Include="ControlSurfacesManager.h" />
     <ClInclude Include="DialogControl.h" />
     <ClInclude Include="DockManager.h" />
-    <ClInclude Include="ExhaustManager.h" />
     <ClInclude Include="ExTexManager.h" />
     <ClInclude Include="FollowMeDlg.h" />
     <ClInclude Include="LaserManager.h" />
@@ -150,6 +149,7 @@
     <ClInclude Include="ParticleManager.h" />
     <ClInclude Include="PropellantManager.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="VariableDragManager.h" />
     <ClInclude Include="VCManager.h" />
     <ClInclude Include="VesselBuilder1.h" />
     <ClInclude Include="ThrusterManager.h" />
@@ -171,7 +171,6 @@
     <ClCompile Include="DialogControl.cpp" />
     <ClCompile Include="DockDlgProc.cpp" />
     <ClCompile Include="DockManager.cpp" />
-    <ClCompile Include="ExhaustManager.cpp" />
     <ClCompile Include="ExTexDlgProc.cpp" />
     <ClCompile Include="ExTexManager.cpp" />
     <ClCompile Include="FollowMeDlg.cpp" />
@@ -187,6 +186,8 @@
     <ClCompile Include="PropellantManager.cpp" />
     <ClCompile Include="PrpDlgProc.cpp" />
     <ClCompile Include="SettingsDlgProc.cpp" />
+    <ClCompile Include="VariableDragDlgProc.cpp" />
+    <ClCompile Include="VariableDragManager.cpp" />
     <ClCompile Include="VCHUDDlgProc.cpp" />
     <ClCompile Include="VCManager.cpp" />
     <ClCompile Include="VCMFDDlgProc.cpp" />

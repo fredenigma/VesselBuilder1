@@ -152,5 +152,7 @@ public:
 	void WriteCfg(FILEHANDLE fh);
 	int AnimationRunStatus(anim_idx a_idx);
 
+	double* GetAnimStatePtr(anim_idx a_idx);
+
 	void Clear();
 };

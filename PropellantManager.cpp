@@ -2,6 +2,8 @@
 #include "DialogControl.h"
 #include "PropellantManager.h"
 
+#define LogV(x,...) VB1->Log->Log(x,##__VA_ARGS__)
+
 PropellantManager::PropellantManager(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;
 	tanks.clear();
@@ -17,6 +19,7 @@ void PropellantManager::AddTankDef() {
 	return AddTankDef(name,1000,1,-1);
 }
 void PropellantManager::AddTankDef(string name, double MaxMass, double efficiency, double currentMass) {
+	LogV("Adding Tank:%s MaxMass:%.3f efficiency:%.3f CurrentMass:%.3f", name.c_str(), MaxMass, efficiency, currentMass);
 	PRP_DEF tank = PRP_DEF();
 	tank.name = name;
 	tank.ph = VB1->CreatePropellantResource(MaxMass, currentMass, efficiency);
@@ -24,6 +27,7 @@ void PropellantManager::AddTankDef(string name, double MaxMass, double efficienc
 	return;
 }
 void PropellantManager::DelTankDef(def_idx d_idx) {
+	LogV("Deleting Tank:%i", d_idx);
 	VB1->DelPropellantResource(tanks[d_idx].ph);
 	tanks.erase(tanks.begin() + d_idx);
 	return;
@@ -75,6 +79,14 @@ bool PropellantManager::IsPrimary(def_idx d_idx) {
 PROPELLANT_HANDLE PropellantManager::GetTankPH(def_idx d_idx) {
 	return tanks[d_idx].ph;
 }
+PROPELLANT_HANDLE PropellantManager::GetMainTankPH() {
+	for (UINT i = 0; i < tanks.size(); i++) {
+		if (IsPrimary(i)) {
+			return tanks[i].ph;
+		}
+	}
+	return NULL;
+}
 int PropellantManager::GetPrpIdx(PROPELLANT_HANDLE ph) {
 	for (UINT i = 0; i < tanks.size(); i++) {
 		if (ph == tanks[i].ph) {
@@ -85,6 +97,7 @@ int PropellantManager::GetPrpIdx(PROPELLANT_HANDLE ph) {
 }
 
 void PropellantManager::ParseCfgFile(FILEHANDLE fh) {
+	LogV("Parsing Tank Section");
 	UINT prp_counter = 0;
 	char cbuf[256] = { '\0' };
 	sprintf(cbuf, "PRP_%i_ID", prp_counter);
@@ -111,7 +124,7 @@ void PropellantManager::ParseCfgFile(FILEHANDLE fh) {
 		prp_counter++;
 		sprintf(cbuf, "PRP_%i_ID", prp_counter);
 	}
-
+	LogV("Parsing Tank Section Completed, found %i definitions",prp_counter);
 	return;
 }
 void PropellantManager::WriteCfg(FILEHANDLE fh) {
@@ -136,7 +149,9 @@ void PropellantManager::WriteCfg(FILEHANDLE fh) {
 	return;
 }
 void PropellantManager::Clear() {
+	LogV("Clearing Tank Section");
 	VB1->ClearPropellantResources();
 	tanks.clear();
+	LogV("Clearing Tank Section Completed");
 	return;
 }

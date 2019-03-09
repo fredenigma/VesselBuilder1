@@ -4,6 +4,8 @@
 #include "VCManager.h"
 #include "MeshManager.h"
 
+#define LogV(x,...) VB1->Log->Log(x,##__VA_ARGS__)
+
 VCManager::VCManager(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;
 	vc_positions.clear();
@@ -329,6 +331,7 @@ void VCManager::SetHUDParams(int mesh, int group, VECTOR3 hudcnt, double size) {
 
 
 void VCManager::ParseCfgFile(FILEHANDLE fh) {
+	LogV("Parsing VC Section");
 	UINT position_counter = 0;
 	char cbuf[256] = { '\0' };
 	int id;
@@ -397,6 +400,8 @@ void VCManager::ParseCfgFile(FILEHANDLE fh) {
 		oapiReadItem_float(fh, "VC_HUD_SIZE", size);
 		SetHUDParams(mesh, group, hudcnt, size);
 	}
+
+	LogV("Parsing VC Section Completed");
 	return;
 }
 void VCManager::WriteCfg(FILEHANDLE fh) {
@@ -468,11 +473,13 @@ void VCManager::WriteCfg(FILEHANDLE fh) {
 	return;
 }
 void VCManager::Clear() {
+	LogV("Clearing VC Defs");
 	vc_positions.clear();
 	vc_mfds.clear();
 	vc_hud->hudcnt = _V(0, 0, 0);
 	vc_hud->ngroup = 0;
 	vc_hud->nmesh = 0;
 	vc_hud->size = 0;
+	LogV("Clearing VC Defs Completed");
 	return;
 }

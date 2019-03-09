@@ -2,6 +2,8 @@
 #include "DialogControl.h"
 #include "DockManager.h"
 
+#define LogV(x,...) VB1->Log->Log(x,##__VA_ARGS__)
+
 DockManager::DockManager(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;
 	dock_defs.clear();
@@ -19,6 +21,7 @@ UINT DockManager::AddDockDef() {
 	return AddDockDef(name, _V(0, 0, 0), _V(0, 0, 1), _V(0, 1, 0), false);
 }
 UINT DockManager::AddDockDef(string name, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot, bool dockjett) {
+	LogV("Adding Dock:%s pos:%.3f %.3f %.3f dir:%.3f %.3f %.3f rot:%.3f %.3f %.3f Jettisonable?:%i", name.c_str(), pos.x, pos.y, pos.z, dir.x, dir.y, dir.z, rot.x, rot.y, rot.z, dockjett);
 	DCK_DEF dd = DCK_DEF();
 	dd.name = name;
 	dd.IsDockJett = dockjett;
@@ -32,12 +35,14 @@ UINT DockManager::AddDockDef(string name, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot,
 }
 
 bool DockManager::DeleteDockDef(def_idx d_idx) {
-	if (d_idx >= dock_defs.size()) { return false; }
+	if (d_idx >= dock_defs.size()) { LogV("WARNING: Dock impossible to delete, wrong index called"); return false; }
+	LogV("Deleting Dock n.%i", d_idx);
 	VB1->DelDock(dock_defs[d_idx].dh);
 	delete dock_defs[d_idx].pos_ptr;
 	delete dock_defs[d_idx].antidir_ptr;
 	delete dock_defs[d_idx].antirot_ptr;
 	dock_defs.erase(dock_defs.begin() + d_idx);
+	LogV("Dock Deleted");
 	return true;
 }
 void DockManager::GetDockParams(def_idx d_idx, VECTOR3 &pos, VECTOR3 &dir, VECTOR3 &rot) {
@@ -105,6 +110,7 @@ void DockManager::SetDockRot(def_idx d_idx, VECTOR3 rot) {
 
 
 void DockManager::ParseCfgFile(FILEHANDLE fh) {
+	LogV("Parsing Docks Section Started");
 	UINT dock_counter = 0;
 	char cbuf[256] = { '\0' };
 	sprintf(cbuf, "DOCK_%i_ID", dock_counter);
@@ -128,7 +134,8 @@ void DockManager::ParseCfgFile(FILEHANDLE fh) {
 		dock_counter++;
 		sprintf(cbuf, "DOCK_%i_ID", dock_counter);
 	}
-
+	LogV("Parsing Docks Section Completed");
+	LogV("Found %i Dock Definitions", dock_counter);
 	return;
 }
 void DockManager::WriteCfg(FILEHANDLE fh) {
@@ -159,8 +166,10 @@ void DockManager::WriteCfg(FILEHANDLE fh) {
 }
 
 void DockManager::Clear() {
+	LogV("Clearing Docks Section");
 	VB1->ClearDockDefinitions();
 	dock_defs.clear();
+	LogV("Clearing Docks Section Completed");
 	return;
 }
 UINT DockManager::GetDockCount() {

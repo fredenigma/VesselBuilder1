@@ -5,6 +5,8 @@
 #include "ExTexManager.h"
 #include "ThrusterManager.h"
 
+#define LogV(x,...) VB1->Log->Log(x,##__VA_ARGS__)
+
 ThrusterManager::ThrusterManager(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;
 	thr_defs.clear();
@@ -20,6 +22,7 @@ void ThrusterManager::AddThrDef() {
 	return;
 }
 UINT ThrusterManager::AddThrDef(string name, VECTOR3 pos, VECTOR3 dir, double maxth, PROPELLANT_HANDLE ph, double isp0, double isp_ref, double p_ref) {
+	LogV("Adding Thruster:%s", name.c_str());
 	THR_DEF thr = THR_DEF();
 	thr.name = name;
 	thr.th = VB1->CreateThruster(pos, dir, maxth, ph, isp0, isp_ref, p_ref);
@@ -31,10 +34,12 @@ UINT ThrusterManager::AddThrDef(string name, VECTOR3 pos, VECTOR3 dir, double ma
 	return thr_defs.size()-1;
 }
 void ThrusterManager::DelThrDef(def_idx d_idx) {
+	LogV("Deleting Thruster:%i", d_idx);
 	VB1->DelThruster(thr_defs[d_idx].th);
 	delete thr_defs[d_idx].antidir_ptr;
 	delete thr_defs[d_idx].pos_ptr;
 	thr_defs.erase(thr_defs.begin() + d_idx);
+	LogV("Deleted");
 	return;
 }
 string ThrusterManager::GetThrName(def_idx d_idx) {
@@ -107,7 +112,119 @@ DWORD ThrusterManager::GetThrCount() {
 THRUSTER_HANDLE ThrusterManager::GetThrTH(def_idx d_idx) {
 	return thr_defs[d_idx].th;
 }
+
+bool ThrusterManager::HasThrExhausts(def_idx d_idx) {
+	if (thr_defs[d_idx].Exhausts_def.size() > 0) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+void ThrusterManager::AddThrExhaust(def_idx d_idx, double length, double width, SURFHANDLE tex, bool customposdir, VECTOR3 pos, VECTOR3 dir) {
+	THEX_DEF ed = THEX_DEF();
+	//oapiWriteLogV("l:%.3f w:%.3f csd:%i pos: %.3f %.3f %.3f dir: %.3f %.3f %.3f",)
+	ed.es->lsize = length;
+	ed.es->wsize = width;
+	ed.es->modulate = 0;
+	ed.es->tex = tex;
+	ed.es->th = thr_defs[d_idx].th;
+	ed.es->level = NULL;
+	ed.es->lofs = 0;
+	ed.customposdir = customposdir;
+	if (customposdir) {
+		ed.es->flags = EXHAUST_CONSTANTDIR | EXHAUST_CONSTANTPOS;
+		ed.es->lpos = &pos;
+		ed.es->ldir = &dir;
+		ed.pos = pos;
+		ed.dir = dir;
+	}
+	else {
+		ed.es->lpos = NULL;
+		ed.es->ldir = NULL;
+	}
+	VB1->AddExhaust(ed.es);
+	thr_defs[d_idx].Exhausts_def.push_back(ed);
+	return;
+}
+void ThrusterManager::RemoveThrExhaust(def_idx d_idx, def_idx ex_idx) {
+	VB1->DelExhaust(thr_defs[d_idx].Exhausts_def[ex_idx].es->id);
+	delete thr_defs[d_idx].Exhausts_def[ex_idx].es;
+	thr_defs[d_idx].Exhausts_def.erase(thr_defs[d_idx].Exhausts_def.begin() + ex_idx);
+	return;
+}
+bool ThrusterManager::IsThrExhsCustomposdir(def_idx d_idx, def_idx ex_idx) {
+	return thr_defs[d_idx].Exhausts_def[ex_idx].customposdir;
+}
+void ThrusterManager::GetThrExParams(def_idx d_idx, def_idx ex_idx, double &lsize, double &wsize, SURFHANDLE &tex, bool &customposdir, VECTOR3 &pos, VECTOR3 &dir) {
+	lsize = thr_defs[d_idx].Exhausts_def[ex_idx].es->lsize;
+	wsize = thr_defs[d_idx].Exhausts_def[ex_idx].es->wsize;
+	tex = thr_defs[d_idx].Exhausts_def[ex_idx].es->tex;
+	customposdir = thr_defs[d_idx].Exhausts_def[ex_idx].customposdir;
+	if (customposdir) {
+		//pos = *thr_defs[d_idx].Exhausts_def[ex_idx].es->lpos;
+		//dir = *thr_defs[d_idx].Exhausts_def[ex_idx].es->ldir;
+		pos = thr_defs[d_idx].Exhausts_def[ex_idx].pos;
+		dir = thr_defs[d_idx].Exhausts_def[ex_idx].dir;
+	}
+	else {
+		pos = _V(0, 0, 0);
+		dir = _V(0, 0, 1);
+	}
+	return;
+}
+UINT ThrusterManager::GetThrExCount(def_idx d_idx) {
+	return thr_defs[d_idx].Exhausts_def.size(); 
+}
+bool ThrusterManager::HasThrParticles(def_idx d_idx) {
+	if (thr_defs[d_idx].particles_def.size() > 0) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+void ThrusterManager::AddThrParticle(def_idx d_idx, UINT pss_index, bool custompos, VECTOR3 pos) {
+	PARTICLESTREAMSPEC pss = VB1->PartMng->GetPArticleDefSpecs(pss_index);
+	THPART_DEF thd = THPART_DEF();
+	thd.custompos = custompos;
+	thd.pos = pos;
+	thd.pss_idx = pss_index;
+	if (custompos) {
+		thd.psh = VB1->AddExhaustStream(thr_defs[d_idx].th, pos, &pss);
+	}
+	else {
+		thd.psh = VB1->AddExhaustStream(thr_defs[d_idx].th, &pss);
+	}
+	thr_defs[d_idx].particles_def.push_back(thd);
+	return;
+
+}
+void ThrusterManager::RemoveThrParticle(def_idx d_idx, def_idx part_idx) {
+	VB1->DelExhaustStream(thr_defs[d_idx].particles_def[part_idx].psh);
+	thr_defs[d_idx].particles_def.erase(thr_defs[d_idx].particles_def.begin() + part_idx);
+	return;
+}
+void ThrusterManager::GetThrParticleParams(def_idx d_idx, def_idx part_idx, UINT &pss_index, bool &custompos, VECTOR3 &pos) {
+	pss_index = thr_defs[d_idx].particles_def[part_idx].pss_idx;
+	custompos = thr_defs[d_idx].particles_def[part_idx].custompos;
+	pos = thr_defs[d_idx].particles_def[part_idx].pos;
+	return;
+}
+UINT ThrusterManager::GetThrParticlesCount(def_idx d_idx) {
+	return thr_defs[d_idx].particles_def.size();
+}
+vector<UINT> ThrusterManager::GetThrParticlesIDs(def_idx d_idx) {
+	vector<UINT> p_ids;
+	p_ids.clear();
+	for (UINT i = 0; i < thr_defs[d_idx].particles_def.size(); i++) {
+		p_ids.push_back(thr_defs[d_idx].particles_def[i].pss_idx);
+	}
+	return p_ids;
+}
+
 void ThrusterManager::ParseCfgFile(FILEHANDLE fh) {
+	LogV("Parsing Thrusters Section");
 	UINT thr_counter = 0;
 	char cbuf[256] = { '\0' };
 	sprintf(cbuf, "THR_%i_ID", thr_counter);
@@ -139,46 +256,73 @@ void ThrusterManager::ParseCfgFile(FILEHANDLE fh) {
 			ph = VB1->PrpMng->GetTankPH(ph_idx);
 		}
 		UINT thidx = AddThrDef(name, pos, dir, Max0, ph, isp, ispref, pref);
-
-		bool hasexhaust;
-		double ex_l, ex_w;
-		int ex_idx;
-
-		sprintf(cbuf, "THR_%i_HASEXHAUST", thr_counter);
-		oapiReadItem_bool(fh, cbuf, hasexhaust);
-		if (hasexhaust) {
-			sprintf(cbuf, "THR_%i_EX_L", thr_counter);
-			oapiReadItem_float(fh, cbuf, ex_l);
-			sprintf(cbuf, "THR_%i_EX_W", thr_counter);
-			oapiReadItem_float(fh, cbuf, ex_w);
-			sprintf(cbuf, "THR_%i_EX_TEX", thr_counter);
-			oapiReadItem_int(fh, cbuf, ex_idx);
-			if (ex_idx > -1) {
-				SetThrExhaust(thidx, ex_l, ex_w, VB1->ExTMng->GetExTexSurf(ex_idx));
-			}
-			else {
-				SetThrExhaust(thidx, ex_l, ex_w, NULL);
-			}
-			
-		}
 		
-		sprintf(cbuf, "THR_%i_PARTICLES", thr_counter);
-		char partsbuf[256] = { '\0' };
-		oapiReadItem_string(fh, cbuf, partsbuf);
-		string parts(partsbuf);
-		vector<UINT>parts_defidx = VB1->readVectorUINT(parts);
-		for (UINT z = 0; z < parts_defidx.size(); z++) {
-			if (parts_defidx[z] == -1) {
-				continue;
+		bool hasexh;
+		sprintf(cbuf, "THR_%i_HASEXHAUST", thr_counter);
+		if (!oapiReadItem_bool(fh, cbuf, hasexh)) { hasexh = false; }
+		if (hasexh) {
+			UINT ex_counter = 0;
+			int ex_id;
+			sprintf(cbuf, "THR_%i_EX_%i_ID", thr_counter, ex_counter);
+			while(oapiReadItem_int(fh,cbuf,ex_id))
+			{
+				double lsize, wsize;
+				bool customposdir;
+				VECTOR3 pos, dir;
+				int extex;
+				sprintf(cbuf, "THR_%i_EX_%i_LSIZE", thr_counter, ex_counter);
+				oapiReadItem_float(fh, cbuf, lsize);
+				sprintf(cbuf, "THR_%i_EX_%i_WSIZE", thr_counter, ex_counter);
+				oapiReadItem_float(fh, cbuf, wsize);
+				sprintf(cbuf, "THR_%i_EX_%i_EXTEX", thr_counter, ex_counter);
+				oapiReadItem_int(fh, cbuf, extex);
+				sprintf(cbuf, "THR_%i_EX_%i_CUSTOMPOSDIR", thr_counter, ex_counter);
+				oapiReadItem_bool(fh, cbuf, customposdir);
+				if (customposdir) {
+					sprintf(cbuf, "THR_%i_EX_%i_POS", thr_counter, ex_counter);
+					oapiReadItem_vec(fh, cbuf, pos);
+					sprintf(cbuf, "THR_%i_EX_%i_DIR", thr_counter, ex_counter);
+					oapiReadItem_vec(fh, cbuf, dir);
+				}
+				SURFHANDLE tex = extex == -1 ? NULL:VB1->ExTMng->GetExTexSurf(extex);
+				AddThrExhaust(thidx, lsize, wsize, tex, customposdir, pos, dir);
+				ex_counter++;
+				sprintf(cbuf, "THR_%i_EX_%i_ID", thr_counter, ex_counter);
 			}
-			AddThrParticles(thidx, parts_defidx[z]);
 		}
-
+		bool haspart;
+		sprintf(cbuf, "THR_%i_HASPARTICLES", thr_counter);
+		if (!oapiReadItem_bool(fh, cbuf, haspart)) { haspart = false; }
+		if (haspart) {
+			UINT part_counter = 0;
+			int part_id;
+			sprintf(cbuf, "THR_%i_PART_%i_ID", thr_counter, part_counter);
+			while(oapiReadItem_int(fh,cbuf,part_id))
+			{
+				UINT pss_index;
+				bool custompos;
+				VECTOR3 pos;
+				sprintf(cbuf, "THR_%i_PART_%i_PSSIDX", thr_counter, part_counter);
+				int pss_int;
+				oapiReadItem_int(fh, cbuf, pss_int);
+				pss_index = (UINT)pss_int;
+				sprintf(cbuf, "THR_%i_PART_%i_CUSTOMPOS", thr_counter, part_counter);
+				oapiReadItem_bool(fh, cbuf, custompos);
+				if (custompos) {
+					sprintf(cbuf, "THR_%i_PART_%i_POS", thr_counter, part_counter);
+					oapiReadItem_vec(fh, cbuf, pos);
+				}
+				AddThrParticle(thidx, pss_index, custompos, pos);
+				part_counter++;
+				sprintf(cbuf, "THR_%i_PART_%i_ID", thr_counter, part_counter);
+			}
+		}
 
 		thr_counter++;
 		sprintf(cbuf, "THR_%i_ID", thr_counter);
 
 	}
+	LogV("Parsing Thrusters Section Completed, found:%i Thrusters",thr_counter);
 	return;
 }
 void ThrusterManager::WriteCfg(FILEHANDLE fh) {
@@ -208,129 +352,58 @@ void ThrusterManager::WriteCfg(FILEHANDLE fh) {
 		sprintf(cbuf, "THR_%i_TANK", i);
 		oapiWriteItem_int(fh, cbuf, VB1->PrpMng->GetPrpIdx(GetThrPh(i)));
 		sprintf(cbuf, "THR_%i_HASEXHAUST", i);
-		oapiWriteItem_bool(fh, cbuf, ThrHasExhaust(i));
-		sprintf(cbuf, "THR_%i_EX_L", i);
-		oapiWriteItem_float(fh, cbuf, GetThrExhaustLength(i));
-		sprintf(cbuf, "THR_%i_EX_W", i);
-		oapiWriteItem_float(fh, cbuf, GetThrExhaustWidth(i));
-		sprintf(cbuf, "THR_%i_EX_TEX", i);
-		oapiWriteItem_int(fh, cbuf, VB1->ExTMng->GetExTexIdx(GetThrExhaustTex(i)));
-		sprintf(cbuf, "THR_%i_PARTICLES", i);
-		vector<def_idx> part_defidxs;
-		part_defidxs.clear();
-		vector<UINT>ids = GetThrParticlesIDs(i);
-		for (UINT j = 0; j < ids.size(); j++) {
-			UINT idd = VB1->PartMng->IdxID2Def(ids[j]);
-			if (idd == (UINT)-1) { continue; }
-			part_defidxs.push_back(idd);
+		bool hasexh = HasThrExhausts(i);
+		oapiWriteItem_bool(fh, cbuf, hasexh);
+		if (hasexh) {
+			for (UINT j = 0; j < GetThrExCount(i); j++) {
+				double lsize, wsize;
+				SURFHANDLE tex;
+				bool customposdir;
+				VECTOR3 pos, dir;
+				GetThrExParams(i, j, lsize, wsize, tex, customposdir, pos, dir);
+				UINT extex_idx = VB1->ExTMng->GetExTexIdx(tex);
+				sprintf(cbuf, "THR_%i_EX_%i_ID", i, j);
+				oapiWriteItem_int(fh, cbuf, j);
+				sprintf(cbuf, "THR_%i_EX_%i_LSIZE", i, j);
+				oapiWriteItem_float(fh, cbuf, lsize);
+				sprintf(cbuf, "THR_%i_EX_%i_WSIZE", i, j);
+				oapiWriteItem_float(fh, cbuf, wsize);
+				sprintf(cbuf, "THR_%i_EX_%i_EXTEX", i, j);
+				oapiWriteItem_int(fh, cbuf, extex_idx);
+				sprintf(cbuf, "THR_%i_EX_%i_CUSTOMPOSDIR", i, j);
+				oapiWriteItem_bool(fh, cbuf, customposdir);
+				if (customposdir) {
+					sprintf(cbuf, "THR_%i_EX_%i_POS", i, j);
+					oapiWriteItem_vec(fh, cbuf, pos);
+					sprintf(cbuf, "THR_%i_EX_%i_DIR", i, j);
+					oapiWriteItem_vec(fh, cbuf, dir);
+				}
+			}	
 		}
-		string vals = VB1->WriteVectorUINT(part_defidxs);
-		char val[256] = { '\0' };
-		sprintf(val, "%s", vals.c_str());
-		oapiWriteItem_string(fh, cbuf, val);
+		sprintf(cbuf, "THR_%i_HASPARTICLES", i);
+		bool haspart = HasThrParticles(i);
+		oapiWriteItem_bool(fh, cbuf, haspart);
+		if (haspart) {
+			for (UINT j = 0; j < GetThrParticlesCount(i); j++) {
+				UINT pss_index;
+				bool custompos;
+				VECTOR3 pos;
+				GetThrParticleParams(i, j, pss_index, custompos, pos);
+				sprintf(cbuf, "THR_%i_PART_%i_ID", i, j);
+				oapiWriteItem_int(fh, cbuf, j);
+				sprintf(cbuf, "THR_%i_PART_%i_PSSIDX", i, j);
+				oapiWriteItem_int(fh, cbuf, pss_index);
+				sprintf(cbuf, "THR_%i_PART_%i_CUSTOMPOS", i, j);
+				oapiWriteItem_bool(fh, cbuf, custompos);
+				if (custompos) {
+					sprintf(cbuf, "THR_%i_PART_%i_POS", i, j);
+					oapiWriteItem_vec(fh, cbuf, pos);
+				}
+			}
+		}
+
 		oapiWriteLine(fh, " ");
 	}
-	return;
-}
-
-bool ThrusterManager::ThrHasExhaust(def_idx d_idx) {
-	return thr_defs[d_idx].HasExhaust;
-}
-void ThrusterManager::SetThrExhaust(def_idx d_idx, double length,double width,SURFHANDLE tex) {
-	EXHAUSTSPEC es;
-	es.th = thr_defs[d_idx].th;
-	es.ldir = NULL;
-	es.lpos = NULL;
-	es.level = NULL;
-	es.lofs = 0;
-	es.modulate = 0.05;
-	es.tex = tex;
-	es.lsize = length;
-	es.wsize = width;
-	thr_defs[d_idx].ExhaustID = VB1->AddExhaust(&es);
-	thr_defs[d_idx].HasExhaust = true;
-
-	return;
-}
-void ThrusterManager::SetThrHasExhaust(def_idx d_idx, bool set) {
-	if (set) {
-		if (thr_defs[d_idx].ExhaustID != (UINT)-1) {
-			VB1->DelExhaust(thr_defs[d_idx].ExhaustID);
-			thr_defs[d_idx].ExhaustID = (UINT)-1;
-		}
-		EXHAUSTSPEC es;
-		es.th = thr_defs[d_idx].th;
-		es.ldir = NULL;
-		es.lpos = NULL;
-		es.level = NULL;
-		es.lofs = 0;
-		es.modulate = 0.05;
-		es.tex = NULL;
-		es.lsize = 6;
-		es.wsize = 1;
-		thr_defs[d_idx].ExhaustID=VB1->AddExhaust(&es );
-		thr_defs[d_idx].HasExhaust = true;
-	}
-	else {
-		if (thr_defs[d_idx].ExhaustID != (UINT)-1) {
-			VB1->DelExhaust(thr_defs[d_idx].ExhaustID);
-		}
-		thr_defs[d_idx].ExhaustID = (UINT)-1;
-		thr_defs[d_idx].HasExhaust = false;
-	}
-}
-void ThrusterManager::SetThrExhaustLength(def_idx d_idx, double newlength) {
-	EXHAUSTSPEC es;
-	VB1->GetExhaustSpec(thr_defs[d_idx].ExhaustID, &es);
-	es.lsize = newlength;
-	VB1->DelExhaust(thr_defs[d_idx].ExhaustID);
-	thr_defs[d_idx].ExhaustID = VB1->AddExhaust(&es);
-	return;
-}
-void ThrusterManager::SetThrExhaustWidth(def_idx d_idx, double newwidth) {
-	EXHAUSTSPEC es;
-	VB1->GetExhaustSpec(thr_defs[d_idx].ExhaustID, &es);
-	es.wsize = newwidth;
-	VB1->DelExhaust(thr_defs[d_idx].ExhaustID);
-	thr_defs[d_idx].ExhaustID = VB1->AddExhaust(&es);
-	return;
-}
-double ThrusterManager::GetThrExhaustLength(def_idx d_idx) {
-	if (ThrHasExhaust(d_idx)) {
-		EXHAUSTSPEC es;
-		VB1->GetExhaustSpec(thr_defs[d_idx].ExhaustID, &es);
-		return es.lsize;
-	}
-	else {
-		return 0;
-	}
-}
-double ThrusterManager::GetThrExhaustWidth(def_idx d_idx) {
-	if (ThrHasExhaust(d_idx)) {
-		EXHAUSTSPEC es;
-		VB1->GetExhaustSpec(thr_defs[d_idx].ExhaustID, &es);
-		return es.wsize;
-	}
-	else {
-		return 0;
-	}
-}
-SURFHANDLE ThrusterManager::GetThrExhaustTex(def_idx d_idx) {
-	if (ThrHasExhaust(d_idx)) {
-		EXHAUSTSPEC es;
-		VB1->GetExhaustSpec(thr_defs[d_idx].ExhaustID, &es);
-		return es.tex;
-	}
-	else {
-		return NULL;
-	}
-}
-void ThrusterManager::SetThrExhaustTex(def_idx d_idx, SURFHANDLE newtex) {
-	EXHAUSTSPEC es;
-	VB1->GetExhaustSpec(thr_defs[d_idx].ExhaustID, &es);
-	es.tex = newtex;
-	VB1->DelExhaust(thr_defs[d_idx].ExhaustID);
-	thr_defs[d_idx].ExhaustID = VB1->AddExhaust(&es);
 	return;
 }
 
@@ -357,7 +430,7 @@ UINT ThrusterManager::GetThrIdx(THRUSTER_HANDLE th) {
 	}
 	return (UINT)-1;
 }
-UINT ThrusterManager::GetThrParticlesCount(def_idx d_idx) {
+/*UINT ThrusterManager::GetThrParticlesCount(def_idx d_idx) {
 	return thr_defs[d_idx].particles_id.size();
 }
 vector<UINT> ThrusterManager::GetThrParticlesIDs(def_idx d_idx) {
@@ -390,7 +463,7 @@ void ThrusterManager::AddThrParticles(def_idx d_idx, def_idx particle_idx) {
 	thr_defs[d_idx].particles_h.push_back(psh);
 	
 	return;
-}
+}*/
 VECTOR3* ThrusterManager::GetThrPosPtr(def_idx d_idx) {
 	return thr_defs[d_idx].pos_ptr;
 }
@@ -398,8 +471,10 @@ VECTOR3* ThrusterManager::GetThrAntiDirPtr(def_idx d_idx) {
 	return thr_defs[d_idx].antidir_ptr;
 }
 void ThrusterManager::Clear() {
+	LogV("Clearing Thrusters Section");
 	VB1->ClearThrusterDefinitions();
 	thr_defs.clear();
+	LogV("Clearing Thrusters Section Completed");
 }
 
 
@@ -460,6 +535,7 @@ vector<THRUSTER_HANDLE> ThrusterGroupManager::GetThrustersfromIdx(vector<UINT> i
 	return thv;
 }
 void ThrusterGroupManager::ParseCfgFile(FILEHANDLE fh) {
+	LogV("Parsing Thruster Group Section");
 	bool defined;
 	if (!oapiReadItem_bool(fh, "THGROUP_MAIN", defined)) {
 		defined = false;
@@ -641,7 +717,7 @@ void ThrusterGroupManager::ParseCfgFile(FILEHANDLE fh) {
 		DefineGroup(THGROUP_ATT_BACK, thv);
 	}
 
-
+	LogV("Parsing Thruster Group Section Completed");
 	return;
 }
 void ThrusterGroupManager::WriteCfg(FILEHANDLE fh) {

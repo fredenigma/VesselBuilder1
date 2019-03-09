@@ -64,7 +64,7 @@
     <ClInclude Include="LaserManager.h">
       <Filter>Vessel\Managers</Filter>
     </ClInclude>
-    <ClInclude Include="ExhaustManager.h">
+    <ClInclude Include="VariableDragManager.h">
       <Filter>Vessel\Managers</Filter>
     </ClInclude>
   </ItemGroup>
@@ -220,8 +220,11 @@
     <ClCompile Include="LaserManager.cpp">
       <Filter>Vessel\Managers</Filter>
     </ClCompile>
-    <ClCompile Include="ExhaustManager.cpp">
+    <ClCompile Include="VariableDragManager.cpp">
       <Filter>Vessel\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="VariableDragDlgProc.cpp">
+      <Filter>Dialog</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

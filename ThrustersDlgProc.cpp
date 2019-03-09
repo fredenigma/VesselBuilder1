@@ -8,6 +8,74 @@
 #include "LaserManager.h"
 #pragma comment(lib, "comctl32.lib")
 
+void DialogControl::ShowExhaustsWin(HWND hWnd, bool show) {
+	RECT rect;
+	GetWindowRect(hDlg, &rect);
+	int currwheight = rect.bottom - rect.top;
+	int currwwidth = rect.right - rect.left;
+
+	if (show && !ShowingExhausts) {
+		SetWindowPos(hDlg, HWND_TOP, rect.left, rect.top, currwwidth + 500, currwheight, 0);
+		ShowingExhausts= true;
+		SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_TOGEXHWIN), "CLOSE \n<<");
+	}
+	else if (!show&&ShowingExhausts) {
+		SetWindowPos(hDlg, HWND_TOP, rect.left, rect.top, currwwidth - 500, currwheight, 0);
+		ShowingExhausts = false;
+		SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_TOGEXHWIN), "EXHAUSTS AND STREAMS \n>>");
+	}
+	else {
+		return;
+	}
+	return;
+}
+void DialogControl::UpdateExhaustWin(HWND hWnd, UINT idx) {
+
+
+	SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_RESETCONTENT, 0, 0);
+	for (UINT i = 0; i < VB1->ExTMng->GetExTexCount(); i++) {
+		char ebuf[256] = { '\0' };
+		sprintf(ebuf, "%s", ExTMng->GetExTexName(i).c_str());
+		SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_INSERTSTRING, i, (LPARAM)ebuf);
+		SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_SETITEMDATA, i, (LPARAM)VB1->ExTMng->GetExTexSurf(i));
+	}
+	SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_INSERTSTRING, 0, (LPARAM)"DEFAULT");
+	SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_SETITEMDATA, 0, (LPARAM)NULL);
+	SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_SETCURSEL, 0, 0);
+
+	SendDlgItemMessage(hWnd, IDC_CHECK_THCUSPOSDIR, BM_SETCHECK, BST_UNCHECKED, 0);
+	int edits[6] = { IDC_EDIT_THEXPOSX,IDC_EDIT_THEXPOSY ,IDC_EDIT_THEXPOSZ,IDC_EDIT_THEXDIRX,IDC_EDIT_THEXDIRY,IDC_EDIT_THEXDIRZ };
+	for (UINT i = 0; i < 6; i++) {
+		SendDlgItemMessage(hWnd, edits[i], EM_SETREADONLY, true, 0);
+	}
+
+	SendDlgItemMessage(hWnd, IDC_LIST_THEXS, LB_RESETCONTENT, 0, 0);
+	for (UINT i = 0; i < ThrMng->GetThrExCount(idx); i++) {
+		char cbuf[256] = { '\0' };
+		sprintf(cbuf, "Exhaust %i", i);
+		SendDlgItemMessage(hWnd, IDC_LIST_THEXS, LB_INSERTSTRING, i, (LPARAM)cbuf);
+	}
+
+	
+	SendDlgItemMessage(hWnd, IDC_LIST_THPART, LB_RESETCONTENT, 0, 0);
+	for (UINT i = 0; i < PartMng->GetParticleDefCount(); i++) {
+		SendDlgItemMessage(hWnd, IDC_LIST_THPART, LB_INSERTSTRING, i, (LPARAM)PartMng->GetParticleDefName(i).c_str());
+		SendDlgItemMessage(hWnd, IDC_LIST_THPART, LB_SETITEMDATA, i, (LPARAM)PartMng->GetParticleDefID(i));
+	}
+	SendDlgItemMessage(hWnd, IDC_CHECK_THPARTCUS, BM_SETCHECK, BST_UNCHECKED, 0);
+	SendDlgItemMessage(hWnd, IDC_EDIT_THPARTX, EM_SETREADONLY, true, 0);
+	SendDlgItemMessage(hWnd, IDC_EDIT_THPARTY, EM_SETREADONLY, true, 0);
+	SendDlgItemMessage(hWnd, IDC_EDIT_THPARTZ, EM_SETREADONLY, true, 0);
+		
+
+	SendDlgItemMessage(hWnd, IDC_LIST_THPARTADDED, LB_RESETCONTENT, 0, 0);
+	for (UINT i = 0; i < ThrMng->GetThrParticlesCount(idx); i++) {
+		char cbuf[256] = { '\0' };
+		sprintf(cbuf, "Stream %i", i);
+		SendDlgItemMessage(hWnd, IDC_LIST_THPARTADDED, LB_INSERTSTRING, i, (LPARAM)cbuf);
+	}
+	return;
+}
 void DialogControl::UpdateThrDialog(HWND hWnd) {
 	UINT idx = CurrentSelection.idx;
 	if (idx >= ThrMng->GetThrCount()) { return; }
@@ -51,69 +119,10 @@ void DialogControl::UpdateThrDialog(HWND hWnd) {
 		SendDlgItemMessage(hWnd, IDC_COMBO_THPH, CB_SETCURSEL, 0, 0);
 	}
 
-	if (ThrMng->ThrHasExhaust(idx)) {
-		SendDlgItemMessage(hWnd, IDC_CHECK_THEX, BM_SETCHECK, BST_CHECKED, 0);
-		SendDlgItemMessage(hWnd, IDC_EDIT_THEXL, EM_SETREADONLY, false, 0);
-		SendDlgItemMessage(hWnd, IDC_EDIT_THEXW, EM_SETREADONLY, false, 0);
-		EnableWindow(GetDlgItem(hWnd, IDC_COMBO_THEXTEX), true);
-		EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_THEXLSET), true);
-		EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_THEXWSET), true);
-		SendDlgItemMessage(hWnd, IDC_CHECK_THEX, BM_SETCHECK, BST_CHECKED, 0);
-		sprintf(cbuf, "%.1f", ThrMng->GetThrExhaustLength(idx));
-		SetDlgItemText(hWnd, IDC_EDIT_THEXL, cbuf);
-		sprintf(cbuf, "%.1f", ThrMng->GetThrExhaustWidth(idx));
-		SetDlgItemText(hWnd, IDC_EDIT_THEXW, cbuf);
+	UpdateExhaustWin(hWnd, idx);
+	
 
-		SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_RESETCONTENT, 0, 0);
-		int index = SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_ADDSTRING, 0, (LPARAM)"DEFAULT");
-		SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_SETITEMDATA, index, (LPARAM)NULL);
-		int topick2 = -1;
-		for (UINT i = 0; i <ExTMng->GetExTexCount(); i++) {
-			if (!ExTMng->IsExTexCreated(i)) { continue; }
-			index = SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_ADDSTRING, 0, (LPARAM)ExTMng->GetExTexName(i).c_str());
-			SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_SETITEMDATA, index, (LPARAM)ExTMng->GetExTexSurf(i));
-			if (ThrMng->ThrHasExhaust(idx)) {
-				if (ThrMng->GetThrExhaustTex(idx) == ExTMng->GetExTexSurf(i)) {
-					topick2 = index;
-				}
-			}
-		}
-		if (topick2 != -1) {
-			SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_SETCURSEL, topick2, 0);
-		}
-		else {
-			SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_SETCURSEL, 0, 0);
-		}
-		
-	}
-	else {
-		SendDlgItemMessage(hWnd, IDC_CHECK_THEX, BM_SETCHECK, BST_UNCHECKED, 0);
-		SendDlgItemMessage(hWnd, IDC_EDIT_THEXL, EM_SETREADONLY, true, 0);
-		SetDlgItemText(hWnd, IDC_EDIT_THEXL, "");
-		SendDlgItemMessage(hWnd, IDC_EDIT_THEXW, EM_SETREADONLY, true, 0);
-		SetDlgItemText(hWnd, IDC_EDIT_THEXW, "");
-		EnableWindow(GetDlgItem(hWnd, IDC_COMBO_THEXTEX), false);
-		EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_THEXLSET), false);
-		EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_THEXWSET), false);
-	}
-
-	SendDlgItemMessage(hWnd, IDC_LIST_THPART, LB_RESETCONTENT, 0, 0);
-	//sprintf(oapiDebugString(), "time:%.3f", oapiGetSimTime());
-	for (UINT i = 0; i < PartMng->GetParticleDefCount(); i++) {
-		SendDlgItemMessage(hWnd, IDC_LIST_THPART, LB_INSERTSTRING, i, (LPARAM)PartMng->GetParticleDefName(i).c_str());
-		SendDlgItemMessage(hWnd, IDC_LIST_THPART, LB_SETITEMDATA, i, (LPARAM)PartMng->GetParticleDefID(i));
-		SendDlgItemMessage(hWnd, IDC_LIST_THPART, LB_SETSEL, false, i);
-		vector<UINT> p_id = ThrMng->GetThrParticlesIDs(idx);
-		for (UINT j = 0; j < p_id.size(); j++) {
-			if (p_id[j] == PartMng->GetParticleDefID(i)) {
-				SendDlgItemMessage(hWnd, IDC_LIST_THPART, LB_SETSEL, true, i);
-			}
-		}
-	}
-
-
-
-
+	
 
 	if (ThrMng->ThrIsTesting(idx)) {
 		SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_THTEST), "STOP TEST");
@@ -272,21 +281,6 @@ BOOL DialogControl::ThrDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 			}
 			break;
 		}
-		case IDC_CHECK_THEX:
-		{
-			if (HIWORD(wParam) == BN_CLICKED) {
-				LRESULT getcheck = SendDlgItemMessage(hWnd, IDC_CHECK_THEX, BM_GETCHECK, 0, 0);
-				if (getcheck == BST_CHECKED) {
-					ThrMng->SetThrHasExhaust(idx, true);
-					UpdateThrDialog(hWnd);
-				}
-				else {
-					ThrMng->SetThrHasExhaust(idx, false);
-					UpdateThrDialog(hWnd);
-				}
-			}
-			break;
-		}
 		case IDC_BUTTON_THTEST:
 		{
 			ThrMng->ToggleThrusterTest(idx);
@@ -299,44 +293,158 @@ BOOL DialogControl::ThrDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 			
 			break;
 		}
-		case IDC_BUTTON_THEXLSET:
+		case IDC_BUTTON_TOGEXHWIN:
 		{
-			double newlength = GetDlgItemDouble(hWnd, IDC_EDIT_THEXL);
-			ThrMng->SetThrExhaustLength(idx, newlength);
+			ShowExhaustsWin(hWnd, !ShowingExhausts);
 			break;
 		}
-		case IDC_BUTTON_THEXWSET:
+		case IDC_LIST_THEXS:
 		{
-			double newwidth = GetDlgItemDouble(hWnd, IDC_EDIT_THEXW);
-			ThrMng->SetThrExhaustWidth(idx, newwidth);
-			break;
-		}
-		case IDC_COMBO_THEXTEX:
-		{
-			if (HIWORD(wParam) == CBN_SELCHANGE) {
-				int index = SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_GETCURSEL, 0, 0);
-				SURFHANDLE surf= (SURFHANDLE)SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_GETITEMDATA, index, 0);
-				ThrMng->SetThrExhaustTex(idx, surf);
+			if (HIWORD(wParam) == LBN_SELCHANGE) {
+				int index = SendDlgItemMessage(hWnd, IDC_LIST_THEXS, LB_GETCURSEL, 0, 0);
+				if ((index >= 0)&&(index<ThrMng->GetThrExCount(idx))) {
+					double lsize, wsize;
+					SURFHANDLE tex;
+					bool customposdir;
+					VECTOR3 pos, dir;
+					ThrMng->GetThrExParams(idx, index, lsize, wsize, tex, customposdir, pos, dir);
+					SetDlgItemDouble(hWnd, IDC_EDIT_THEXL, lsize, 1);
+					SetDlgItemDouble(hWnd, IDC_EDIT_THEXW, wsize, 1);
+					if (tex != NULL) {
+						int extex = ExTMng->GetExTexIdx(tex);
+						SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_SETCURSEL, extex + 1, 0);
+					}
+					else {
+						SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_SETCURSEL, 0, 0);
+					}
+					int edits[6] = { IDC_EDIT_THEXPOSX , IDC_EDIT_THEXPOSY ,IDC_EDIT_THEXPOSZ ,IDC_EDIT_THEXDIRX,IDC_EDIT_THEXDIRY,IDC_EDIT_THEXDIRZ };
+					if (customposdir) {
+						SendDlgItemMessage(hWnd, IDC_CHECK_THCUSPOSDIR, BM_SETCHECK, BST_CHECKED, 0);
+						for (UINT i = 0; i < 6; i++) {
+							SendDlgItemMessage(hWnd, edits[i], EM_SETREADONLY, false, 0);
+						}
+						SetDlgItemsTextVector3(hWnd, IDC_EDIT_THEXPOSX, IDC_EDIT_THEXPOSY, IDC_EDIT_THEXPOSZ, pos);
+						SetDlgItemsTextVector3(hWnd, IDC_EDIT_THEXDIRX, IDC_EDIT_THEXDIRY, IDC_EDIT_THEXDIRZ, dir);
+					}
+					else {
+						SendDlgItemMessage(hWnd, IDC_CHECK_THCUSPOSDIR, BM_SETCHECK, BST_UNCHECKED, 0);
+						for (UINT i = 0; i < 6; i++) {
+							SendDlgItemMessage(hWnd, edits[i], EM_SETREADONLY, true, 0);
+							SetDlgItemText(hWnd, edits[i], "");
+						}
+					}
+				}
 			}
 			break;
 		}
-		case IDC_BUTTON_THPARTSET:
+		case IDC_LIST_THPARTADDED:
 		{
-			ThrMng->ClearThrParticles(idx);
-			int nsel = SendDlgItemMessage(hWnd, IDC_LIST_THPART, LB_GETSELCOUNT, 0, 0);
-			if (nsel <= 0) { break; }
-			UINT *sellist = new UINT[nsel];
-			SendDlgItemMessage(hWnd, IDC_LIST_THPART, LB_GETSELITEMS, nsel, (LPARAM)sellist);
-			vector<UINT> _ids;
-			for (UINT i = 0; i < nsel; i++) {
-				UINT _id = (UINT)SendDlgItemMessage(hWnd, IDC_LIST_THPART, LB_GETITEMDATA, (WPARAM)sellist[i], 0);
-				_ids.push_back(_id);
+			if (HIWORD(wParam) == LBN_SELCHANGE) {
+				int index = SendDlgItemMessage(hWnd, IDC_LIST_THPARTADDED, LB_GETCURSEL, 0, 0);
+				if ((index >= 0) && (index < ThrMng->GetThrParticlesCount(idx))) {
+					UINT pss_index;
+					bool custompos;
+					VECTOR3 pos;
+					ThrMng->GetThrParticleParams(idx, index, pss_index, custompos, pos);
+					SendDlgItemMessage(hWnd, IDC_LIST_THPART, LB_SETCURSEL, pss_index, 0);
+					int edits[3] = { IDC_EDIT_THPARTX,IDC_EDIT_THPARTY,IDC_EDIT_THPARTZ };
+					if (custompos) {
+						for (UINT i = 0; i < 3; i++) {
+							SendDlgItemMessage(hWnd, edits[i], EM_SETREADONLY, false, 0);
+						}
+						SetDlgItemsTextVector3(hWnd, IDC_EDIT_THPARTX, IDC_EDIT_THPARTY, IDC_EDIT_THPARTZ, pos);
+						SendDlgItemMessage(hWnd, IDC_CHECK_THPARTCUS, BM_SETCHECK, BST_CHECKED, 0);
+					}
+					else {
+						for (UINT i = 0; i < 3; i++) {
+							SendDlgItemMessage(hWnd, edits[i], EM_SETREADONLY, true, 0);
+							SetDlgItemText(hWnd, edits[i], "");
+						}
+						SendDlgItemMessage(hWnd, IDC_CHECK_THPARTCUS, BM_SETCHECK, BST_UNCHECKED, 0);
+					}
+				}
 			}
-			ThrMng->SetThrParticles(idx, _ids);
-			delete[] sellist;
 			break;
 		}
-
+		case IDC_BUTTON_THADDEX:
+		{
+			double lsize = GetDlgItemDouble(hWnd, IDC_EDIT_THEXL);
+			double wsize = GetDlgItemDouble(hWnd, IDC_EDIT_THEXW);
+			int index = SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_GETCURSEL, 0, 0);
+			SURFHANDLE tex = (SURFHANDLE)SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_GETITEMDATA, index, 0);
+			
+			bool customposdir = IsCheckBoxChecked(hWnd, IDC_CHECK_THCUSPOSDIR);
+			VECTOR3 pos, dir;
+			if (customposdir) {
+				pos = GetDlgItemsVector3(hWnd, IDC_EDIT_THEXPOSX, IDC_EDIT_THEXPOSY, IDC_EDIT_THEXPOSZ);
+				dir = GetDlgItemsVector3(hWnd, IDC_EDIT_THEXDIRX, IDC_EDIT_THEXDIRY, IDC_EDIT_THEXDIRZ);
+			}
+			ThrMng->AddThrExhaust(idx, lsize, wsize, tex, customposdir, pos, dir);
+			UpdateExhaustWin(hWnd, idx);
+			break;
+		}
+		case IDC_BUTTON_THREMEX:
+		{
+			int index = SendDlgItemMessage(hWnd, IDC_LIST_THEXS, LB_GETCURSEL, 0, 0);
+			if (index >= 0) {
+				ThrMng->RemoveThrExhaust(idx, index);
+			}
+			UpdateExhaustWin(hWnd, idx);
+			break;
+		}
+		case IDC_CHECK_THCUSPOSDIR:
+		{
+			if (HIWORD(wParam) == BN_CLICKED) {
+				bool check = IsCheckBoxChecked(hWnd, IDC_CHECK_THCUSPOSDIR);
+				int edits[6] = { IDC_EDIT_THEXPOSX,IDC_EDIT_THEXPOSY, IDC_EDIT_THEXPOSZ,IDC_EDIT_THEXDIRX,IDC_EDIT_THEXDIRY,IDC_EDIT_THEXDIRZ };
+				for (UINT i = 0; i < 6; i++) {
+					SendDlgItemMessage(hWnd, edits[i], EM_SETREADONLY,check?false:true,0);
+				}
+				
+			}
+			break;
+		}
+		case IDC_BUTTON_THPARTADD:
+		{
+			int index = SendDlgItemMessage(hWnd, IDC_LIST_THPART, LB_GETCURSEL, 0, 0);
+			if (index >= 0) {
+				bool check = IsCheckBoxChecked(hWnd, IDC_CHECK_THPARTCUS);
+				VECTOR3 pos = _V(0, 0, 0);
+				if (check) {
+					pos = GetDlgItemsVector3(hWnd, IDC_EDIT_THPARTX, IDC_EDIT_THPARTY, IDC_EDIT_THPARTZ);
+				}
+				ThrMng->AddThrParticle(idx, index, check, pos);
+				UpdateExhaustWin(hWnd,idx);
+			}
+			break;
+		}
+		case IDC_CHECK_THPARTCUS:
+		{
+			int edits[3] = { IDC_EDIT_THPARTX, IDC_EDIT_THPARTY, IDC_EDIT_THPARTZ };
+			bool check = IsCheckBoxChecked(hWnd, IDC_CHECK_THPARTCUS);
+			for (UINT i = 0; i < 3; i++) {
+				SendDlgItemMessage(hWnd, edits[i], EM_SETREADONLY, check ? false : true, 0);
+			}
+			break;
+		}
+		case IDC_BUTTON_THPARTREM:
+		{
+			int index = SendDlgItemMessage(hWnd, IDC_LIST_THPARTADDED, LB_GETCURSEL, 0, 0);
+			if (index >= 0) {
+				ThrMng->RemoveThrParticle(idx, index);
+				UpdateExhaustWin(hWnd, idx);
+			}
+			break;
+		}
+		case IDC_BUTTON_THEXPASTEV:
+		{
+			if (VB1->vclip.valid) {
+				SetDlgItemsTextVector3(hWnd, IDC_EDIT_THEXPOSX, IDC_EDIT_THEXPOSY, IDC_EDIT_THEXPOSZ, VB1->vclip.pos);
+				SetDlgItemsTextVector3(hWnd, IDC_EDIT_THEXDIRX, IDC_EDIT_THEXDIRY, IDC_EDIT_THEXDIRZ, VB1->vclip.dir);
+				SetDlgItemsTextVector3(hWnd, IDC_EDIT_THPARTX, IDC_EDIT_THPARTY, IDC_EDIT_THPARTZ, VB1->vclip.pos);
+			}
+			break;
+		}
 		}
 		break;
 	}

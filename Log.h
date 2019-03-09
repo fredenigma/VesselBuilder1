@@ -1,17 +1,17 @@
 #pragma once
 
-void ResetSBLog();
+/*void ResetSBLog();
 void SBLog(std::string str);
 void SBLog(const char* str, ...);
-void CloseSBLog();
+void CloseSBLog();*/
 class Logger {
 public:
-	Logger(VESSEL *_v,std::string filename);
+	Logger(VESSEL *_v);
 	~Logger();
 	void Log(std::string str);
 	void Log(const char* str, ...);
-	void ResetLog();
+	void InitLog();
 	void CloseLog();
-	FILEHANDLE logfile;
+	std::string filename;
 	VESSEL *v;
 };

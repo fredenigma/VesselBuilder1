@@ -2,6 +2,8 @@
 #include "DialogControl.h"
 #include "CameraManager.h"
 
+#define LogV(x,...) VB1->Log->Log(x,##__VA_ARGS__)
+
 CameraManager::CameraManager(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;
 	cam_defs.clear();
@@ -21,6 +23,7 @@ UINT CameraManager::AddCamDef() {
 	return AddCamDef(name, _V(0, 0, 0), _V(0, 0, 1), 0);
 }
 UINT CameraManager::AddCamDef(string name, VECTOR3 pos, VECTOR3 dir, double tilt) {
+	LogV("Adding Camera:%s", name.c_str());
 	CAM_DEF cd = CAM_DEF();
 	cd.name = name;
 	cd.pos = pos;
@@ -104,6 +107,7 @@ UINT CameraManager::GetCamCount() {
 }
 
 void CameraManager::RemoveCamDef(def_idx d_idx) {
+	LogV("Deleting Camera:%i", d_idx);
 	cam_defs.erase(cam_defs.begin() + d_idx);
 	return;
 }
@@ -123,6 +127,7 @@ int CameraManager::ConsumeCameraBufferedKey(DWORD key, bool down, char *kstate) 
 }
 
 void CameraManager::ParseCfgFile(FILEHANDLE fh) {
+	LogV("Parsing Camera Section");
 	char cbuf[256] = { '\0' };
 	UINT cam_counter = 0;
 	sprintf(cbuf, "CAM_%i_ID", cam_counter);
@@ -145,7 +150,7 @@ void CameraManager::ParseCfgFile(FILEHANDLE fh) {
 		cam_counter++;
 		sprintf(cbuf, "CAM_%i_ID", cam_counter);
 	}
-	
+	LogV("Parsing Camera Section Completed, found %i definitions",cam_counter);
 	return;
 }
 void CameraManager::WriteCfg(FILEHANDLE fh) {
@@ -172,8 +177,10 @@ void CameraManager::WriteCfg(FILEHANDLE fh) {
 }
 
 void CameraManager::Clear() {
+	LogV("Clearing Cameras");
 	VB1->SetCameraDefaultDirection(_V(0, 0, 1),0);
 	VB1->SetCameraOffset(_V(0, 0, 0));
 	cam_defs.clear();
+	LogV("Clearing Cameras Completed");
 	return;
 }

@@ -112,7 +112,14 @@ void ExhaustManager::Clear() {
 
 void ExhaustManager::GetExParams(def_idx d_idx, UINT &thr_index, double &lsize, double &wsize, VECTOR3 &pos, VECTOR3 &dir, UINT &extex, bool &customposdir, bool &customtex) {
 	EXHAUSTSPEC es;
-	VB1->GetExhaustSpec(ex_def[d_idx].ID, &es);
+	for (UINT i = 0; i < VB1->GetExhaustCount(); i++) {
+		VB1->GetExhaustSpec(i, &es);
+		if (es.id == ex_def[d_idx].ID) {
+			break;
+		}
+	}
+	
+
 	thr_index = VB1->ThrMng->GetThrIdx(es.th);
 	lsize = es.lsize;
 	wsize = es.wsize;

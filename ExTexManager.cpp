@@ -2,6 +2,8 @@
 #include "DialogControl.h"
 #include "ExTexManager.h"
 
+#define LogV(x,...) VB1->Log->Log(x,##__VA_ARGS__)
+
 ExTexManager::ExTexManager(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;
 	extex_defs.clear();
@@ -68,6 +70,7 @@ int ExTexManager::GetExTexIdx(SURFHANDLE tex) {
 }
 
 void ExTexManager::ParseCfgFile(FILEHANDLE fh) {
+	LogV("Parsing Exhaust Textures Section");
 	char cbuf[256] = { '\0' };
 	UINT extex_counter = 0;
 	int id;
@@ -81,6 +84,7 @@ void ExTexManager::ParseCfgFile(FILEHANDLE fh) {
 		extex_counter++;
 		sprintf(cbuf, "EXTEX_%i_ID", extex_counter);
 	}
+	LogV("Parsing Exhaust Textures Section Completed, found %i definitions",extex_counter);
 	return;
 }
 void ExTexManager::WriteCfg(FILEHANDLE fh) {
@@ -104,6 +108,8 @@ void ExTexManager::WriteCfg(FILEHANDLE fh) {
 	return;
 }
 void ExTexManager::Clear() {
+	LogV("Clearing ExTex");
 	extex_defs.clear();
+	LogV("Clearing ExTex Completed");
 	return;
 }

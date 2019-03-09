@@ -377,14 +377,14 @@ BOOL DialogControl::MeshDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 			//string meshdir = VB1->OrbiterRoot;
 			//meshdir += "\\Meshes\\";
 			string meshdir = VB1->meshdir;
-			char absmeshdir_c[MAX_PATH];
+			/*char absmeshdir_c[MAX_PATH];
 			char currentdir1[MAX_PATH];
 			GetCurrentDirectory(sizeof(currentdir1) / sizeof(char), currentdir1);
 			SetCurrentDirectory(meshdir.c_str());
 			GetCurrentDirectory(sizeof(absmeshdir_c) / sizeof(char), absmeshdir_c);
 			string absmeshdir(absmeshdir_c);
 			SetCurrentDirectory(currentdir1);
-
+			*/
 			OPENFILENAME ofn;       // common dialog box structure
 			char szFile[260] = { '\0' };       // buffer for file name
 											   //HWND hwnd;              // owner window
@@ -427,7 +427,7 @@ BOOL DialogControl::MeshDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
 				//sprintf(test, szFile);
 				string result(szFile);
-				string filename = result.substr(absmeshdir.size()+1, ofn.nFileExtension - 2 - absmeshdir.size());//result.size()-meshdir.size()-
+				string filename = result.substr(meshdir.size()+1, ofn.nFileExtension - 2 - meshdir.size());//result.size()-meshdir.size()-
 				oapiWriteLogV("filename:%s", filename.c_str());
 				SetWindowText(GetDlgItem(hWnd, IDC_EDIT_MESHNAME), filename.c_str());
 				bool changed = MshMng->ChangeMeshFile(CurrentSelection.idx, filename);

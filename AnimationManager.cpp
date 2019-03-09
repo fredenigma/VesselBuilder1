@@ -4,6 +4,8 @@
 #include "AttachmentManager.h"
 //#include "TouchdownPointsManager.h"
 
+#define LogV(x,...) VB1->Log->Log(x,##__VA_ARGS__)
+
 AnimationManager::AnimationManager(VesselBuilder1* _VB1) {
 	VB1 = _VB1;
 	anim_defs.clear();
@@ -25,6 +27,7 @@ UINT AnimationManager::AddAnimDef() {
 	return AddAnimDef(name, 10, AnimCycleType::GOANDSTOP, OAPI_KEY_K, 0);
 }
 UINT AnimationManager::AddAnimDef(string name, double duration, AnimCycleType Cycle, DWORD Key, double defstate) {
+	LogV("Adding Animation:%s duration:%.3f Cycle:%i Key:%i defstate:%.3f", name.c_str(), duration, (int)Cycle, Key, defstate);
 	ANIM_DEF ad = ANIM_DEF();
 	ad.name = name;
 	ad.duration = duration;
@@ -37,6 +40,7 @@ UINT AnimationManager::AddAnimDef(string name, double duration, AnimCycleType Cy
 	return index;
 }
 void AnimationManager::DeleteAnimDef(anim_idx a_idx) {
+	LogV("Deleting Animation %i", a_idx);
 	ANIMATION *anims;
 	UINT nanims = VB1->GetAnimPtr(&anims);
 	for (UINT i = 0; i < anims[a_idx].ncomp; i++) {
@@ -46,7 +50,7 @@ void AnimationManager::DeleteAnimDef(anim_idx a_idx) {
 	delete anim_defs[a_idx].state_ptr; //? not so sure it won't trigger issues
 	VB1->DelAnimation(a_idx);
 	anim_defs[a_idx].Valid = false;
-	
+	LogV("Deleted");
 	return;
 }
 void AnimationManager::InvalidateComponent(def_idx d_idx) {
@@ -132,6 +136,7 @@ UINT AnimationManager::AddAnimCompDef(anim_idx a_idx, MGROUP_TRANSFORM::TYPE typ
 	return AddAnimCompDef(a_idx, name, 0, 1, 0, 0, empty, -1, (int)type, _V(0, 0, 0), _V(0, 0, 1), _V(1, 1, 1), _V(0, 0, 0), 0);
 }
 UINT AnimationManager::AddAnimCompDef(anim_idx a_idx, string name, double state0, double state1, int mesh, int ngrps, vector<UINT>grps, int parent, int type, VECTOR3 ref, VECTOR3 axis, VECTOR3 scale, VECTOR3 shift, double angle) {
+	LogV("Adding AnimComp: name:%s",name.c_str());
 	ANIMCOMP_DEF acd = ANIMCOMP_DEF();
 	acd.name = name;
 	acd.ref = ref;
@@ -174,9 +179,10 @@ UINT AnimationManager::AddAnimCompDef(anim_idx a_idx, string name, double state0
 	return index;
 }
 void AnimationManager::DeleteAnimCompDef(def_idx d_idx) {
-
+	LogV("Deleting AnimComp:%i", d_idx);
 	VB1->DelAnimationComponent(animcomp_defs[d_idx].a_idx, animcomp_defs[d_idx].ach);
 	animcomp_defs[d_idx].Valid = false;
+	LogV("Deleted");
 	return;
 }
 bool AnimationManager::IsAnimCompDefValid(def_idx d_idx) {
@@ -766,6 +772,7 @@ void AnimationManager::AnimationPreStep(double simt, double simdt, double mjd) {
 }
 
 void AnimationManager::ParseCfgFile(FILEHANDLE fh) {
+	LogV("Parsing Animations Section");
 	UINT anim_counter = 0;
 	char cbuf[256] = { '\0' };
 	int id;
@@ -875,6 +882,9 @@ void AnimationManager::ParseCfgFile(FILEHANDLE fh) {
 		animcompdef_counter++;
 		sprintf(cbuf, "ANIMCOMP_%i_ID", animcompdef_counter);
 	}
+
+	LogV("Parsing Animation Section Completed");
+	LogV("Found: %i Animations and %i Animation Components", anim_counter, animcompdef_counter);
 	return;
 }
 void AnimationManager::WriteCfg(FILEHANDLE fh) {
@@ -991,6 +1001,7 @@ int AnimationManager::AnimationRunStatus(anim_idx a_idx) {
 }
 
 void AnimationManager::Clear() {
+	LogV("Clearing Animation Section");
 	ANIMATION* anims;
 	UINT nanims = VB1->GetAnimPtr(&anims);
 	for (UINT i = 0; i < nanims; i++) {
@@ -1000,5 +1011,10 @@ void AnimationManager::Clear() {
 	
 	anim_defs.clear();
 	animcomp_defs.clear();
+	LogV("Clearing Animation Section Completed");
 	return;
+}
+
+double* AnimationManager::GetAnimStatePtr(anim_idx a_idx) {
+	return anim_defs[a_idx].state_ptr;
 }

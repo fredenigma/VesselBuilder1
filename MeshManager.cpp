@@ -3,7 +3,7 @@
 #include "MeshManager.h"
 #include "gcAPI.h"
 
-//GLOBALS
+#define LogV(x,...) VB1->Log->Log(x,##__VA_ARGS__)
 
 
 bool WD3D9 = false;// MM->UsingD3D9();
@@ -162,6 +162,7 @@ void MeshManager::AddMeshDef(MSH_DEF md) {
 	return;
 }
 void MeshManager::AddMeshDef(string meshname, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot,WORD visibility) {
+	LogV("Adding Mesh Def:%s pos:%.3f %.3f %.3f dir:%.3f %.3f %.3f rot:%.3f %.3f %.3f Visibility:%i", meshname.c_str(), pos.x, pos.y, pos.z, dir.x, dir.y, dir.z, rot.x, rot.y, rot.z, visibility);
 	MSH_DEF md = MSH_DEF();
 	md.meshname = meshname;
 	md.ofs = pos;
@@ -173,9 +174,11 @@ void MeshManager::AddMeshDef(string meshname, VECTOR3 pos, VECTOR3 dir, VECTOR3 
 
 
 void MeshManager::LoadMeshes() {
-	SBLog("Loading of %i Meshes...",nMeshes);
+	LogV("Load Meshes Started");
+//	SBLog("Loading of %i Meshes...",nMeshes);
 	if (msh_defs.size() <= 0) {
-		SBLog("WARNING: No Mesh Definitions");
+		LogV("WARNING: No Mesh Definitions found");
+//		SBLog("WARNING: No Mesh Definitions");
 		return;
 	}
 	
@@ -199,14 +202,16 @@ void MeshManager::LoadMeshes() {
 		}
 		
 		if (msh_defs[i].msh_h != NULL) {
-			SBLog("Loaded Mesh: %s @:%.3f %.3f %.3f", msh_defs[i].meshname.c_str(), msh_defs[i].ofs.x, msh_defs[i].ofs.y, msh_defs[i].ofs.z);
+			LogV("Loaded Mesh : %s @:%.3f %.3f %.3f", msh_defs[i].meshname.c_str(), msh_defs[i].ofs.x, msh_defs[i].ofs.y, msh_defs[i].ofs.z);
+	//		SBLog("Loaded Mesh: %s @:%.3f %.3f %.3f", msh_defs[i].meshname.c_str(), msh_defs[i].ofs.x, msh_defs[i].ofs.y, msh_defs[i].ofs.z);
 		}
 		else {
-			SBLog("WARNING: Unable to load mesh %s", msh_defs[i].meshname.c_str());
+			LogV("WARNING: Unable to load mesh %s", msh_defs[i].meshname.c_str());
+		//	SBLog("WARNING: Unable to load mesh %s", msh_defs[i].meshname.c_str());
 		}
 	}
-
-	SBLog("Loading of %i Meshes Complete", msh_defs.size());
+	LogV("Loading of %i Meshes Completed", msh_defs.size());
+	//SBLog("Loading of %i Meshes Complete", msh_defs.size());
 	return;
 }
 
@@ -372,7 +377,7 @@ def_idx MeshManager::GetMeshDefIndexfromMsh_idx(msh_idx idx) {
 
 bool MeshManager::DeleteMeshDef(def_idx idx) {
 	if ((msh_defs.size() - 1 < idx) || (idx<0)) {
-		SBLog("WARNING: Called a Delete Mesh Definition with out of range index");
+	//	SBLog("WARNING: Called a Delete Mesh Definition with out of range index");
 		return false;
 	}
 	VB1->DelMesh(msh_defs[idx].msh_idx, false);
@@ -385,7 +390,7 @@ bool MeshManager::DeleteMeshDef(def_idx idx) {
 	return true;
 }
 bool MeshManager::ChangeMeshFile(def_idx idx, string newmeshname) {
-	SBLog("Substituting mesh definitions for index: %i old meshname:%s new meshname:%s", idx, msh_defs[idx].meshname.c_str(), newmeshname.c_str());
+	LogV("Substituting mesh definitions for index: %i old meshname:%s new meshname:%s", idx, msh_defs[idx].meshname.c_str(), newmeshname.c_str());
 	if (msh_defs[idx].msh_idx != -1) {
 		VB1->DelMesh(msh_defs[idx].msh_idx, false);
 	}
@@ -413,12 +418,12 @@ bool MeshManager::ChangeMeshFile(def_idx idx, string newmeshname) {
 
 
 	if (msh_defs[idx].msh_h == NULL) {
-		SBLog("WARNING! Mesh File Not Valid!");
+		LogV("WARNING! Mesh File Not Valid!");
 		return false;
 	}
 	msh_defs[idx].msh_idx = VB1->AddMesh(msh_defs[idx].msh_h, &msh_defs[idx].ofs);
 	msh_defs[idx].devmsh_h = VB1->GetDevMesh(VB1->visual, msh_defs[idx].msh_idx);
-	SBLog("Substitution complete: mesh added with mesh index:%i", msh_defs[idx].msh_idx);
+	LogV("Substitution complete: mesh added with mesh index:%i", msh_defs[idx].msh_idx);
 	return true;
 
 }
@@ -604,6 +609,7 @@ void MeshManager::SetMeshVisibility(def_idx d_idx, WORD visibility) {
 	return;
 }
 void MeshManager::ParseCfgFile(FILEHANDLE fh) {
+	LogV("Parsing Mesh Section");
 	UINT mesh_counter = 0;
 	char cbuf[256] = { '\0' };
 	char item[256] = { '\0' };
@@ -628,12 +634,15 @@ void MeshManager::ParseCfgFile(FILEHANDLE fh) {
 		mesh_counter++;
 		sprintf_s(cbuf, "MESH_%i_NAME", mesh_counter);
 	}
+	LogV("Found %i Mesh Definitions", mesh_counter);
 	//SBLog("Found %i Mesh Definitions", GetMeshCount());
 	return;
 }
 
 void MeshManager::Clear() {
+	LogV("Clearing Mesh Section");
 	VB1->ClearMeshes();
 	msh_defs.clear();
 	nMeshes = 0;
+	LogV("Clearing Mesh Section Completed");
 }

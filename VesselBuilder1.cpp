@@ -1,10 +1,12 @@
 #define ORBITER_MODULE
 
 
-
+#include <chrono>
+#include <ctime> 
 #include <math.h>
 #include <stdio.h>
 #include "VesselBuilder1.h"
+#include "Log.h"
 #include "LaserManager.h"
 #include "DialogControl.h"
 #include "FollowMeDlg.h"
@@ -25,7 +27,9 @@
 #include "ExTexManager.h"
 #include "VCManager.h"
 #include "LightsManager.h"
-#include "ExhaustManager.h"
+#include "VariableDragManager.h"
+
+#define LogV(x,...) Log->Log(x,##__VA_ARGS__)
 
 #define _CRT_SECURE_NO_WARNINGS
 #define _CRT_NONSTDC_NO_DEPRECATE
@@ -34,12 +38,15 @@ HINSTANCE hDLL;
 //Creation
 VesselBuilder1::VesselBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
 	gcInitialize();
+	Log = new Logger(this);
+	Log->InitLog();
 	OrbiterRoot.clear();
 	char root[MAX_PATH] = { '\0' };
 	GetCurrentDirectory(MAX_PATH, root);
 	OrbiterRoot.assign(root);
 	wD3D9 = false;
 	GetOrbiterDirs();
+	
 	
 	MshMng = new MeshManager(this);
 	DckMng = new DockManager(this);
@@ -57,7 +64,7 @@ VesselBuilder1::VesselBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
 	VCMng = new VCManager(this);
 	LightsMng = new LightsManager(this);
 	Laser = new LaserManager(this);
-	ExMng = new ExhaustManager(this);
+	VardMng = new VariableDragManager(this);
 
 	cfgfilename.clear();
 	follow_me_pos = _V(0, 0, 0);
@@ -69,7 +76,7 @@ VesselBuilder1::VesselBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
 	follow_me_rotation_speed = 60*RAD;
 	follow_me_translation_speed = 6;
 	FollowMeSuperPrecision = false;
-	ResetSBLog();
+//	ResetSBLog();
 	follow_me_noteh = oapiCreateAnnotation(false, 1, _V(1, 1, 1));
 	Dlg = new DialogControl(this);
 	FMDlg = new FollowMeDlg(this);
@@ -83,11 +90,13 @@ VesselBuilder1::VesselBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
 	currentGrabAtt = 0;
 	NoEditor = false;
 	level1 = 1.0;
-	SBLog("Class Initialize");
+	LogV("Class Initialized");
+//	SBLog("Class Initialize");
 	return;
 }
 
 VesselBuilder1::~VesselBuilder1(){
+	LogV("Destructor Started");
 	delete Dlg;
 	Dlg = NULL;
 	delete FMDlg;
@@ -124,10 +133,15 @@ VesselBuilder1::~VesselBuilder1(){
 	LightsMng = NULL;
 	delete Laser;
 	Laser = NULL;
-	delete ExMng;
-	ExMng = NULL;
+	delete VardMng;
+	VardMng = NULL;
 
-	CloseSBLog();
+	
+	LogV("Destructor Completed");
+	Log->CloseLog();
+	delete Log;
+	Log = NULL;
+//	CloseSBLog();
 	
 	//ClearDelete(mgr);
 	return;
@@ -139,8 +153,12 @@ void VesselBuilder1::GetOrbiterDirs() {
 	if (gcEnabled()) { 
 		cfgname.assign("Orbiter_NG.cfg"); 
 		wD3D9 = true;
-
+		LogV("D3D9 Active");
 	}
+	else {
+		LogV("Using Inline Graphic Client");
+	}
+
 	meshdir.assign(".\\Meshes\\");
 	configdir.assign(".\\Config\\");
 	texturedir.assign(".\\Textures\\");
@@ -166,14 +184,51 @@ void VesselBuilder1::GetOrbiterDirs() {
 		}
 
 	}
-	SBLog("cfg file:%s", cfgname.c_str());
-	SBLog("Orbiter Folders: %s %s %s %s %s", meshdir.c_str(), configdir.c_str(), texturedir.c_str(), texture2dir.c_str(), scenariodir.c_str());
+	
+	
+	char absconfigdir_c[MAX_PATH];
+	char currentdir1[MAX_PATH];
+	GetCurrentDirectory(sizeof(currentdir1) / sizeof(char), currentdir1);
+	SetCurrentDirectory(configdir.c_str());
+	GetCurrentDirectory(sizeof(absconfigdir_c) / sizeof(char), absconfigdir_c);
+	SetCurrentDirectory(currentdir1);
+	configdir.assign(absconfigdir_c);
+	char absmeshdir_c[MAX_PATH];
+	GetCurrentDirectory(sizeof(currentdir1) / sizeof(char), currentdir1);
+	SetCurrentDirectory(meshdir.c_str());
+	GetCurrentDirectory(sizeof(absmeshdir_c) / sizeof(char), absmeshdir_c);
+	SetCurrentDirectory(currentdir1);
+	meshdir.assign(absmeshdir_c);
+	char abstexdir_c[MAX_PATH];
+	GetCurrentDirectory(sizeof(currentdir1) / sizeof(char), currentdir1);
+	SetCurrentDirectory(texturedir.c_str());
+	GetCurrentDirectory(sizeof(abstexdir_c) / sizeof(char), abstexdir_c);
+	SetCurrentDirectory(currentdir1);
+	texturedir.assign(abstexdir_c);
+	char abstex2dir_c[MAX_PATH];
+	GetCurrentDirectory(sizeof(currentdir1) / sizeof(char), currentdir1);
+	SetCurrentDirectory(texture2dir.c_str());
+	GetCurrentDirectory(sizeof(abstex2dir_c) / sizeof(char), abstex2dir_c);
+	SetCurrentDirectory(currentdir1);
+	texture2dir.assign(abstex2dir_c);
+	char absscndir_c[MAX_PATH];
+	GetCurrentDirectory(sizeof(currentdir1) / sizeof(char), currentdir1);
+	SetCurrentDirectory(scenariodir.c_str());
+	GetCurrentDirectory(sizeof(absscndir_c) / sizeof(char), absscndir_c);
+	SetCurrentDirectory(currentdir1);
+	scenariodir.assign(absscndir_c);
+	
+	LogV("Orbiter dirs: %s %s %s %s %s", configdir.c_str(), meshdir.c_str(), texturedir.c_str(), texture2dir.c_str(), scenariodir.c_str());
+	
+	//SBLog("cfg file:%s", cfgname.c_str());
+//	SBLog("Orbiter Folders: %s %s %s %s %s", meshdir.c_str(), configdir.c_str(), texturedir.c_str(), texture2dir.c_str(), scenariodir.c_str());
 	oapiCloseFile(orbiter_cfg, FILE_IN_ZEROONFAIL);
 	return;
 }
 
 
 void VesselBuilder1::clbkSetClassCaps(FILEHANDLE cfg){
+	LogV("Set Class Caps Started");
 	SetEmptyMass(1000);
 	SetSize(10);
 	
@@ -181,7 +236,7 @@ void VesselBuilder1::clbkSetClassCaps(FILEHANDLE cfg){
 	greenL = oapiRegisterExhaustTexture("green_L");
 	blueL = oapiRegisterExhaustTexture("blue_L");
 
-	SBLog("ClassName:%s", GetClassName());
+//	SBLog("ClassName:%s", GetClassName());
 	
 	ResetVehicle();
 	ParseCfgFile(cfg);
@@ -192,12 +247,13 @@ void VesselBuilder1::clbkSetClassCaps(FILEHANDLE cfg){
 	SetNosewheelSteering(true);
 	SetMaxWheelbrakeForce(2e5);
 	//SetCW(0.09, 0.09, 2, 1.4);
-	
+	LogV("Set Class Caps Completed");
 	return;
 }
 void VesselBuilder1::clbkLoadStateEx(FILEHANDLE scn,void *vs)
 {
-	SBLog("Loading State...");
+	LogV("Load State Started");
+//	SBLog("Loading State...");
 	char *line;
 	while (oapiReadScenario_nextline(scn, line)) {
 		if (!_strnicmp(line, "ANIM_", 5)) {
@@ -257,12 +313,13 @@ void VesselBuilder1::clbkLoadStateEx(FILEHANDLE scn,void *vs)
 		}	
 	}
 
-
-	SBLog("Loading State Finished");
+	LogV("Load State Completed");
+//	SBLog("Loading State Finished");
 }
 void VesselBuilder1::clbkSaveState(FILEHANDLE scn)
 {
-	SBLog("Saving State...");
+	LogV("Save State Started");
+	//SBLog("Saving State...");
 
 	
 	
@@ -319,8 +376,8 @@ void VesselBuilder1::clbkSaveState(FILEHANDLE scn)
 		WriteCfgFile(fn);
 	}
 	
-	
-	SBLog("Save State Finished");
+	LogV("Save State Completed");
+//	SBLog("Save State Finished");
 }
 void VesselBuilder1::clbkPostCreation() {
 	
@@ -677,10 +734,10 @@ void VesselBuilder1::clbkDockEvent(int dock, OBJHANDLE mate) {
 	return;
 }
 void VesselBuilder1::VehicleSetup() {
-	SBLog("Vehicle Setup Started...");
+	//SBLog("Vehicle Setup Started...");
 //	ResetVehicle();
 	MshMng->LoadMeshes();
-	SBLog("Vehicle Setup Finished...");
+	//SBLog("Vehicle Setup Finished...");
 }
 MATRIX3 VesselBuilder1::FindRM(VECTOR3 dir2, VECTOR3 rot2) {
 	return FindRM(_V(0, 0, 1), _V(0, 1, 0), dir2, rot2);
@@ -734,7 +791,8 @@ void VesselBuilder1::FindDirRot(MATRIX3 rm, VECTOR3 &dir, VECTOR3 &rot) {
 	return;
 }
 void VesselBuilder1::ResetVehicle() {
-	SBLog("Resetting Vehicle...");
+	//SBLog("Resetting Vehicle...");
+	LogV("Resetting entirely the Vehicle");
 	ClearMeshes();
 	ClearAttachments();
 	ClearDockDefinitions();
@@ -746,12 +804,13 @@ void VesselBuilder1::ResetVehicle() {
 	ClearLightEmitters();
 	ClearPropellantResources();
 	ClearVariableDragElements();
-	SBLog("Reset Complete");
+	LogV("Reset Complete");
+	//SBLog("Reset Complete");
 }
 
 void VesselBuilder1::ParseCfgFile(FILEHANDLE fh) {
-	SBLog("Parsing Configuration File");
-	if (fh == NULL) { SBLog("WARNING: cfg file handle NULL!"); }
+	LogV("Parsing of Cfg File Started");
+//	if (fh == NULL) { SBLog("WARNING: cfg file handle NULL!"); }
 	char cbuf[256] = { '\0' };
 
 	MshMng->ParseCfgFile(fh);
@@ -767,15 +826,20 @@ void VesselBuilder1::ParseCfgFile(FILEHANDLE fh) {
 	AirfoilMng->ParseCfgFile(fh);
 	CtrSurfMng->ParseCfgFile(fh);
 	CamMng->ParseCfgFile(fh);
-	//Lights
 	VCMng->ParseCfgFile(fh);
 	LightsMng->ParseCfgFile(fh);
+	VardMng->ParseCfgFile(fh);
 
 	if (!oapiReadItem_bool(fh, "NOEDITOR", NoEditor)) { NoEditor = false; }
-	SBLog("Parsing Completed");
+	if (NoEditor) {
+		LogV("No Editor option active");
+	}
+	LogV("Parsing of Cfg File Completed");
+	//SBLog("Parsing Completed");
 	return;
 }
 void VesselBuilder1::WriteCfgFile(string filename) {
+	LogV("Writing CFG file...");
 	FILEHANDLE fh=oapiOpenFile(filename.c_str(), FILE_OUT, CONFIG);
 	char cbuf[256] = { '\0' };
 	oapiWriteLine(fh, "ClassName = VesselBuilder1");
@@ -813,34 +877,49 @@ void VesselBuilder1::WriteCfgFile(string filename) {
 	AirfoilMng->WriteCfg(fh);
 	CtrSurfMng->WriteCfg(fh);
 	CamMng->WriteCfg(fh);
-	//Lights
 	VCMng->WriteCfg(fh);
 	LightsMng->WriteCfg(fh);
-
+	VardMng->WriteCfg(fh);
 
 	oapiCloseFile(fh, FILE_OUT);
+	LogV("Writing CFG file Completed!");
 	return;
 }
 void VesselBuilder1::WriteBackupFile() {
-	
-	string fn = OrbiterRoot;
-	fn += configdir;
+	LogV("Writing Backup...");
+	string fn = configdir;
 	fn += "\\Vessels\\";
 	fn += GetClassName();
 	
 	string fnbackup = fn;
-	fnbackup += "__BACKUP.cfg";
+	fnbackup += "__BACKUPS.txt";
 	fn += ".cfg";
 	ifstream cfgfile;
 	ofstream cfgbackup;
 	cfgfile.open(fn.c_str());
-	cfgbackup.open(fnbackup.c_str());
+	cfgbackup.open(fnbackup.c_str(),fstream::app);
 	string line;
+	char cbuf[256] = { '\0' };
+	sprintf(cbuf, "==========================================================================================================");
+	cfgbackup << cbuf << "\n";
+
+	auto time = std::chrono::system_clock::now();
+	std::time_t bup_time = std::chrono::system_clock::to_time_t(time);
+	sprintf(cbuf, "BACKUP DATE:");// , oapiGetSysMJD());
+	cfgbackup << cbuf << std::ctime(&bup_time) <<"\n";
+	sprintf(cbuf, "BEGIN:");
+	cfgbackup << cbuf << "\n";
 	while (getline(cfgfile, line)) {
 		cfgbackup << line<<"\n";
 	}
+	sprintf(cbuf, "END");
+	cfgbackup << cbuf << "\n";
+	sprintf(cbuf, "==========================================================================================================");
+	cfgbackup << cbuf << "\n";
 	cfgfile.close();
 	cfgbackup.close();
+	LogV("Writing Backup completed!");
+	return;
 }
 
 void VesselBuilder1::CreateFollowMe(VECTOR3 initpos) {
@@ -848,6 +927,7 @@ void VesselBuilder1::CreateFollowMe(VECTOR3 initpos) {
 	return CreateFollowMe();
 }
 void VesselBuilder1::CreateFollowMe() {
+	LogV("Creating Follow Me Tool");
 	VESSELSTATUS2 vs2;
 	memset(&vs2, 0, sizeof(vs2));
 	vs2.version = 2;
@@ -861,6 +941,7 @@ void VesselBuilder1::CreateFollowMe() {
 	return;
 }
 void VesselBuilder1::DeleteFollowMe(bool reset) {
+	LogV("Deleting Follow Me Tool");
 	oapiAnnotationSetText(follow_me_noteh, "");
 	if (oapiIsVessel(h_follow_me)) {
 		oapiDeleteVessel(h_follow_me, GetHandle());
@@ -927,7 +1008,149 @@ void VesselBuilder1::ToggleFollowMeSuprePrecision() {
 
 	return;
 }
+void VesselBuilder1::AddDefaultRCS() {
+	LogV("Adding Default RCS System");
+	double target_ang_acc = 3*RAD;
+	double target_lin_acc = 0.15;
+	VECTOR3 PMI;
+	GetPMI(PMI);
+	double mass = GetMass();
+	double arm = 10;
+	double massive_isp = 1e7;
+	VECTOR3 force_needed;
+	VECTOR3 lin_force_needed;
+	force_needed.x = (PMI.x*mass*target_ang_acc) / arm;
+	force_needed.y = (PMI.y*mass*target_ang_acc) / arm;
+	force_needed.z = (PMI.z*mass*target_ang_acc) / arm;
+	
+	lin_force_needed.x = mass*target_lin_acc;
+	lin_force_needed.y = mass*target_lin_acc;
+	lin_force_needed.z = mass*target_lin_acc;
 
+	LogV("Vessel Mass: %.1f Target Ang Acc:3 deg/s2 Target Linear Acc:0.15 m/s2 Torque Needed: %.3f %.3f %.3f Force Needed:%.3f", mass, force_needed.x, force_needed.y, force_needed.z, lin_force_needed.x);
+
+	vector<UINT>th_idx;
+	vector<THRUSTER_HANDLE>th_h;
+
+
+	if (!ThrGrpMng->IsGroupDefined(THGROUP_ATT_PITCHUP)) {
+		UINT idx_pup1 = ThrMng->AddThrDef("Pitch_up_1", _V(0, 0, arm), _V(0, 1, 0), force_needed.x*0.5, PrpMng->GetMainTankPH(), massive_isp, 0, 101400);
+		UINT idx_pup2 = ThrMng->AddThrDef("Pitch_up_2", _V(0, 0, -arm), _V(0, -1, 0), force_needed.x*0.5, PrpMng->GetMainTankPH(), massive_isp, 0, 101400);
+		th_h.clear();
+		th_idx.clear();
+		th_idx.push_back(idx_pup1);
+		th_idx.push_back(idx_pup2);
+		th_h = ThrGrpMng->GetThrustersfromIdx(th_idx);
+		ThrGrpMng->DefineGroup(THGROUP_ATT_PITCHUP, th_h);
+	}
+	if (!ThrGrpMng->IsGroupDefined(THGROUP_ATT_PITCHDOWN)) {
+		UINT idx_pdwn1 = ThrMng->AddThrDef("Pitch_dwn_1", _V(0, 0, arm), _V(0, -1, 0), force_needed.x*0.5, PrpMng->GetMainTankPH(), massive_isp, 0, 101400);
+		UINT idx_pdwn2 = ThrMng->AddThrDef("Pitch_dwn_2", _V(0, 0, -arm), _V(0, 1, 0), force_needed.x*0.5, PrpMng->GetMainTankPH(), massive_isp, 0, 101400);
+		th_h.clear();
+		th_idx.clear();
+		th_idx.push_back(idx_pdwn1);
+		th_idx.push_back(idx_pdwn2);
+		th_h = ThrGrpMng->GetThrustersfromIdx(th_idx);
+		ThrGrpMng->DefineGroup(THGROUP_ATT_PITCHDOWN, th_h);
+	}
+	if (!ThrGrpMng->IsGroupDefined(THGROUP_ATT_YAWLEFT)) {
+		UINT idx_yawleft1 = ThrMng->AddThrDef("Yaw_left_1", _V(0, 0, arm), _V(-1, 0, 0), force_needed.y*0.5, PrpMng->GetMainTankPH(), massive_isp, 0, 101400);
+		UINT idx_yawleft2 = ThrMng->AddThrDef("Yaw_left_2", _V(0, 0, -arm), _V(1, 0, 0), force_needed.y*0.5, PrpMng->GetMainTankPH(), massive_isp, 0, 101400);
+		th_h.clear();
+		th_idx.clear();
+		th_idx.push_back(idx_yawleft1);
+		th_idx.push_back(idx_yawleft2);
+		th_h = ThrGrpMng->GetThrustersfromIdx(th_idx);
+		ThrGrpMng->DefineGroup(THGROUP_ATT_YAWLEFT, th_h);
+
+	}
+	if (!ThrGrpMng->IsGroupDefined(THGROUP_ATT_YAWRIGHT)) {
+		UINT idx_yawright1 = ThrMng->AddThrDef("Yaw_right_1", _V(0, 0, arm), _V(1, 0, 0), force_needed.y*0.5, PrpMng->GetMainTankPH(), massive_isp, 0, 101400);
+		UINT idx_yawright2 = ThrMng->AddThrDef("Yaw_right_2", _V(0, 0, -arm), _V(-1, 0, 0), force_needed.y*0.5, PrpMng->GetMainTankPH(), massive_isp, 0, 101400);
+		th_h.clear();
+		th_idx.clear();
+		th_idx.push_back(idx_yawright1);
+		th_idx.push_back(idx_yawright2);
+		th_h = ThrGrpMng->GetThrustersfromIdx(th_idx);
+		ThrGrpMng->DefineGroup(THGROUP_ATT_YAWRIGHT, th_h);
+	}
+	if (!ThrGrpMng->IsGroupDefined(THGROUP_ATT_BANKLEFT)) {
+		UINT idx_bankleft1 = ThrMng->AddThrDef("Bank_left_1", _V(arm, 0, 0), _V(0, 1, 0), force_needed.z*0.5, PrpMng->GetMainTankPH(), massive_isp, 0, 101400);
+		UINT idx_bankleft2 = ThrMng->AddThrDef("Bank_left_2", _V(arm, 0, 0), _V(0, -1, 0), force_needed.z*0.5, PrpMng->GetMainTankPH(), massive_isp, 0, 101400);
+		th_h.clear();
+		th_idx.clear();
+		th_idx.push_back(idx_bankleft1);
+		th_idx.push_back(idx_bankleft1);
+		th_h = ThrGrpMng->GetThrustersfromIdx(th_idx);
+		ThrGrpMng->DefineGroup(THGROUP_ATT_BANKLEFT, th_h);
+	}
+	if (!ThrGrpMng->IsGroupDefined(THGROUP_ATT_BANKRIGHT)) {
+		UINT idx_bankright1 = ThrMng->AddThrDef("Bank_right_1", _V(arm, 0, 0), _V(0, -1, 0), force_needed.z*0.5, PrpMng->GetMainTankPH(), massive_isp, 0, 101400);
+		UINT idx_bankright2 = ThrMng->AddThrDef("Bank_right_2", _V(arm, 0, 0), _V(0, 1, 0), force_needed.z*0.5, PrpMng->GetMainTankPH(), massive_isp, 0, 101400);
+		th_h.clear();
+		th_idx.clear();
+		th_idx.push_back(idx_bankright1);
+		th_idx.push_back(idx_bankright1);
+		th_h = ThrGrpMng->GetThrustersfromIdx(th_idx);
+		ThrGrpMng->DefineGroup(THGROUP_ATT_BANKRIGHT, th_h);
+	}
+	if (!ThrGrpMng->IsGroupDefined(THGROUP_ATT_UP)) {
+		UINT idx_up = ThrMng->AddThrDef("Translate_up", _V(0, 0, 0), _V(0, 1, 0), lin_force_needed.y, PrpMng->GetMainTankPH(), massive_isp, 0, 101400);
+		th_h.clear();
+		th_idx.clear();
+		th_idx.push_back(idx_up);
+		th_h = ThrGrpMng->GetThrustersfromIdx(th_idx);
+		ThrGrpMng->DefineGroup(THGROUP_ATT_UP, th_h);
+	}
+	if (!ThrGrpMng->IsGroupDefined(THGROUP_ATT_DOWN)) {
+		UINT idx_dwn = ThrMng->AddThrDef("Translate_dwn", _V(0, 0, 0), _V(0, -1, 0), lin_force_needed.y, PrpMng->GetMainTankPH(), massive_isp, 0, 101400);
+		th_h.clear();
+		th_idx.clear();
+		th_idx.push_back(idx_dwn);
+		th_h = ThrGrpMng->GetThrustersfromIdx(th_idx);
+		ThrGrpMng->DefineGroup(THGROUP_ATT_DOWN, th_h);
+	}
+	if (!ThrGrpMng->IsGroupDefined(THGROUP_ATT_LEFT)) {
+		UINT idx_left = ThrMng->AddThrDef("Translate_left", _V(0, 0, 0), _V(-1, 0, 0), lin_force_needed.x, PrpMng->GetMainTankPH(), massive_isp, 0, 101400);
+		th_h.clear();
+		th_idx.clear();
+		th_idx.push_back(idx_left);
+		th_h = ThrGrpMng->GetThrustersfromIdx(th_idx);
+		ThrGrpMng->DefineGroup(THGROUP_ATT_LEFT, th_h);
+	}
+	if (!ThrGrpMng->IsGroupDefined(THGROUP_ATT_RIGHT)) {
+		UINT idx_right = ThrMng->AddThrDef("Translate_right", _V(0, 0, 0), _V(1, 0, 0), lin_force_needed.x, PrpMng->GetMainTankPH(), massive_isp, 0, 101400);
+		th_h.clear();
+		th_idx.clear();
+		th_idx.push_back(idx_right);
+		th_h = ThrGrpMng->GetThrustersfromIdx(th_idx);
+		ThrGrpMng->DefineGroup(THGROUP_ATT_RIGHT, th_h);
+	}
+	if (!ThrGrpMng->IsGroupDefined(THGROUP_ATT_FORWARD)) {
+		UINT idx_forward = ThrMng->AddThrDef("Translate_forward", _V(0, 0, 0), _V(0, 0, 1), lin_force_needed.z, PrpMng->GetMainTankPH(), massive_isp, 0, 101400);
+		th_h.clear();
+		th_idx.clear();
+		th_idx.push_back(idx_forward);
+		th_h = ThrGrpMng->GetThrustersfromIdx(th_idx);
+		ThrGrpMng->DefineGroup(THGROUP_ATT_FORWARD, th_h);
+	}
+	if (!ThrGrpMng->IsGroupDefined(THGROUP_ATT_BACK)) {
+		UINT idx_back = ThrMng->AddThrDef("Translate_backward", _V(0, 0, 0), _V(0, 0, -1), lin_force_needed.z, PrpMng->GetMainTankPH(), massive_isp, 0, 101400);
+		th_h.clear();
+		th_idx.clear();
+		th_idx.push_back(idx_back);
+		th_h = ThrGrpMng->GetThrustersfromIdx(th_idx);
+		ThrGrpMng->DefineGroup(THGROUP_ATT_BACK, th_h);
+	}
+	
+	
+	if (Dlg->IsOpen()) {
+		Dlg->UpdateTree(Dlg->hDlg, THRUSTERS, 0);
+		Dlg->UpdateTree(Dlg->hDlg, THRUSTERGROUPS, 0);
+	}
+	LogV("Default RCS System Added");
+	return;
+}
 
 
 

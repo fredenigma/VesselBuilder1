@@ -16,7 +16,7 @@
 #include "ExTexManager.h"
 #include "VCManager.h"
 #include "LightsManager.h"
-#include "ExhaustManager.h"
+#include "VariableDragManager.h"
 #pragma comment(lib, "comctl32.lib")
 
 
@@ -176,7 +176,13 @@ BOOL CALLBACK LightsDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
 	return DlgCtrl->LightsDlgProc(hWnd, uMsg, wParam, lParam);
 }
-
+BOOL CALLBACK VarDragDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	if (uMsg == WM_INITDIALOG) {
+		SetWindowLong(hWnd, GWL_USERDATA, (LONG)lParam);
+	}
+	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
+	return DlgCtrl->VarDragDlgProc(hWnd, uMsg, wParam, lParam);
+}
 DialogControl::DialogControl(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;
 	MshMng = VB1->MshMng;
@@ -194,7 +200,7 @@ DialogControl::DialogControl(VesselBuilder1 *_VB1) {
 	ExTMng = VB1->ExTMng;
 	VCMng = VB1->VCMng;
 	LightsMng = VB1->LightsMng;
-	ExMng = VB1->ExMng;
+	VardMng = VB1->VardMng;
 
 	open = false;
 	hDlg = NULL;
@@ -205,7 +211,7 @@ DialogControl::DialogControl(VesselBuilder1 *_VB1) {
 	InitOapiKeys();
 	AnimTesting = false;
 	ShowingAFGraph = false;
-
+	ShowingExhausts = false;
 	penblack = CreatePen(PS_SOLID,2,RGB(0,0,0));
 	pengray = CreatePen(PS_SOLID, 1, RGB(160, 160, 160));
 	penblue_l = CreatePen(PS_SOLID, 3, RGB(0, 0, 255));
@@ -230,7 +236,7 @@ DialogControl::~DialogControl() {
 	ExTMng = NULL; 
 	VCMng = NULL;
 	LightsMng = NULL;
-	ExMng = NULL;
+	VardMng = NULL;
 	hDlg = NULL;
 	DeleteObject(penblack);
 	DeleteObject(pengray);
@@ -239,6 +245,7 @@ DialogControl::~DialogControl() {
 }
 void DialogControl::Open(HINSTANCE hDLL) {
 	hDlg = oapiOpenDialogEx(hDLL, IDD_DIALOG1, DlgProcHook, DLG_CAPTIONHELP|DLG_CAPTIONCLOSE, this);
+	
 	open = true;
 }
 void DialogControl::Close() {
@@ -283,6 +290,7 @@ void DialogControl::InitDialog(HWND hWnd) {
 	hWnd_Beacons = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_BEACONS), hWnd, BeaconsDlgProcHook, (LPARAM)this);
 	hWnd_LightCreation = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_LIGHTCREATION), hWnd, LightCreationDlgProcHook, (LPARAM)this);
 	hWnd_Lights= CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_LIGHTS), hWnd, LightsDlgProcHook, (LPARAM)this);
+	hWnd_VarDrag = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_VARDRAG), hWnd, VarDragDlgProcHook, (LPARAM)this);
 	SetWindowPos(hwnd_Mesh, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hwnd_Mesh, SW_HIDE);
 	SetWindowPos(hWnd_Dock, NULL, 255, 10, 0, 0, SWP_NOSIZE);
@@ -325,6 +333,8 @@ void DialogControl::InitDialog(HWND hWnd) {
 	ShowWindow(hWnd_LightCreation, SW_HIDE);
 	SetWindowPos(hWnd_Lights, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hWnd_Lights, SW_HIDE);
+	SetWindowPos(hWnd_VarDrag, NULL, 255, 10, 0, 0, SWP_NOSIZE);
+	ShowWindow(hWnd_VarDrag, SW_HIDE);
 
 
 
@@ -1147,6 +1157,40 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootLightEmitters, TVE_EXPAND);
 		break;
 	}
+	case VARIABLEDRAG:
+	{
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootVariableDrag);
+		while (ht != NULL) {
+			TreeItem.erase(ht);
+			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootVariableDrag);
+		}
+		TVINSERTSTRUCT insertstruct = { 0 };
+
+		insertstruct.hInsertAfter = TVI_ROOT;
+		insertstruct.item.mask = TVIF_TEXT;
+		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
+		insertstruct.hParent = hrootVariableDrag;
+		for (UINT i = 0; i < VardMng->GetVardDefCount(); i++) {
+			char cbuf[256] = { '\0' };
+			if (VardMng->IsVardDefDefined(i)) {
+				sprintf(cbuf, "%s", VardMng->GetVardName(i).c_str());
+			}
+			else {
+				sprintf(cbuf, "*%s", VardMng->GetVardName(i).c_str());
+			}
+			
+			insertstruct.item.pszText = (LPSTR)cbuf;
+			insertstruct.item.cchTextMax = strlen(cbuf);
+			TREE_ITEM_REF Tir = TREE_ITEM_REF();
+			Tir.Type = VARIABLEDRAG;
+			Tir.idx = i;
+			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			TreeItem[Tir.hitem] = Tir;
+		}
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootVariableDrag, TVE_EXPAND);
+		break;
+	}
 
 
 
@@ -1311,8 +1355,12 @@ void DialogControl::InitTree(HWND hWnd) {
 	Tir.hitem = hrootVCHud;
 	TreeItem[Tir.hitem] = Tir;
 
-
-
+	insertstruct.hParent = hrootVessel;
+	insertstruct.item.pszText = (LPSTR)TEXT("Variable Drag Elems\0");
+	insertstruct.item.cchTextMax = 21;
+	hrootVariableDrag = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+	Tir.hitem = hrootVariableDrag;
+	TreeItem[Tir.hitem] = Tir;
 
 	
 	UpdateTree(hWnd, MESH,0);
@@ -1332,6 +1380,7 @@ void DialogControl::InitTree(HWND hWnd) {
 	UpdateTree(hWnd, VCMFD, 0);
 	UpdateTree(hWnd, BEACONS, 0);
 	UpdateTree(hWnd, LIGHTS, 0);
+	UpdateTree(hWnd, VARIABLEDRAG, 0);
 	return;
 }
 
@@ -1364,6 +1413,9 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 	}
 	if (type != THRUSTERS) {
 		ShowWindow(hWnd_Thr, SW_HIDE);
+		if (ShowingExhausts) {
+			ShowExhaustsWin(hWnd_Thr, false);
+		}
 	}
 	if (type != THRUSTERGROUPS) {
 		ShowWindow(hWnd_ThrGrp, SW_HIDE);
@@ -1394,6 +1446,9 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 	}
 	if (type != LIGHTS) {
 		ShowWindow(hWnd_Lights, SW_HIDE);
+	}
+	if (type != VARIABLEDRAG) {
+		ShowWindow(hWnd_VarDrag, SW_HIDE);
 	}
 
 
@@ -1491,6 +1546,11 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 		ShowWindow(hWnd_Lights, SW_SHOW);
 		break;
 	}
+	case VARIABLEDRAG:
+	{
+		ShowWindow(hWnd_VarDrag, SW_SHOW);
+		break;
+	}
 	}
 
 	return;
@@ -1568,7 +1628,13 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 				LightsMng->AddBeaconDef();
 				UpdateTree(hWnd, BEACONS, 0);
 			}
-			
+			else if (CurrentSelection.hitem == hrootThrusterGroups) {
+				VB1->AddDefaultRCS();
+			}
+			else if (CurrentSelection.hitem == hrootVariableDrag) {
+				VardMng->AddUndefinedVardDef();
+				UpdateTree(hWnd, VARIABLEDRAG, 0);
+			}
 			break;
 		}
 		case IDC_BUTTON_ADD2:
@@ -1578,6 +1644,11 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 				UpdateTree(hWnd, AIRFOILS, 0);
 
 			}
+			break;
+		}
+		case IDC_BUTTON_CLOSE:
+		{
+			Close();
 			break;
 		}
 		}
@@ -1678,6 +1749,16 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD BEACON");
+					}
+					else if (CurrentSelection.hitem == hrootThrusterGroups) {
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
+						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD DEFAULT RCS SYSTEM");
+					}
+					else if (CurrentSelection.hitem == hrootVariableDrag) {
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
+						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD VARIABLE DRAG ELEMENT");
 					}
 					else {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_HIDE);
@@ -1805,6 +1886,11 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 						case LIGHTS:
 						{
 							UpdateLightsDialog(hWnd_Lights);
+							break;
+						}
+						case VARIABLEDRAG:
+						{
+							UpdateVarDragDialog(hWnd_VarDrag);
 							break;
 						}
 					}

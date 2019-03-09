@@ -2,6 +2,8 @@
 #include "DialogControl.h"
 #include "ControlSurfacesManager.h"
 
+#define LogV(x,...) VB1->Log->Log(x,##__VA_ARGS__)
+
 ControlSurfacesManager::ControlSurfacesManager(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;
 	ctrlsurf_defs.clear();
@@ -43,6 +45,7 @@ void ControlSurfacesManager::SetCtrlSurfDefParams(def_idx d_idx, AIRCTRL_TYPE ty
 	return;
 }
 void ControlSurfacesManager::DefineCtrlSurface(def_idx d_idx) {
+	LogV("Defining CtrlSurface:%i", d_idx);
 	ctrlsurf_defs[d_idx].csfh = VB1->CreateControlSurface3(ctrlsurf_defs[d_idx].type, ctrlsurf_defs[d_idx].area, ctrlsurf_defs[d_idx].dCl, ctrlsurf_defs[d_idx].ref, ctrlsurf_defs[d_idx].axis, ctrlsurf_defs[d_idx].delay, ctrlsurf_defs[d_idx].anim);
 	ctrlsurf_defs[d_idx].defined = true;
 	return;
@@ -84,7 +87,7 @@ void ControlSurfacesManager::GetCtrlSurfDefParams(def_idx d_idx, AIRCTRL_TYPE &t
 	return;
 }
 void ControlSurfacesManager::ParseCfgFile(FILEHANDLE fh) {
-	
+	LogV("Parsing Control Surfaces Section");
 	char cbuf[256] = { '\0' };
 	UINT ctr_counter = 0;
 	int id;
@@ -126,11 +129,7 @@ void ControlSurfacesManager::ParseCfgFile(FILEHANDLE fh) {
 	}
 	
 	
-	
-	
-	
-	
-	
+	LogV("Parsing Control Surfaces Section Completed, found %i definitions",ctr_counter);
 	
 	
 	return;
@@ -176,7 +175,9 @@ void ControlSurfacesManager::WriteCfg(FILEHANDLE fh) {
 	return;
 }
 void ControlSurfacesManager::Clear() {
+	LogV("Clearing CtrlSurfaces");
 	VB1->ClearControlSurfaceDefinitions();
 	ctrlsurf_defs.clear();
+	LogV("Clearing CtrlSurfaces Completed");
 	return;
 }

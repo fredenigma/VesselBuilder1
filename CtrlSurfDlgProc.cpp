@@ -39,7 +39,9 @@ void DialogControl::UpdateCtrlSurfDialog(HWND hWnd) {
 		SendDlgItemMessage(hWnd, IDC_COMBO_CSANIM, CB_SETITEMDATA, index, i);
 	}
 	if (anim != (UINT)-1) {
-		SendDlgItemMessage(hWnd, IDC_COMBO_CSANIM, CB_SETCURSEL, anim+1, 0);
+		int index = ComboFindItemData(GetDlgItem(hWnd, IDC_COMBO_CSANIM), (void*)anim);
+		SendDlgItemMessage(hWnd, IDC_COMBO_CSANIM, CB_SETCURSEL, index, 0);
+		//SendDlgItemMessage(hWnd, IDC_COMBO_CSANIM, CB_SETCURSEL, anim+1, 0);
 	}
 	else {
 		SendDlgItemMessage(hWnd, IDC_COMBO_CSANIM, CB_SETCURSEL, 0, 0);

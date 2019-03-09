@@ -31,6 +31,7 @@ public:
 	void MakePrimary(def_idx d_idx);
 	bool IsPrimary(def_idx d_idx);
 	PROPELLANT_HANDLE GetTankPH(def_idx d_idx);
+	PROPELLANT_HANDLE GetMainTankPH();
 	int GetPrpIdx(PROPELLANT_HANDLE ph);
 	void Clear();
 };

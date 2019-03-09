@@ -3,6 +3,7 @@
 #include "ExTexManager.h"
 #include "ParticleManager.h"
 
+#define LogV(x,...) VB1->Log->Log(x,##__VA_ARGS__)
 
 ParticleManager::ParticleManager(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;
@@ -59,6 +60,7 @@ void ParticleManager::AddParticleDef() {
 	return AddParticleDef(name, pss);
 }
 void ParticleManager::AddParticleDef(string name, PARTICLESTREAMSPEC pss) {
+	LogV("Adding Particle:%s", name.c_str());
 	PARTICLE_DEF pdef = PARTICLE_DEF();
 	pdef.name = name;
 	pdef.pss = pss;
@@ -74,6 +76,7 @@ void ParticleManager::AddParticleDef(PARTICLE_DEF pdef) {
 	return;
 }
 void ParticleManager::DeleteParticleDef(def_idx d_idx) {
+	LogV("Deleting Particle:%i", d_idx);
 	particle_defs.erase(particle_defs.begin() + d_idx);
 	return;
 }
@@ -93,6 +96,7 @@ PARTICLESTREAMSPEC ParticleManager::GetPArticleDefSpecs(def_idx d_idx) {
 }
 
 void ParticleManager::ParseCfgFile(FILEHANDLE fh) {
+	LogV("Parsing Particles Section");
 	UINT part_counter = 2;
 	char cbuf[256] = { '\0' };
 	sprintf(cbuf, "PARTICLE_%i_ID", part_counter);
@@ -152,7 +156,7 @@ void ParticleManager::ParseCfgFile(FILEHANDLE fh) {
 		sprintf(cbuf, "PARTICLE_%i_ID", part_counter);
 	}
 	
-	
+	LogV("Parsing Particles Section Completed, found %i definitions",part_counter);
 	return;
 }
 void ParticleManager::WriteCfg(FILEHANDLE fh) {
@@ -233,8 +237,10 @@ def_idx ParticleManager::IdxID2Def(UINT _id) {
 }
 
 void ParticleManager::Clear() {
+	LogV("Clearing Particle Section");
 	particle_defs.clear();
 	AddParticleDef(DefaultContrail);
 	AddParticleDef(DefaultExhaust);
+	LogV("Clearing Particle Section Completed");
 	return;
 }
