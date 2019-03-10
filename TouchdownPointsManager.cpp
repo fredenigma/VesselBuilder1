@@ -175,6 +175,7 @@ void TouchdownPointsManager::RemovePoint(UINT set, UINT idx) {
 }
 void TouchdownPointsManager::EnableSecondSet(bool enable) {
 	Set2Enabled = enable;
+	if (!enable) { state_chk = NULL; }
 }
 void TouchdownPointsManager::SetChangeOverAnimation(anim_idx a_idx) {
 	change_anim_idx = a_idx;
@@ -237,7 +238,7 @@ UINT TouchdownPointsManager::GetPointsCount(UINT set) {
 	}
 }
 void TouchdownPointsManager::TouchDownPointsPreStep(double simt, double simdt, double mjd) {
-	if (!IsSecondSetEnabled()) { return; }
+	if (!IsSecondSetEnabled()||state_chk==NULL) { return; }
 	if (*state_chk> 0.999) {
 		if (GetCurrentSet() == 1) {
 			SetCurrentSet(2);

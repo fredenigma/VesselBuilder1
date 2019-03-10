@@ -36,6 +36,12 @@ void HLiftCoeff(VESSEL *v, double beta, double M, double Re, void *context, doub
 }
 */
 void LiftCoeff(VESSEL *v, double aoa, double M, double Re, void *context, double *cl, double *cm, double *cd) {
+	if (((LiftCoeffDef*)context)->GetPointsCount() <= 0) {
+		*cl = 0;
+		*cm = 0;
+		*cd = 0;
+		return;
+	}
 	*cl = ((LiftCoeffDef*)context)->GetCL(aoa);
 	*cm = ((LiftCoeffDef*)context)->GetCM(aoa);
 	*cd = ((LiftCoeffDef*)context)->GetCD(aoa,M);

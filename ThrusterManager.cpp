@@ -143,7 +143,7 @@ void ThrusterManager::AddThrExhaust(def_idx d_idx, double length, double width, 
 		ed.es->lpos = NULL;
 		ed.es->ldir = NULL;
 	}
-	VB1->AddExhaust(ed.es);
+	ed.es->id=VB1->AddExhaust(ed.es);
 	thr_defs[d_idx].Exhausts_def.push_back(ed);
 	return;
 }
