@@ -28,6 +28,7 @@
 #include "VCManager.h"
 #include "LightsManager.h"
 #include "VariableDragManager.h"
+#include "MET.h"
 #include "EventManager.h"
 
 #define LogV(x,...) Log->Log(x,##__VA_ARGS__)
@@ -36,11 +37,18 @@
 #define _CRT_NONSTDC_NO_DEPRECATE
 
 HINSTANCE hDLL;
+bool IamFirst = true;
 //Creation
 VesselBuilder1::VesselBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
 	gcInitialize();
 	Log = new Logger(this);
-	Log->InitLog();
+	if (IamFirst) {
+		IamFirst = false;
+		Log->InitLog();
+		//oapiWriteLogV("First : %s", GetName());
+	}
+	
+	
 	OrbiterRoot.clear();
 	char root[MAX_PATH] = { '\0' };
 	GetCurrentDirectory(MAX_PATH, root);
@@ -67,7 +75,7 @@ VesselBuilder1::VesselBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
 	Laser = new LaserManager(this);
 	VardMng = new VariableDragManager(this);
 	EvMng = new EventManager(this);
-
+	Met = new MET();
 
 	cfgfilename.clear();
 	follow_me_pos = _V(0, 0, 0);
@@ -140,7 +148,8 @@ VesselBuilder1::~VesselBuilder1(){
 	VardMng = NULL;
 	delete EvMng;
 	EvMng = NULL;
-	
+	delete Met;
+	Met = NULL;
 	LogV("Destructor Completed");
 	Log->CloseLog();
 	delete Log;
@@ -608,6 +617,7 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 		return 1;
 	}
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == OAPI_KEY_K) {
+		Met->SetMJD0(oapiGetSimMJD() + 0.01);
 	/*	DWORD td_count = this->GetTouchdownPointCount();
 		for (UINT i = 0; i < td_count; i++) {
 			oapiWriteLogV("td:%i", i);
@@ -642,11 +652,21 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 	}
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && KEYMOD_CONTROL(kstate) && key == OAPI_KEY_K) {
 		Event::TRIGGER Trig = Event::TRIGGER();
-		Trig.Type = Event::TRIGGER::TRIGGERTYPE::KEYPRESS;
-		Trig.Key = OAPI_KEY_M;
-		Trig.KeyMods.Alt = true;
-		Trig.repeat_mode = Event::TRIGGER::REPEAT_MODE::ALWAYS;
-		EvMng->CreateChildSpawnEvent("TestSpawn", Trig, "SLS\\core", "stage");
+		Trig.Type = Event::TRIGGER::TIME;
+		Trig.time_mode = Event::TRIGGER::TIME_MODE::MET;
+		Trig.TriggerValue = 10;
+		//Trig.Type = Event::TRIGGER::TRIGGERTYPE::KEYPRESS;
+		//Trig.Key = OAPI_KEY_M;
+		//Trig.KeyMods.Alt = true;
+		//Trig.repeat_mode = Event::TRIGGER::REPEAT_MODE::ALWAYS;
+		//EvMng->CreateChildSpawnEvent("TestSpawn", Trig, "SLS\\core", "stage");
+		//EvMng->CreateAnimTriggerEvent("TESTANIM", Trig, 5, true);
+		THRUSTER_HANDLE th = ThrMng->GetThrTH(3);
+		//EvMng->CreateThrusterFireEvent("TEST", Trig, th);
+		EvMng->CreateThrusterGroupLevelEvent("TEST", Trig, THGROUP_MAIN);
+		Trig.TriggerValue = 15;
+		EvMng->CreateThrusterGroupLevelEvent("TEST", Trig, THGROUP_MAIN,0);
+		//EvMng->CreateThrusterFireEvent("TEST", Trig, th,0);
 	/*	ResetVehicle();
 		MshMng->msh_defs.clear();
 		AttMng->att_defs.clear();
@@ -706,6 +726,7 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 
 
 void VesselBuilder1::clbkPreStep(double simt, double simdt, double mjd) {
+	Met->PreStep(mjd);
 	if (GrabMode) {
 		def_idx attidx = AttMng->IdxAtt2Def(currentGrabAtt);
 		sprintf(oapiDebugString(), "Attachment ready for Grab: %i %s", currentGrabAtt, AttMng->GetAttDefId(attidx).c_str());
@@ -715,8 +736,14 @@ void VesselBuilder1::clbkPreStep(double simt, double simdt, double mjd) {
 	if (follow_me) {
 		UpdateFollowMe();
 	}
+	EvMng->PreStep(simt, simdt, mjd);
 	
 	
+	/*
+	int sign, hrs, mins, secs;
+	Met->GetHMS(sign, hrs, mins, secs);
+
+	sprintf(oapiDebugString(), "%i %02d:%02d:%02d %.8f %i", sign, hrs, mins, secs,Met->d_secs,Met->MyRound(Met->d_secs));*/
 	return;
 }
 void VesselBuilder1::clbkPostStep(double simt, double simdt, double mjd) {
@@ -1172,7 +1199,9 @@ void VesselBuilder1::AddDefaultRCS() {
 	return;
 }
 
-
+double VesselBuilder1::GetMET() {
+	return Met->GetDeltaSeconds();
+}
 
 
 bool VesselBuilder1::UsingD3D9() {

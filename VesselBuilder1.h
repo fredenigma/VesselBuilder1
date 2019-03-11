@@ -82,6 +82,8 @@ class LaserManager;
 class VariableDragManager;
 class EventManager;
 
+class MET;
+
 class VesselBuilder1 :public VESSEL4{
 public:
  VesselBuilder1(OBJHANDLE hObj,int fmodel);
@@ -120,6 +122,7 @@ public:
  VariableDragManager *VardMng;
  Logger* Log;
  
+ MET *Met;
  EventManager *EvMng;
 
 
@@ -190,6 +193,7 @@ public:
  double level1;
  
  void AddDefaultRCS();
+ double GetMET();
 };
 
 

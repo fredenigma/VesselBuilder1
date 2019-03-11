@@ -724,233 +724,270 @@ void ThrusterGroupManager::WriteCfg(FILEHANDLE fh) {
 	oapiWriteLine(fh, ";<-------------------------THRUSTER GROUPS DEFINITIONS------------------------->");
 	oapiWriteLine(fh, " ");
 	char cbuf[256] = { '\0' };
-	oapiWriteItem_bool(fh, "THGROUP_MAIN", Defined[THGROUP_MAIN]);
-	vector<THRUSTER_HANDLE>thrusters; 
+	vector<THRUSTER_HANDLE>thrusters;
 	vector<UINT>indexes;
-	indexes.clear();
-	thrusters = GetThrusters(THGROUP_MAIN);
-	for (UINT i = 0; i < thrusters.size(); i++) {
-		UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
-		if (idx != (UINT)-1) {
-			indexes.push_back(idx);
-		}
-	}
-	string thr_s = VB1->WriteVectorUINT(indexes);
-	sprintf(cbuf, "%s", thr_s.c_str());
-	oapiWriteItem_string(fh, "THGROUP_MAIN_THRUSTERS", cbuf);
-	indexes.clear();
 	thrusters.clear();
+	indexes.clear();
+	string thr_s;
+	thr_s.clear();
+
+	if (Defined[THGROUP_MAIN]) {
+		oapiWriteItem_bool(fh, "THGROUP_MAIN", Defined[THGROUP_MAIN]);
+		indexes.clear();
+		thrusters = GetThrusters(THGROUP_MAIN);
+		for (UINT i = 0; i < thrusters.size(); i++) {
+			UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
+			if (idx != (UINT)-1) {
+				indexes.push_back(idx);
+			}
+		}
+		thr_s = VB1->WriteVectorUINT(indexes);
+		sprintf(cbuf, "%s", thr_s.c_str());
+		oapiWriteItem_string(fh, "THGROUP_MAIN_THRUSTERS", cbuf);
+		indexes.clear();
+		thrusters.clear();
+	}
 	
-	oapiWriteItem_bool(fh, "THGROUP_RETRO", Defined[THGROUP_RETRO]);
-	thrusters = GetThrusters(THGROUP_RETRO);
-	for (UINT i = 0; i < thrusters.size(); i++) {
-		UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
-		if (idx != (UINT)-1) {
-			indexes.push_back(idx);
+	if (Defined[THGROUP_RETRO]) {
+		oapiWriteItem_bool(fh, "THGROUP_RETRO", Defined[THGROUP_RETRO]);
+		thrusters = GetThrusters(THGROUP_RETRO);
+		for (UINT i = 0; i < thrusters.size(); i++) {
+			UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
+			if (idx != (UINT)-1) {
+				indexes.push_back(idx);
+			}
 		}
-	}
-	thr_s = VB1->WriteVectorUINT(indexes);
-	sprintf(cbuf, "%s", thr_s.c_str());
-	oapiWriteItem_string(fh, "THGROUP_RETRO_THRUSTERS", cbuf);
-	indexes.clear();
-	thrusters.clear();
-	thr_s.clear();
+		thr_s = VB1->WriteVectorUINT(indexes);
+		sprintf(cbuf, "%s", thr_s.c_str());
+		oapiWriteItem_string(fh, "THGROUP_RETRO_THRUSTERS", cbuf);
+		indexes.clear();
+		thrusters.clear();
+		thr_s.clear();
 
-	oapiWriteItem_bool(fh, "THGROUP_HOVER", Defined[THGROUP_HOVER]);
-	thrusters = GetThrusters(THGROUP_HOVER);
-	for (UINT i = 0; i < thrusters.size(); i++) {
-		UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
-		if (idx != (UINT)-1) {
-			indexes.push_back(idx);
-		}
 	}
-	thr_s = VB1->WriteVectorUINT(indexes);
-	sprintf(cbuf, "%s", thr_s.c_str());
-	oapiWriteItem_string(fh, "THGROUP_HOVER_THRUSTERS", cbuf);
-	indexes.clear();
-	thrusters.clear();
-	thr_s.clear();
 	
-	oapiWriteItem_bool(fh, "THGROUP_ATT_PITCHUP", Defined[THGROUP_ATT_PITCHUP]);
-	thrusters = GetThrusters(THGROUP_ATT_PITCHUP);
-	for (UINT i = 0; i < thrusters.size(); i++) {
-		UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
-		if (idx != (UINT)-1) {
-			indexes.push_back(idx);
+	if (Defined[THGROUP_HOVER]) {
+		oapiWriteItem_bool(fh, "THGROUP_HOVER", Defined[THGROUP_HOVER]);
+		thrusters = GetThrusters(THGROUP_HOVER);
+		for (UINT i = 0; i < thrusters.size(); i++) {
+			UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
+			if (idx != (UINT)-1) {
+				indexes.push_back(idx);
+			}
 		}
-	}
-	thr_s = VB1->WriteVectorUINT(indexes);
-	sprintf(cbuf, "%s", thr_s.c_str());
-	oapiWriteItem_string(fh, "THGROUP_ATT_PITCHUP_THRUSTERS", cbuf);
-	indexes.clear();
-	thrusters.clear();
-	thr_s.clear();
+		thr_s = VB1->WriteVectorUINT(indexes);
+		sprintf(cbuf, "%s", thr_s.c_str());
+		oapiWriteItem_string(fh, "THGROUP_HOVER_THRUSTERS", cbuf);
+		indexes.clear();
+		thrusters.clear();
+		thr_s.clear();
 
-	oapiWriteItem_bool(fh, "THGROUP_ATT_PITCHDOWN", Defined[THGROUP_ATT_PITCHDOWN]);
-	thrusters = GetThrusters(THGROUP_ATT_PITCHDOWN);
-	for (UINT i = 0; i < thrusters.size(); i++) {
-		UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
-		if (idx != (UINT)-1) {
-			indexes.push_back(idx);
+	}
+	
+	if (Defined[THGROUP_ATT_PITCHUP]) {
+		oapiWriteItem_bool(fh, "THGROUP_ATT_PITCHUP", Defined[THGROUP_ATT_PITCHUP]);
+		thrusters = GetThrusters(THGROUP_ATT_PITCHUP);
+		for (UINT i = 0; i < thrusters.size(); i++) {
+			UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
+			if (idx != (UINT)-1) {
+				indexes.push_back(idx);
+			}
 		}
+		thr_s = VB1->WriteVectorUINT(indexes);
+		sprintf(cbuf, "%s", thr_s.c_str());
+		oapiWriteItem_string(fh, "THGROUP_ATT_PITCHUP_THRUSTERS", cbuf);
+		indexes.clear();
+		thrusters.clear();
+		thr_s.clear();
 	}
-	thr_s = VB1->WriteVectorUINT(indexes);
-	sprintf(cbuf, "%s", thr_s.c_str());
-	oapiWriteItem_string(fh, "THGROUP_ATT_PITCHDOWN_THRUSTERS", cbuf);
-	indexes.clear();
-	thrusters.clear();
-	thr_s.clear();
 
-	oapiWriteItem_bool(fh, "THGROUP_ATT_YAWLEFT", Defined[THGROUP_ATT_YAWLEFT]);
-	thrusters = GetThrusters(THGROUP_ATT_YAWLEFT);
-	for (UINT i = 0; i < thrusters.size(); i++) {
-		UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
-		if (idx != (UINT)-1) {
-			indexes.push_back(idx);
+	if (Defined[THGROUP_ATT_PITCHDOWN]) {
+		oapiWriteItem_bool(fh, "THGROUP_ATT_PITCHDOWN", Defined[THGROUP_ATT_PITCHDOWN]);
+		thrusters = GetThrusters(THGROUP_ATT_PITCHDOWN);
+		for (UINT i = 0; i < thrusters.size(); i++) {
+			UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
+			if (idx != (UINT)-1) {
+				indexes.push_back(idx);
+			}
 		}
+		thr_s = VB1->WriteVectorUINT(indexes);
+		sprintf(cbuf, "%s", thr_s.c_str());
+		oapiWriteItem_string(fh, "THGROUP_ATT_PITCHDOWN_THRUSTERS", cbuf);
+		indexes.clear();
+		thrusters.clear();
+		thr_s.clear();
 	}
-	thr_s = VB1->WriteVectorUINT(indexes);
-	sprintf(cbuf, "%s", thr_s.c_str());
-	oapiWriteItem_string(fh, "THGROUP_ATT_YAWLEFT_THRUSTERS", cbuf);
-	indexes.clear();
-	thrusters.clear();
-	thr_s.clear();
-
-	oapiWriteItem_bool(fh, "THGROUP_ATT_YAWRIGHT", Defined[THGROUP_ATT_YAWRIGHT]);
-	thrusters = GetThrusters(THGROUP_ATT_YAWRIGHT);
-	for (UINT i = 0; i < thrusters.size(); i++) {
-		UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
-		if (idx != (UINT)-1) {
-			indexes.push_back(idx);
+	
+	if (Defined[THGROUP_ATT_YAWLEFT]) {
+		oapiWriteItem_bool(fh, "THGROUP_ATT_YAWLEFT", Defined[THGROUP_ATT_YAWLEFT]);
+		thrusters = GetThrusters(THGROUP_ATT_YAWLEFT);
+		for (UINT i = 0; i < thrusters.size(); i++) {
+			UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
+			if (idx != (UINT)-1) {
+				indexes.push_back(idx);
+			}
 		}
+		thr_s = VB1->WriteVectorUINT(indexes);
+		sprintf(cbuf, "%s", thr_s.c_str());
+		oapiWriteItem_string(fh, "THGROUP_ATT_YAWLEFT_THRUSTERS", cbuf);
+		indexes.clear();
+		thrusters.clear();
+		thr_s.clear();
 	}
-	thr_s = VB1->WriteVectorUINT(indexes);
-	sprintf(cbuf, "%s", thr_s.c_str());
-	oapiWriteItem_string(fh, "THGROUP_ATT_YAWRIGHT_THRUSTERS", cbuf);
-	indexes.clear();
-	thrusters.clear();
-	thr_s.clear();
-
-	oapiWriteItem_bool(fh, "THGROUP_ATT_BANKLEFT", Defined[THGROUP_ATT_BANKLEFT]);
-	thrusters = GetThrusters(THGROUP_ATT_BANKLEFT);
-	for (UINT i = 0; i < thrusters.size(); i++) {
-		UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
-		if (idx != (UINT)-1) {
-			indexes.push_back(idx);
+	
+	if (Defined[THGROUP_ATT_YAWRIGHT]) {
+		oapiWriteItem_bool(fh, "THGROUP_ATT_YAWRIGHT", Defined[THGROUP_ATT_YAWRIGHT]);
+		thrusters = GetThrusters(THGROUP_ATT_YAWRIGHT);
+		for (UINT i = 0; i < thrusters.size(); i++) {
+			UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
+			if (idx != (UINT)-1) {
+				indexes.push_back(idx);
+			}
 		}
+		thr_s = VB1->WriteVectorUINT(indexes);
+		sprintf(cbuf, "%s", thr_s.c_str());
+		oapiWriteItem_string(fh, "THGROUP_ATT_YAWRIGHT_THRUSTERS", cbuf);
+		indexes.clear();
+		thrusters.clear();
+		thr_s.clear();
 	}
-	thr_s = VB1->WriteVectorUINT(indexes);
-	sprintf(cbuf, "%s", thr_s.c_str());
-	oapiWriteItem_string(fh, "THGROUP_ATT_BANKLEFT_THRUSTERS", cbuf);
-	indexes.clear();
-	thrusters.clear();
-	thr_s.clear();
-
-	oapiWriteItem_bool(fh, "THGROUP_ATT_BANKRIGHT", Defined[THGROUP_ATT_BANKRIGHT]);
-	thrusters = GetThrusters(THGROUP_ATT_BANKRIGHT);
-	for (UINT i = 0; i < thrusters.size(); i++) {
-		UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
-		if (idx != (UINT)-1) {
-			indexes.push_back(idx);
+	
+	if (Defined[THGROUP_ATT_BANKLEFT]) {
+		oapiWriteItem_bool(fh, "THGROUP_ATT_BANKLEFT", Defined[THGROUP_ATT_BANKLEFT]);
+		thrusters = GetThrusters(THGROUP_ATT_BANKLEFT);
+		for (UINT i = 0; i < thrusters.size(); i++) {
+			UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
+			if (idx != (UINT)-1) {
+				indexes.push_back(idx);
+			}
 		}
+		thr_s = VB1->WriteVectorUINT(indexes);
+		sprintf(cbuf, "%s", thr_s.c_str());
+		oapiWriteItem_string(fh, "THGROUP_ATT_BANKLEFT_THRUSTERS", cbuf);
+		indexes.clear();
+		thrusters.clear();
+		thr_s.clear();
 	}
-	thr_s = VB1->WriteVectorUINT(indexes);
-	sprintf(cbuf, "%s", thr_s.c_str());
-	oapiWriteItem_string(fh, "THGROUP_ATT_BANKRIGHT_THRUSTERS", cbuf);
-	indexes.clear();
-	thrusters.clear();
-	thr_s.clear();
-
-	oapiWriteItem_bool(fh, "THGROUP_ATT_RIGHT", Defined[THGROUP_ATT_RIGHT]);
-	thrusters = GetThrusters(THGROUP_ATT_RIGHT);
-	for (UINT i = 0; i < thrusters.size(); i++) {
-		UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
-		if (idx != (UINT)-1) {
-			indexes.push_back(idx);
+	
+	if (Defined[THGROUP_ATT_BANKRIGHT]) {
+		oapiWriteItem_bool(fh, "THGROUP_ATT_BANKRIGHT", Defined[THGROUP_ATT_BANKRIGHT]);
+		thrusters = GetThrusters(THGROUP_ATT_BANKRIGHT);
+		for (UINT i = 0; i < thrusters.size(); i++) {
+			UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
+			if (idx != (UINT)-1) {
+				indexes.push_back(idx);
+			}
 		}
+		thr_s = VB1->WriteVectorUINT(indexes);
+		sprintf(cbuf, "%s", thr_s.c_str());
+		oapiWriteItem_string(fh, "THGROUP_ATT_BANKRIGHT_THRUSTERS", cbuf);
+		indexes.clear();
+		thrusters.clear();
+		thr_s.clear();
 	}
-	thr_s = VB1->WriteVectorUINT(indexes);
-	sprintf(cbuf, "%s", thr_s.c_str());
-	oapiWriteItem_string(fh, "THGROUP_ATT_RIGHT_THRUSTERS", cbuf);
-	indexes.clear();
-	thrusters.clear();
-	thr_s.clear();
-
-	oapiWriteItem_bool(fh, "THGROUP_ATT_LEFT", Defined[THGROUP_ATT_LEFT]);
-	thrusters = GetThrusters(THGROUP_ATT_LEFT);
-	for (UINT i = 0; i < thrusters.size(); i++) {
-		UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
-		if (idx != (UINT)-1) {
-			indexes.push_back(idx);
+	
+	if (Defined[THGROUP_ATT_RIGHT]) {
+		oapiWriteItem_bool(fh, "THGROUP_ATT_RIGHT", Defined[THGROUP_ATT_RIGHT]);
+		thrusters = GetThrusters(THGROUP_ATT_RIGHT);
+		for (UINT i = 0; i < thrusters.size(); i++) {
+			UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
+			if (idx != (UINT)-1) {
+				indexes.push_back(idx);
+			}
 		}
+		thr_s = VB1->WriteVectorUINT(indexes);
+		sprintf(cbuf, "%s", thr_s.c_str());
+		oapiWriteItem_string(fh, "THGROUP_ATT_RIGHT_THRUSTERS", cbuf);
+		indexes.clear();
+		thrusters.clear();
+		thr_s.clear();
 	}
-	thr_s = VB1->WriteVectorUINT(indexes);
-	sprintf(cbuf, "%s", thr_s.c_str());
-	oapiWriteItem_string(fh, "THGROUP_ATT_LEFT_THRUSTERS", cbuf);
-	indexes.clear();
-	thrusters.clear();
-	thr_s.clear();
-
-	oapiWriteItem_bool(fh, "THGROUP_ATT_UP", Defined[THGROUP_ATT_UP]);
-	thrusters = GetThrusters(THGROUP_ATT_UP);
-	for (UINT i = 0; i < thrusters.size(); i++) {
-		UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
-		if (idx != (UINT)-1) {
-			indexes.push_back(idx);
+	
+	if (Defined[THGROUP_ATT_LEFT]) {
+		oapiWriteItem_bool(fh, "THGROUP_ATT_LEFT", Defined[THGROUP_ATT_LEFT]);
+		thrusters = GetThrusters(THGROUP_ATT_LEFT);
+		for (UINT i = 0; i < thrusters.size(); i++) {
+			UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
+			if (idx != (UINT)-1) {
+				indexes.push_back(idx);
+			}
 		}
+		thr_s = VB1->WriteVectorUINT(indexes);
+		sprintf(cbuf, "%s", thr_s.c_str());
+		oapiWriteItem_string(fh, "THGROUP_ATT_LEFT_THRUSTERS", cbuf);
+		indexes.clear();
+		thrusters.clear();
+		thr_s.clear();
 	}
-	thr_s = VB1->WriteVectorUINT(indexes);
-	sprintf(cbuf, "%s", thr_s.c_str());
-	oapiWriteItem_string(fh, "THGROUP_ATT_UP_THRUSTERS", cbuf);
-	indexes.clear();
-	thrusters.clear();
-	thr_s.clear();
-
-	oapiWriteItem_bool(fh, "THGROUP_ATT_DOWN", Defined[THGROUP_ATT_DOWN]);
-	thrusters = GetThrusters(THGROUP_ATT_DOWN);
-	for (UINT i = 0; i < thrusters.size(); i++) {
-		UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
-		if (idx != (UINT)-1) {
-			indexes.push_back(idx);
+	
+	if (Defined[THGROUP_ATT_UP]) {
+		oapiWriteItem_bool(fh, "THGROUP_ATT_UP", Defined[THGROUP_ATT_UP]);
+		thrusters = GetThrusters(THGROUP_ATT_UP);
+		for (UINT i = 0; i < thrusters.size(); i++) {
+			UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
+			if (idx != (UINT)-1) {
+				indexes.push_back(idx);
+			}
 		}
+		thr_s = VB1->WriteVectorUINT(indexes);
+		sprintf(cbuf, "%s", thr_s.c_str());
+		oapiWriteItem_string(fh, "THGROUP_ATT_UP_THRUSTERS", cbuf);
+		indexes.clear();
+		thrusters.clear();
+		thr_s.clear();
 	}
-	thr_s = VB1->WriteVectorUINT(indexes);
-	sprintf(cbuf, "%s", thr_s.c_str());
-	oapiWriteItem_string(fh, "THGROUP_ATT_DOWN_THRUSTERS", cbuf);
-	indexes.clear();
-	thrusters.clear();
-	thr_s.clear();
-
-	oapiWriteItem_bool(fh, "THGROUP_ATT_FORWARD", Defined[THGROUP_ATT_FORWARD]);
-	thrusters = GetThrusters(THGROUP_ATT_FORWARD);
-	for (UINT i = 0; i < thrusters.size(); i++) {
-		UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
-		if (idx != (UINT)-1) {
-			indexes.push_back(idx);
+	
+	if (Defined[THGROUP_ATT_DOWN]) {
+		oapiWriteItem_bool(fh, "THGROUP_ATT_DOWN", Defined[THGROUP_ATT_DOWN]);
+		thrusters = GetThrusters(THGROUP_ATT_DOWN);
+		for (UINT i = 0; i < thrusters.size(); i++) {
+			UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
+			if (idx != (UINT)-1) {
+				indexes.push_back(idx);
+			}
 		}
+		thr_s = VB1->WriteVectorUINT(indexes);
+		sprintf(cbuf, "%s", thr_s.c_str());
+		oapiWriteItem_string(fh, "THGROUP_ATT_DOWN_THRUSTERS", cbuf);
+		indexes.clear();
+		thrusters.clear();
+		thr_s.clear();
 	}
-	thr_s = VB1->WriteVectorUINT(indexes);
-	sprintf(cbuf, "%s", thr_s.c_str());
-	oapiWriteItem_string(fh, "THGROUP_ATT_FORWARD_THRUSTERS", cbuf);
-	indexes.clear();
-	thrusters.clear();
-	thr_s.clear();
-
-	oapiWriteItem_bool(fh, "THGROUP_ATT_BACK", Defined[THGROUP_ATT_BACK]);
-	thrusters = GetThrusters(THGROUP_ATT_BACK);
-	for (UINT i = 0; i < thrusters.size(); i++) {
-		UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
-		if (idx != (UINT)-1) {
-			indexes.push_back(idx);
+	
+	if (Defined[THGROUP_ATT_FORWARD]) {
+		oapiWriteItem_bool(fh, "THGROUP_ATT_FORWARD", Defined[THGROUP_ATT_FORWARD]);
+		thrusters = GetThrusters(THGROUP_ATT_FORWARD);
+		for (UINT i = 0; i < thrusters.size(); i++) {
+			UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
+			if (idx != (UINT)-1) {
+				indexes.push_back(idx);
+			}
 		}
+		thr_s = VB1->WriteVectorUINT(indexes);
+		sprintf(cbuf, "%s", thr_s.c_str());
+		oapiWriteItem_string(fh, "THGROUP_ATT_FORWARD_THRUSTERS", cbuf);
+		indexes.clear();
+		thrusters.clear();
+		thr_s.clear();
 	}
-	thr_s = VB1->WriteVectorUINT(indexes);
-	sprintf(cbuf, "%s", thr_s.c_str());
-	oapiWriteItem_string(fh, "THGROUP_ATT_BACK_THRUSTERS", cbuf);
-	indexes.clear();
-	thrusters.clear();
-	thr_s.clear();
-
+	
+	if (Defined[THGROUP_ATT_BACK]) {
+		oapiWriteItem_bool(fh, "THGROUP_ATT_BACK", Defined[THGROUP_ATT_BACK]);
+		thrusters = GetThrusters(THGROUP_ATT_BACK);
+		for (UINT i = 0; i < thrusters.size(); i++) {
+			UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
+			if (idx != (UINT)-1) {
+				indexes.push_back(idx);
+			}
+		}
+		thr_s = VB1->WriteVectorUINT(indexes);
+		sprintf(cbuf, "%s", thr_s.c_str());
+		oapiWriteItem_string(fh, "THGROUP_ATT_BACK_THRUSTERS", cbuf);
+		indexes.clear();
+		thrusters.clear();
+		thr_s.clear();
+	}
+	
 
 	return;
 }

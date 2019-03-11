@@ -458,8 +458,9 @@ void VCManager::WriteCfg(FILEHANDLE fh) {
 		}
 		oapiWriteLine(fh, " ");
 	}
-	oapiWriteItem_bool(fh, "VC_HUD", IsHUDEnabled());
-	if (IsHUDEnabled()) {
+	bool wHud = IsHUDEnabled();
+	if (wHud) {
+		oapiWriteItem_bool(fh, "VC_HUD", wHud);
 		DWORD mesh, group;
 		VECTOR3 hudcnt;
 		double size;

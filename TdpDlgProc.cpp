@@ -122,7 +122,7 @@ void DialogControl::UpdateTdpDialog(HWND hWnd) {
 	SendDlgItemMessage(hWnd, IDC_LIST_TDP, LB_RESETCONTENT, 0, 0);
 	for (UINT i = 0; i < curset.size(); i++) {
 		char cbuf[256] = { '\0' };
-		sprintf(cbuf, "Point:%i Pos:%.2f %.2f %.2f Damp:%.1e Stiff:%.1e Mu:%.1f Mu lng:%.1f", i,curset[i].pos.x, curset[i].pos.y, curset[i].pos.z, curset[i].damping, curset[i].stiffness, curset[i].mu, curset[i].mu_lng);
+		sprintf(cbuf, "Point:%i Pos:%.2f %.2f %.2f Stiff:%.1e Damp:%.1e Mu:%.1f Mu lng:%.1f", i,curset[i].pos.x, curset[i].pos.y, curset[i].pos.z, curset[i].stiffness, curset[i].damping, curset[i].mu, curset[i].mu_lng);
 		SendDlgItemMessage(hWnd, IDC_LIST_TDP, LB_INSERTSTRING, i, (LPARAM)cbuf);
 		SendDlgItemMessage(hWnd, IDC_LIST_TDP, LB_SETITEMDATA, i, (LPARAM)i);
 	}

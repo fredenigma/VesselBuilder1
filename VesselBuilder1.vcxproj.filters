@@ -70,6 +70,9 @@
     <ClInclude Include="EventManager.h">
       <Filter>Vessel\Managers</Filter>
     </ClInclude>
+    <ClInclude Include="MET.h">
+      <Filter>Vessel\Managers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\Orbitersdk\lib\orbiter.lib">
@@ -230,6 +233,9 @@
       <Filter>Dialog</Filter>
     </ClCompile>
     <ClCompile Include="EventManager.cpp">
+      <Filter>Vessel\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="MET.cpp">
       <Filter>Vessel\Managers</Filter>
     </ClCompile>
   </ItemGroup>

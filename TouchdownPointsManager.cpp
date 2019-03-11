@@ -30,10 +30,10 @@ void TouchdownPointsManager::ParseCfgFile(FILEHANDLE fh) {
 		sprintf(cbuf, "TDP_%i_%i_POS", set, point_counter);
 		while (oapiReadItem_vec(fh, cbuf, pos)) {
 			double damping, stiffness, mu, mu_lng;
-			sprintf(cbuf, "TDP_%i_%i_DAMPING", set, point_counter);
-			oapiReadItem_float(fh, cbuf, damping);
 			sprintf(cbuf, "TDP_%i_%i_STIFFNESS", set, point_counter);
 			oapiReadItem_float(fh, cbuf, stiffness);
+			sprintf(cbuf, "TDP_%i_%i_DAMPING", set, point_counter);
+			oapiReadItem_float(fh, cbuf, damping);
 			sprintf(cbuf, "TDP_%i_%i_MU", set, point_counter);
 			oapiReadItem_float(fh, cbuf, mu);
 			sprintf(cbuf, "TDP_%i_%i_MULNG", set, point_counter);
@@ -88,10 +88,10 @@ void TouchdownPointsManager::WriteCfg(FILEHANDLE fh) {
 			char cbuf[256] = { '\0' };
 			sprintf(cbuf, "TDP_%i_%i_POS", set, i);
 			oapiWriteItem_vec(fh, cbuf, GetPointPos(set, i));
-			sprintf(cbuf, "TDP_%i_%i_DAMPING",set,i);
-			oapiWriteItem_float(fh, cbuf, GetPointDamping(set, i));
 			sprintf(cbuf, "TDP_%i_%i_STIFFNESS",set,i);
 			oapiWriteItem_float(fh, cbuf, GetPointStiffnes(set, i));
+			sprintf(cbuf, "TDP_%i_%i_DAMPING", set, i);
+			oapiWriteItem_float(fh, cbuf, GetPointDamping(set, i));
 			sprintf(cbuf, "TDP_%i_%i_MU",set,i);
 			oapiWriteItem_float(fh, cbuf, GetPointMu(set, i));
 			sprintf(cbuf, "TDP_%i_%i_MULNG",set,i);

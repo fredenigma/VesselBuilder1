@@ -3,16 +3,17 @@
 
 Logger::Logger(VESSEL *_v) {
 	v = _v;
-	char nbuf[256] = { '\0' };
+	/*char nbuf[256] = { '\0' };
 	sprintf(nbuf, "%s", v->GetName());
 	string nn(nbuf);
-	filename = "\\Vessels\\VesselBuilder1\\Logs\\" + nn + ".log";
+	filename = "\\Vessels\\VesselBuilder1\\Logs\\" + nn + ".log";*/
+	filename = "VesselBuilder1.log";
 }
 Logger::~Logger(){
 	v = NULL;
 }
 void Logger::Log(std::string str) {
-	FILEHANDLE fh = oapiOpenFile(filename.c_str(), FILE_APP, CONFIG);
+	FILEHANDLE fh = oapiOpenFile(filename.c_str(), FILE_APP, ROOT);
 	char line[MAX_PATH] = { '\0' };
 	sprintf(line, str.c_str());
 	char buf2[MAX_PATH] = { '\0' };
@@ -22,7 +23,7 @@ void Logger::Log(std::string str) {
 	return;
 }
 void Logger::Log(const char* str, ...) {
-	FILEHANDLE fh = oapiOpenFile(filename.c_str(), FILE_APP, CONFIG);
+	FILEHANDLE fh = oapiOpenFile(filename.c_str(), FILE_APP, ROOT);
 	char buf[MAX_PATH] = { '\0' };
 	va_list va;
 	va_start(va, str);
@@ -35,9 +36,9 @@ void Logger::Log(const char* str, ...) {
 	return;
 }
 void Logger::InitLog() {
-	FILEHANDLE fh = oapiOpenFile(filename.c_str(), FILE_OUT, CONFIG);
+	FILEHANDLE fh = oapiOpenFile(filename.c_str(), FILE_OUT, ROOT);
 	char cbuf[256] = { '\0' };
-	sprintf(cbuf, "LOGFILE for VESSEL: %s", v->GetName());
+	sprintf(cbuf, "LOGFILE");
 	oapiWriteLine(fh, cbuf);
 	oapiWriteLine(fh, "******************************************************************************");
 	char line[256] = { '\0' };
@@ -46,7 +47,7 @@ void Logger::InitLog() {
 	oapiCloseFile(fh, FILE_OUT);
 }
 void Logger::CloseLog(){
-	FILEHANDLE fh = oapiOpenFile(filename.c_str(), FILE_APP, CONFIG);
+	FILEHANDLE fh = oapiOpenFile(filename.c_str(), FILE_APP, ROOT);
 	oapiWriteLine(fh, "Closing....");
 	oapiWriteLine(fh, "******************************************************************************");
 	oapiCloseFile(fh, FILE_APP);

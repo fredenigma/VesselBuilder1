@@ -11,7 +11,7 @@ public:
 	virtual TYPE Type() const { return NULL_EVENT; }
 	
 	struct TRIGGER {
-		enum TRIGGERTYPE { NULL_TRIG, KEYPRESS, ALTITUDE, FUELTANK_LEVEL, VELOCITY, TIME, DYNPRESSURE }Type;
+		enum TRIGGERTYPE { NULL_TRIG, KEYPRESS, ALTITUDE, MAINFUELTANK_LEVEL, VELOCITY, TIME, DYNPRESSURE }Type;
 		enum REPEAT_MODE{ONCE,ALWAYS}repeat_mode;
 		DWORD Key;
 		struct KEYMOD { bool Shift; bool Ctrl; bool Alt; }KeyMods;
@@ -33,7 +33,7 @@ public:
 		}
 	}Trigger;
 	void SetTrigger(TRIGGER _trig);
-	TRIGGER GetTrigger();
+	//TRIGGER GetTrigger();
 	TRIGGER::TRIGGERTYPE GetTriggerType();
 	virtual void EventPreStep(double simt, double simdt, double mjd);
 	virtual void ConsumeBufferedKey(DWORD key, bool down, char *kstate);
@@ -70,8 +70,48 @@ public:
 	VECTOR3 GetOfs();
 	VECTOR3 GetVel();
 	VECTOR3 GetRotVel();
-
 };
+
+class Anim_Trigger :public Event {
+public:
+	Anim_Trigger(VesselBuilder1* VB1, UINT anim_idx, bool forward=true);
+	~Anim_Trigger();
+	TYPE Type() const { return ANIMATION_TRIGGER; }
+	UINT anim_idx;
+	bool forward;
+	void ConsumeEvent();
+	void SetAnimIdx(UINT _anim_idx);
+	UINT GetAnimIdx();
+	void SetForward(bool set);
+	bool GetForward();
+};
+
+class Thruster_Fire :public Event {
+public:
+	Thruster_Fire(VesselBuilder1* VB1, THRUSTER_HANDLE th, double level = 1);
+	~Thruster_Fire();
+	THRUSTER_HANDLE th;
+	double level;
+	void ConsumeEvent();
+	void SetThrusterTH(THRUSTER_HANDLE _th);
+	THRUSTER_HANDLE GetThrusterTH();
+	void SetLevel(double _Level);
+	double GetLevel();
+};
+
+class ThrusterGroup_Fire :public Event {
+public:
+	ThrusterGroup_Fire(VesselBuilder1* VB1, THGROUP_TYPE thgroup_type, double level = 1);
+	~ThrusterGroup_Fire();
+	THGROUP_TYPE thgroup;
+	double level;
+	void ConsumeEvent();
+	void SetThGroup(THGROUP_TYPE thgrp_type);
+	THGROUP_TYPE GetThGroup();
+	void SetLevel(double _level);
+	double GetLevel();
+};
+
 
 class EventManager {
 public:
@@ -81,6 +121,9 @@ public:
 	vector<Event*>Events;
 	Event* CreateGeneralVBEvent(string name,Event::TYPE type,Event::TRIGGER _Trigger);
 	Event* CreateChildSpawnEvent(string name, Event::TRIGGER _Trigger, string v_name, string v_class, VECTOR3 ofs = _V(0, 0, 0), VECTOR3 vel = _V(0, 0, 0), VECTOR3 rot_vel = _V(0, 0, 0), int mesh_to_del = -1);
+	Event* CreateAnimTriggerEvent(string name, Event::TRIGGER _Trigger, UINT _anim_idx, bool _forward);
+	Event* CreateThrusterFireEvent(string name, Event::TRIGGER _Trigger, THRUSTER_HANDLE th, double level = 1);
+	Event* CreateThrusterGroupLevelEvent(string name, Event::TRIGGER _Trigger, THGROUP_TYPE thgroup_type, double level = 1);
 	void DeleteEvent(Event* ev);
 	void PreStep(double simt, double simdt, double mjd);
 	void ConsumeBufferedKey(DWORD key, bool down, char *kstate);

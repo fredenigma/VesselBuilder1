@@ -147,6 +147,7 @@
     <ClInclude Include="LightsManager.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="MeshManager.h" />
+    <ClInclude Include="MET.h" />
     <ClInclude Include="ParticleManager.h" />
     <ClInclude Include="PropellantManager.h" />
     <ClInclude Include="resource.h" />
@@ -183,6 +184,7 @@
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="MeshDialogProc.cpp" />
     <ClCompile Include="MeshManager.cpp" />
+    <ClCompile Include="MET.cpp" />
     <ClCompile Include="ParticleManager.cpp" />
     <ClCompile Include="ParticlesDlgProc.cpp" />
     <ClCompile Include="PropellantManager.cpp" />
