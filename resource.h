@@ -569,8 +569,11 @@
 #define IDC_BUTTON_VDPASTEV             1503
 #define IDC_BUTTON_VBDEFUNDEF           1504
 #define IDC_EDIT_VDNAME                 1505
-#define IDC_BUTTON2                     1506
 #define IDC_BUTTON_VDNAMESET            1506
+#define IDC_EDIT_ATTIDCHECK             1507
+#define IDC_CHECK_ATTIDCHECKENABLE      1508
+#define IDC_BUTTON_ATTIDCHECKSET        1509
+#define IDC_STATIC_VBVERSION            1510
 
 // Next default values for new objects
 // 
@@ -578,7 +581,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1507
+#define _APS_NEXT_CONTROL_VALUE         1511
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

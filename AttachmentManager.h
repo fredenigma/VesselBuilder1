@@ -15,6 +15,8 @@ struct ATT_DEF {
 	string id;
 	bool loose;
 	bool created;
+	bool id_check;
+	string id_check_string;
 	double range;
 	ATT_DEF() {
 		pos = _V(0, 0, 0);
@@ -32,6 +34,8 @@ struct ATT_DEF {
 		id.clear();
 		created = false;
 		range = 10;
+		id_check = false;
+		id_check_string.clear();
 	}
 };
 
@@ -44,7 +48,7 @@ public:
 	void CreateAttDef();
 	void AddAttDefNoCreate();
 	void CreateAttDef(ATT_DEF att_d);
-	void CreateAttDef(bool toparent, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot, string id, double range, bool loose);
+	void CreateAttDef(bool toparent, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot, string id, double range, bool loose, bool id_check, string id_check_string);
 	void DeleteAttDef(def_idx d_idx);
 	void ModifyAttDef(def_idx d_idx, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot);
 	UINT GetAttCount();
@@ -66,5 +70,9 @@ public:
 	VECTOR3* GetAttDefDirPtr(def_idx d_idx);
 	VECTOR3* GetAttDefAntiDirPtr(def_idx d_idx);
 	VECTOR3* GetAttDefAntiRotPtr(def_idx d_idx);
+	void SetIdCheck(def_idx d_idx, bool set);
+	bool GetIdCheck(def_idx d_idx);
+	void SetIdCheckString(def_idx d_idx, string _id_check_string);
+	string GetIdCheckString(def_idx d_idx);
 	void Clear();
 };

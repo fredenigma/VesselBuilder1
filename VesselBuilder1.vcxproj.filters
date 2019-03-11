@@ -67,6 +67,9 @@
     <ClInclude Include="VariableDragManager.h">
       <Filter>Vessel\Managers</Filter>
     </ClInclude>
+    <ClInclude Include="EventManager.h">
+      <Filter>Vessel\Managers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\Orbitersdk\lib\orbiter.lib">
@@ -225,6 +228,9 @@
     </ClCompile>
     <ClCompile Include="VariableDragDlgProc.cpp">
       <Filter>Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="EventManager.cpp">
+      <Filter>Vessel\Managers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

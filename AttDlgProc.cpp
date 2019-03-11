@@ -9,6 +9,7 @@ void DialogControl::UpdateAttDialog(HWND hWnd) {
 	UINT idx = CurrentSelection.idx;
 	if (idx >= AttMng->GetAttCount()) { return; }
 	if (AttMng->AttIsCreated(idx)) {
+		bool hasidcheck = AttMng->GetIdCheck(idx);
 		EnableWindow(GetDlgItem(hWnd, IDC_CHECK_ATTHIGHLIGHT), true);
 		EnableWindow(GetDlgItem(hWnd, IDC_CHECK_ATTPARENT), false);
 		SendDlgItemMessage(hWnd, IDC_EDIT_ATTID, EM_SETREADONLY, true, 0);
@@ -22,6 +23,7 @@ void DialogControl::UpdateAttDialog(HWND hWnd) {
 		SendDlgItemMessage(hWnd, IDC_EDIT_ATTROTY, EM_SETREADONLY, false, 0);
 		SendDlgItemMessage(hWnd, IDC_EDIT_ATTROTZ, EM_SETREADONLY, false, 0);
 		SendDlgItemMessage(hWnd, IDC_EDIT_ATTRANGE, EM_SETREADONLY, false, 0);
+		SendDlgItemMessage(hWnd, IDC_EDIT_ATTIDCHECK, EM_SETREADONLY, hasidcheck?false:true, 0);
 		EnableWindow(GetDlgItem(hWnd, IDC_SPIN_ATTPITCH), true);
 		EnableWindow(GetDlgItem(hWnd, IDC_SPIN_ATTROLL), true);
 		EnableWindow(GetDlgItem(hWnd, IDC_SPIN_ATTYAW), true);
@@ -34,6 +36,18 @@ void DialogControl::UpdateAttDialog(HWND hWnd) {
 		EnableWindow(GetDlgItem(hWnd, IDC_BTN_ATTPASTEV), true);
 		EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_CRDELATTDEF), true);
 		EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_ATTRANGESET), true);
+		EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_ATTIDCHECKSET), hasidcheck?true:false);
+		EnableWindow(GetDlgItem(hWnd, IDC_CHECK_ATTIDCHECKENABLE), true);
+		if (hasidcheck) {
+			char cbuf[256] = { '\0' };
+			sprintf(cbuf, "%s", AttMng->GetIdCheckString(idx).c_str());
+			SetDlgItemText(hWnd, IDC_EDIT_ATTIDCHECK, cbuf);
+			SendDlgItemMessage(hWnd, IDC_CHECK_ATTIDCHECKENABLE, BM_SETCHECK, BST_CHECKED, 0);
+		}
+		else {
+			SetDlgItemText(hWnd, IDC_EDIT_ATTIDCHECK, "");
+			SendDlgItemMessage(hWnd, IDC_CHECK_ATTIDCHECKENABLE, BM_SETCHECK, BST_UNCHECKED, 0);
+		}
 		SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_CRDELATTDEF), (LPCSTR)TEXT("DELETE THIS ATTACHMENT"));
 
 	}
@@ -51,6 +65,7 @@ void DialogControl::UpdateAttDialog(HWND hWnd) {
 		SendDlgItemMessage(hWnd, IDC_EDIT_ATTROTY, EM_SETREADONLY, true, 0);
 		SendDlgItemMessage(hWnd, IDC_EDIT_ATTROTZ, EM_SETREADONLY, true, 0);
 		SendDlgItemMessage(hWnd, IDC_EDIT_ATTRANGE, EM_SETREADONLY, true, 0);
+		SendDlgItemMessage(hWnd, IDC_EDIT_ATTIDCHECK, EM_SETREADONLY, true, 0);
 		EnableWindow(GetDlgItem(hWnd, IDC_SPIN_ATTPITCH), false);
 		EnableWindow(GetDlgItem(hWnd, IDC_SPIN_ATTROLL), false);
 		EnableWindow(GetDlgItem(hWnd, IDC_SPIN_ATTYAW), false);
@@ -63,8 +78,10 @@ void DialogControl::UpdateAttDialog(HWND hWnd) {
 		EnableWindow(GetDlgItem(hWnd, IDC_BTN_ATTPASTEV), false);
 		EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_CRDELATTDEF), true);
 		EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_ATTRANGESET), false);
+		EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_ATTIDCHECKSET), false);
+		EnableWindow(GetDlgItem(hWnd, IDC_CHECK_ATTIDCHECKENABLE), false);
 		SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_CRDELATTDEF), (LPCSTR)TEXT("CREATE THE ATTACHMENT"));
-
+		SendDlgItemMessage(hWnd, IDC_CHECK_ATTIDCHECKENABLE, BM_SETCHECK, BST_UNCHECKED, 0);
 	}
 	
 	SetDlgItemText(hWnd, IDC_EDIT_ATTID, AttMng->GetAttDefId(idx).c_str());
@@ -201,7 +218,24 @@ BOOL DialogControl::AttDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 			AttMng->SetAttDefRange(idx, newrange);
 			break;
 		}
-
+		case IDC_BUTTON_ATTIDCHECKSET:
+		{
+			char cbuf[256] = { '\0' };
+			GetDlgItemText(hWnd, IDC_EDIT_ATTIDCHECK, cbuf, 256);
+			string newidcheck(cbuf);
+			AttMng->SetIdCheckString(idx, newidcheck);
+			break;
+		}
+		case IDC_CHECK_ATTIDCHECKENABLE:
+		{
+			if (HIWORD(wParam) == BN_CLICKED) {
+				bool checked = IsCheckBoxChecked(hWnd, IDC_CHECK_ATTIDCHECKENABLE);
+				AttMng->SetIdCheck(idx, checked);
+				SendDlgItemMessage(hWnd, IDC_EDIT_ATTIDCHECK, EM_SETREADONLY, checked ? false : true, 0);
+				EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_ATTIDCHECKSET), checked ? true : false);
+			}
+			break;
+		}
 		}
 		break;
 	}

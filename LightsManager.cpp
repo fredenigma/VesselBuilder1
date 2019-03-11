@@ -200,7 +200,7 @@ UINT LightsManager::AddLightDef(LightEmitter::TYPE type) {
 	COLOUR4 col_d = { 0.9,0.8,1,0 };
 	COLOUR4 col_s = { 0.9,0.8,1,0 };
 	COLOUR4 col_a = { 0,0,0,0 };
-	return AddLightDef(type, name, _V(0, 0, 0), LightEmitter::VISIBILITY::VIS_EXTERNAL,_V(0,0,1), _V(1e-3, 0, 2e-3), 200,90*RAD,45*RAD, col_d, col_s, col_a);
+	return AddLightDef(type, name, _V(0, 0, 0), LightEmitter::VISIBILITY::VIS_EXTERNAL,_V(0,0,1), _V(1e-3, 0, 2e-3), 200,45*RAD,90*RAD, col_d, col_s, col_a);
 }
 UINT LightsManager::AddLightDef(LightEmitter::TYPE type, COLOUR4 diffuse, COLOUR4 specular, COLOUR4 ambient) {
 	UINT index = lights_def.size();
@@ -212,7 +212,7 @@ UINT LightsManager::AddLightDef(LightEmitter::TYPE type, COLOUR4 diffuse, COLOUR
 		sprintf(cbuf, "SpotLight_%i", index);
 	}
 	string name(cbuf);
-	return AddLightDef(type, name, _V(0, 0, 0),LightEmitter::VISIBILITY::VIS_EXTERNAL, _V(0,0,1),_V(1e-3, 0, 2e-3), 200,90*RAD,45*RAD, diffuse, specular, ambient);
+	return AddLightDef(type, name, _V(0, 0, 0),LightEmitter::VISIBILITY::VIS_EXTERNAL, _V(0,0,1),_V(1e-3, 0, 2e-3), 200,45*RAD,90*RAD, diffuse, specular, ambient);
 }
 UINT LightsManager::AddLightDef(LightEmitter::TYPE type, string name, VECTOR3 position, LightEmitter::VISIBILITY vis, VECTOR3 direction, VECTOR3 attenuation, double range, double umbra, double penumbra, COLOUR4 diffuse, COLOUR4 specular, COLOUR4 ambient) {
 	LIGHTS_DEF ld = LIGHTS_DEF();

@@ -140,6 +140,7 @@
     <ClInclude Include="ControlSurfacesManager.h" />
     <ClInclude Include="DialogControl.h" />
     <ClInclude Include="DockManager.h" />
+    <ClInclude Include="EventManager.h" />
     <ClInclude Include="ExTexManager.h" />
     <ClInclude Include="FollowMeDlg.h" />
     <ClInclude Include="LaserManager.h" />
@@ -171,6 +172,7 @@
     <ClCompile Include="DialogControl.cpp" />
     <ClCompile Include="DockDlgProc.cpp" />
     <ClCompile Include="DockManager.cpp" />
+    <ClCompile Include="EventManager.cpp" />
     <ClCompile Include="ExTexDlgProc.cpp" />
     <ClCompile Include="ExTexManager.cpp" />
     <ClCompile Include="FollowMeDlg.cpp" />

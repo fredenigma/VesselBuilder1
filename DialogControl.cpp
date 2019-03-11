@@ -336,7 +336,9 @@ void DialogControl::InitDialog(HWND hWnd) {
 	SetWindowPos(hWnd_VarDrag, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hWnd_VarDrag, SW_HIDE);
 
-
+	char verbuf[256] = { '\0' };
+	sprintf(verbuf, "Version: %i", VBVERSION);
+	SetDlgItemText(hWnd, IDC_STATIC_VBVERSION, verbuf);
 
 	return;
 }

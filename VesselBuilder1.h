@@ -36,7 +36,9 @@ typedef UINT anim_idx;
 typedef UINT msh_idx;
 typedef UINT def_idx;
 class Laser;
+class Event;
 typedef Laser* LASER_HANDLE;
+typedef Event* EVENT_HANDLE;
 
 struct V_CLIPBOARD {
 	VECTOR3 pos;
@@ -78,6 +80,7 @@ class VCManager;
 class LightsManager;
 class LaserManager;
 class VariableDragManager;
+class EventManager;
 
 class VesselBuilder1 :public VESSEL4{
 public:
@@ -116,6 +119,10 @@ public:
  LaserManager *Laser;
  VariableDragManager *VardMng;
  Logger* Log;
+ 
+ EventManager *EvMng;
+
+
  VISHANDLE visual;
  
 

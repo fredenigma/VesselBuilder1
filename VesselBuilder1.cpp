@@ -28,6 +28,7 @@
 #include "VCManager.h"
 #include "LightsManager.h"
 #include "VariableDragManager.h"
+#include "EventManager.h"
 
 #define LogV(x,...) Log->Log(x,##__VA_ARGS__)
 
@@ -65,6 +66,8 @@ VesselBuilder1::VesselBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
 	LightsMng = new LightsManager(this);
 	Laser = new LaserManager(this);
 	VardMng = new VariableDragManager(this);
+	EvMng = new EventManager(this);
+
 
 	cfgfilename.clear();
 	follow_me_pos = _V(0, 0, 0);
@@ -135,7 +138,8 @@ VesselBuilder1::~VesselBuilder1(){
 	Laser = NULL;
 	delete VardMng;
 	VardMng = NULL;
-
+	delete EvMng;
+	EvMng = NULL;
 	
 	LogV("Destructor Completed");
 	Log->CloseLog();
@@ -405,6 +409,16 @@ bool VesselBuilder1::ToggleGrapple() {
 			DWORD nAttach = v->AttachmentCount(true);
 			for (DWORD j = 0; j < nAttach; j++) { // now scan all attachment points of the candidate
 				ATTACHMENTHANDLE hAtt = v->GetAttachmentHandle(true, j);
+				bool id_check = AttMng->GetIdCheck(AttIdx);
+				if (id_check) {
+					string id_check_string = AttMng->GetIdCheckString(AttIdx);
+					const char* otherId = v->GetAttachmentId(hAtt);
+					string otherId_s(otherId);
+					UINT length = id_check_string.length();
+					if (id_check_string.compare(0, length, otherId_s) != 0) {
+						continue;
+					}
+				}
 				v->GetAttachmentParams(hAtt, pos, dir, rot);
 				v->Local2Global(pos, gpos);
 				if (dist(gpos, grms) < distbar) {
@@ -423,7 +437,7 @@ bool VesselBuilder1::ToggleGrapple() {
 		return true;
 	}
 	else {
-		DetachChild(ah, 0.01);
+		DetachChild(ah, 0.05);
 	}
 	
 	
@@ -554,6 +568,7 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 	//}
 	CamMng->ConsumeCameraBufferedKey(key, down, kstate);
 	LightsMng->ConsumeLightsBufferedKey(key, down, kstate);
+	EvMng->ConsumeBufferedKey(key, down, kstate);
 	//}
 	
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == OAPI_KEY_SPACE) {
@@ -626,7 +641,12 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 		return 1;
 	}
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && KEYMOD_CONTROL(kstate) && key == OAPI_KEY_K) {
-		
+		Event::TRIGGER Trig = Event::TRIGGER();
+		Trig.Type = Event::TRIGGER::TRIGGERTYPE::KEYPRESS;
+		Trig.Key = OAPI_KEY_M;
+		Trig.KeyMods.Alt = true;
+		Trig.repeat_mode = Event::TRIGGER::REPEAT_MODE::ALWAYS;
+		EvMng->CreateChildSpawnEvent("TestSpawn", Trig, "SLS\\core", "stage");
 	/*	ResetVehicle();
 		MshMng->msh_defs.clear();
 		AttMng->att_defs.clear();

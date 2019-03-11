@@ -57,7 +57,7 @@ void TouchdownPointsManager::ParseCfgFile(FILEHANDLE fh) {
 	sprintf(cbuf, "TDP_SECONDSET_ENABLED");
 	if (!oapiReadItem_bool(fh, cbuf, SecondSetEnabled)) {SecondSetEnabled = false;}
 	sprintf(cbuf, "TDP_CHANGEOVER_ANIM");
-	oapiReadItem_int(fh, cbuf, changeoveranim);
+	if (!oapiReadItem_int(fh, cbuf, changeoveranim)) { changeoveranim = -1; };
 	EnableSecondSet(SecondSetEnabled);
 	if (changeoveranim >= 0) {
 		SetChangeOverAnimation(changeoveranim);
@@ -75,10 +75,14 @@ void TouchdownPointsManager::WriteCfg(FILEHANDLE fh) {
 	for (UINT set = 1; set < 3; set++) {
 		if (set == 2) {
 			char cbuf[256] = { '\0' };
-			sprintf(cbuf, "TDP_SECONDSET_ENABLED");
-			oapiWriteItem_bool(fh, cbuf, IsSecondSetEnabled());
-			sprintf(cbuf, "TDP_CHANGEOVER_ANIM");
-			oapiWriteItem_int(fh, cbuf, GetChangeOverAnimation());
+			bool set2Enabled = IsSecondSetEnabled();
+			if (set2Enabled) {
+				sprintf(cbuf, "TDP_SECONDSET_ENABLED");
+				oapiWriteItem_bool(fh, cbuf, IsSecondSetEnabled());
+				sprintf(cbuf, "TDP_CHANGEOVER_ANIM");
+				oapiWriteItem_int(fh, cbuf, GetChangeOverAnimation());
+			}
+			
 		}
 		for (UINT i = 0; i < GetPointsCount(set); i++) {
 			char cbuf[256] = { '\0' };

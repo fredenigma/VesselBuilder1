@@ -16,7 +16,7 @@ void AttachmentManager::CreateAttDef() {
 	return CreateAttDef(attd);
 }
 
-void AttachmentManager::CreateAttDef(bool toparent, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot, string id,double range, bool loose) {
+void AttachmentManager::CreateAttDef(bool toparent, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot, string id,double range, bool loose,bool id_check,string id_check_string) {
 	LogV("Creating Attachment: To Parent:%i pos:%.3f %.3f %.3f dir:%.3f %.3f %.3f rot:%.3f %.3f %.3f id:%s range:%.3f loose:%i", toparent, pos.x, pos.y, pos.z, dir.x, dir.y, dir.z, rot.x, rot.y, rot.z, id.c_str(), range, loose);
 	ATT_DEF attd = ATT_DEF();
 	attd.toparent = toparent;
@@ -28,6 +28,8 @@ void AttachmentManager::CreateAttDef(bool toparent, VECTOR3 pos, VECTOR3 dir, VE
 	attd.id = id;
 	attd.loose = loose;
 	attd.range = range;
+	attd.id_check = id_check;
+	attd.id_check_string = id_check_string;
 	return CreateAttDef(attd);
 }
 
@@ -144,7 +146,24 @@ void AttachmentManager::ParseCfgFile(FILEHANDLE fh) {
 		string id(idbuf);
 		sprintf(cbuf, "ATT_%i_TOPARENT", att_counter);
 		oapiReadItem_bool(fh, cbuf, toparent);
-		CreateAttDef(toparent, pos, dir, rot, id,range, false);
+
+		bool id_check;
+		string id_check_string;
+		id_check_string.clear();
+		sprintf(cbuf, "ATT_%i_IDCHECK", att_counter);
+		if (!oapiReadItem_bool(fh, cbuf, id_check)) { id_check = false; }
+		if (id_check) {
+			sprintf(cbuf, "ATT_%i_IDCHECKSTRING", att_counter);
+			char checkbuff[256] = { '\0' };
+			oapiReadItem_string(fh, cbuf, checkbuff);
+			id_check_string.assign(checkbuff);
+		}
+
+		CreateAttDef(toparent, pos, dir, rot, id,range, false,id_check,id_check_string);
+
+		
+
+
 		att_counter++;
 		sprintf(cbuf, "ATT_%i_IDX", att_counter);
 	}
@@ -178,6 +197,15 @@ void AttachmentManager::WriteCfg(FILEHANDLE fh) {
 		oapiWriteItem_string(fh, cbuf, cbuf2);
 		sprintf(cbuf, "ATT_%i_TOPARENT", counter);
 		oapiWriteItem_bool(fh, cbuf, att_defs[i].toparent);
+		sprintf(cbuf, "ATT_%i_IDCHECK", counter);
+		oapiWriteItem_bool(fh, cbuf, att_defs[i].id_check);
+		if (att_defs[i].id_check)
+		{
+			sprintf(cbuf, "ATT_%i_IDCHECKSTRING", counter);
+			char checkbuff[256] = { '\0' };
+			sprintf(checkbuff, "%s", att_defs[i].id_check_string.c_str());
+			oapiWriteItem_string(fh, cbuf, checkbuff);
+		}
 		oapiWriteLine(fh, " ");
 		counter++;
 		
@@ -216,4 +244,19 @@ void AttachmentManager::Clear() {
 	att_defs.clear();
 	LogV("Clearing Attachments Completed");
 	return;
+}
+
+void AttachmentManager::SetIdCheck(def_idx d_idx, bool set) {
+	att_defs[d_idx].id_check = set;
+	return;
+}
+bool AttachmentManager::GetIdCheck(def_idx d_idx) {
+	return att_defs[d_idx].id_check;
+}
+void AttachmentManager::SetIdCheckString(def_idx d_idx, string _id_check_string) {
+	att_defs[d_idx].id_check_string = _id_check_string;
+	return;
+}
+string AttachmentManager::GetIdCheckString(def_idx d_idx) {
+	return att_defs[d_idx].id_check_string;
 }
