@@ -1,7 +1,9 @@
 #include "VesselBuilder1.h"
 #include "DialogControl.h"
+
 #include "EventManager.h"
 #include "AnimationManager.h"
+#include "MET.h"
 
 Event::Event(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;
@@ -100,6 +102,11 @@ void Event::EventPreStep(double simt, double simdt, double mjd) {
 			ref_time = VB1->GetMET();
 		}
 		if (ref_time >= Trigger.TriggerValue) {
+			Trig();
+		}
+	}
+	else if (Trigger.Type == TRIGGER::SIMSTART) {
+		if (oapiGetSimTime() >= 0) {
 			Trig();
 		}
 	}
@@ -272,12 +279,96 @@ double ThrusterGroup_Fire::GetLevel() {
 	return level;
 }
 
+Payload_Jettison::Payload_Jettison(VesselBuilder1* VB1, bool _next, UINT _dock_idx) :Event(VB1) {
+	next = _next;
+	dock_idx = _dock_idx;
+	return;
+}
+Payload_Jettison::~Payload_Jettison(){}
+
+void Payload_Jettison::ConsumeEvent() {
+	if (next) {
+		VB1->JettisonNextDock();
+	}
+	else {
+		VB1->JettisonDock(dock_idx);
+	}
+	return;
+}
+void Payload_Jettison::SetDockIdx(UINT _dock_idx) {
+	dock_idx = _dock_idx;
+	return;
+}
+UINT Payload_Jettison::GetDockIdx() {
+	return dock_idx;
+}
+void Payload_Jettison::SetNext(bool set) {
+	next = set;
+	return;
+}
+bool Payload_Jettison::GetNext() {
+	return next;
+}
 
 
+Reset_Met::Reset_Met(VesselBuilder1* VB1, bool _now, double _newmjd0):Event(VB1) {
+	now = _now;
+	newmjd0 = _newmjd0;
+}
+Reset_Met::~Reset_Met(){}
 
+void Reset_Met::ConsumeEvent() {
+	VB1->Met->SetMJD0(now ? oapiGetSimMJD() : newmjd0 );
+	return;
+}
+void Reset_Met::SetNow(bool set) {
+	now = set;
+	return;
+}
+bool Reset_Met::GetNow() {
+	return now;
+}
+void Reset_Met::SetNewMJD0(double _newmjd0) {
+	newmjd0 = _newmjd0;
+	return;
+}
+double Reset_Met::GetNewMJD0() {
+	return newmjd0;
+}
 
+Reconfiguration::Reconfiguration(VesselBuilder1* VB1, bitset<N_SECTIONS>_Sections, string _newfilename) :Event(VB1) {
+	Sections = _Sections;
+	newfilename = _newfilename;
+	return;
+}
+Reconfiguration::~Reconfiguration(){}
+void Reconfiguration::ConsumeEvent() {
+	if (Sections.all()) {
+		VB1->ResetVehicle();
+		FILEHANDLE fh = oapiOpenFile(newfilename.c_str(), FILE_IN_ZEROONFAIL, CONFIG);
+		if (fh != NULL) {
+			VB1->ParseCfgFile(fh);
+		}
+	}
+	else {
 
-
+	}
+	return;
+}
+void Reconfiguration::SetSections(bitset<N_SECTIONS>newSections) {
+	Sections = newSections;
+	return;
+}
+bitset<N_SECTIONS> Reconfiguration::GetSections() {
+	return Sections;
+}
+void Reconfiguration::SetNewFileName(string _newfilename) {
+	newfilename = _newfilename;
+	return;
+}
+string Reconfiguration::GetNewFileName() {
+	return newfilename;
+}
 
 
 
@@ -303,6 +394,19 @@ Event* EventManager::CreateGeneralVBEvent(string name, Event::TYPE type, Event::
 	}
 	else if (type == Event::THRUSTERGROUP_LEVEL) {
 		ev = new ThrusterGroup_Fire(VB1, THGROUP_MAIN);
+	}
+	else if (type == Event::PAYLOAD_JETTISON) {
+		ev = new Payload_Jettison(VB1);
+	}
+	else if (type == Event::RESET_MET) {
+		ev = new Reset_Met(VB1);
+	}
+	else if (type == Event::RECONFIG) {
+		bitset<N_SECTIONS>Sects;
+		for (UINT i = 0; i < N_SECTIONS; i++) {
+			Sects.set(i);
+		}
+		ev = new Reconfiguration(VB1, Sects, "");
 	}
 	if (ev) {
 		ev->id = id_counter;
@@ -345,6 +449,36 @@ Event* EventManager::CreateThrusterFireEvent(string name, Event::TRIGGER _Trigge
 
 Event* EventManager::CreateThrusterGroupLevelEvent(string name, Event::TRIGGER _Trigger, THGROUP_TYPE thgroup_type, double level) {
 	Event* ev = new ThrusterGroup_Fire(VB1, thgroup_type, level);
+	ev->SetTrigger(_Trigger);
+	ev->SetName(name);
+	ev->id = id_counter;
+	id_counter++;
+	Events.push_back(ev);
+	return ev;
+}
+
+Event* EventManager::CreatePayloadJettisonEvent(string name, Event::TRIGGER _Trigger, bool next, UINT dock_idx) {
+	Event* ev = new Payload_Jettison(VB1, next, dock_idx);
+	ev->SetTrigger(_Trigger);
+	ev->SetName(name);
+	ev->id = id_counter;
+	id_counter++;
+	Events.push_back(ev);
+	return ev;
+}
+
+Event* EventManager::CreateResetMetEvent(string name, Event::TRIGGER _Trigger, bool now , double newmjd0) {
+	Event* ev = new Reset_Met(VB1, now, newmjd0);
+	ev->SetTrigger(_Trigger);
+	ev->SetName(name);
+	ev->id = id_counter;
+	id_counter++;
+	Events.push_back(ev);
+	return ev;
+}
+
+Event* EventManager::CreateReconfigurationEvent(string name, Event::TRIGGER _Trigger, bitset<N_SECTIONS>_Sections, string _newfilename) {
+	Event* ev = new Reconfiguration(VB1, _Sections, _newfilename);
 	ev->SetTrigger(_Trigger);
 	ev->SetName(name);
 	ev->id = id_counter;

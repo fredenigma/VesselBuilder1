@@ -2,6 +2,7 @@
 #include "resource.h"
 #include "LaserManager.h"
 #include "DialogControl.h"
+#include "TextReaderDlg.h"
 #include "MeshManager.h"
 #include "DockManager.h"
 #include "AttachmentManager.h"
@@ -337,8 +338,10 @@ void DialogControl::InitDialog(HWND hWnd) {
 	ShowWindow(hWnd_VarDrag, SW_HIDE);
 
 	char verbuf[256] = { '\0' };
-	sprintf(verbuf, "Version: %i", VBVERSION);
+	sprintf(verbuf, "Ver:%i", VBVERSION);
 	SetDlgItemText(hWnd, IDC_STATIC_VBVERSION, verbuf);
+	
+	
 
 	return;
 }
@@ -1646,6 +1649,11 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 				UpdateTree(hWnd, AIRFOILS, 0);
 
 			}
+			break;
+		}
+		case IDC_BUTTON_TEXTREADER:
+		{
+			VB1->TextDlg->Open(hDLL);
 			break;
 		}
 		case IDC_BUTTON_CLOSE:

@@ -26,6 +26,7 @@
 #define IDD_DIALOG_LIGHTCREATION        124
 #define IDD_DIALOG_LIGHTS               125
 #define IDD_DIALOG_VARDRAG              126
+#define IDD_DIALOG_TEXTREADER           127
 #define IDC_TREE1                       1001
 #define IDC_SPIN_POSZ_S                 1005
 #define IDC_SPIN_POSZ_L                 1006
@@ -574,6 +575,13 @@
 #define IDC_CHECK_ATTIDCHECKENABLE      1508
 #define IDC_BUTTON_ATTIDCHECKSET        1509
 #define IDC_STATIC_VBVERSION            1510
+#define IDC_BUTTON_TEXTREADER           1511
+#define IDC_EDIT_TEXT                   1512
+#define IDC_BUTTON_TEXTOPENFILE         1513
+#define ID_TEXT_EXIT                    1514
+#define IDC_BUTTON_TEXTOPENVBLOG        1515
+#define IDC_BUTTON_TEXTOPENFILE3        1516
+#define IDC_BUTTON_TEXTOPENORBLOG       1516
 
 // Next default values for new objects
 // 
@@ -581,7 +589,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1511
+#define _APS_NEXT_CONTROL_VALUE         1515
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

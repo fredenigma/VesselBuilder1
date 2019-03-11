@@ -73,6 +73,9 @@
     <ClInclude Include="MET.h">
       <Filter>Vessel\Managers</Filter>
     </ClInclude>
+    <ClInclude Include="TextReaderDlg.h">
+      <Filter>Dialog\TextReader</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\Orbitersdk\lib\orbiter.lib">
@@ -103,6 +106,9 @@
     </Filter>
     <Filter Include="Vessel\Managers">
       <UniqueIdentifier>{b761ed0d-41fb-4529-8166-5f473101d5df}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Dialog\TextReader">
+      <UniqueIdentifier>{3937152b-0a17-4baf-8e66-ade245acd0eb}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -237,6 +243,9 @@
     </ClCompile>
     <ClCompile Include="MET.cpp">
       <Filter>Vessel\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="TextReaderDlg.cpp">
+      <Filter>Dialog\TextReader</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

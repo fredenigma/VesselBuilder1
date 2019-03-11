@@ -7,11 +7,11 @@ public:
 	VesselBuilder1 *VB1;
 	string name;
 	UINT id;
-	enum TYPE{NULL_EVENT, CHILD_SPAWN,PAYLOAD_JETTISON,ANIMATION_TRIGGER,THRUSTER_FIRING,THRUSTERGROUP_LEVEL,PARTIAL_RECONFIG,TOTAL_RECONFIG,TEXTURE_SWAP};
+	enum TYPE{NULL_EVENT, CHILD_SPAWN,PAYLOAD_JETTISON,ANIMATION_TRIGGER,THRUSTER_FIRING,THRUSTERGROUP_LEVEL,RESET_MET,RECONFIG,TEXTURE_SWAP};
 	virtual TYPE Type() const { return NULL_EVENT; }
 	
 	struct TRIGGER {
-		enum TRIGGERTYPE { NULL_TRIG, KEYPRESS, ALTITUDE, MAINFUELTANK_LEVEL, VELOCITY, TIME, DYNPRESSURE }Type;
+		enum TRIGGERTYPE { NULL_TRIG, SIMSTART, KEYPRESS, ALTITUDE, MAINFUELTANK_LEVEL, VELOCITY, TIME, DYNPRESSURE }Type;
 		enum REPEAT_MODE{ONCE,ALWAYS}repeat_mode;
 		DWORD Key;
 		struct KEYMOD { bool Shift; bool Ctrl; bool Alt; }KeyMods;
@@ -45,6 +45,7 @@ public:
 	UINT GetID();
 	void SetName(string newname);
 	string GetName();
+	
 };
 
 class Child_Spawn :public Event {
@@ -90,6 +91,7 @@ class Thruster_Fire :public Event {
 public:
 	Thruster_Fire(VesselBuilder1* VB1, THRUSTER_HANDLE th, double level = 1);
 	~Thruster_Fire();
+	TYPE Type() const { return THRUSTER_FIRING; }
 	THRUSTER_HANDLE th;
 	double level;
 	void ConsumeEvent();
@@ -103,6 +105,7 @@ class ThrusterGroup_Fire :public Event {
 public:
 	ThrusterGroup_Fire(VesselBuilder1* VB1, THGROUP_TYPE thgroup_type, double level = 1);
 	~ThrusterGroup_Fire();
+	TYPE Type() const { return THRUSTERGROUP_LEVEL; }
 	THGROUP_TYPE thgroup;
 	double level;
 	void ConsumeEvent();
@@ -112,7 +115,47 @@ public:
 	double GetLevel();
 };
 
+class Payload_Jettison :public Event {
+public:
+	Payload_Jettison(VesselBuilder1* VB1, bool next = true, UINT dock_idx = (UINT)-1);
+	~Payload_Jettison();
+	TYPE Type() const { return PAYLOAD_JETTISON; }
+	bool next;
+	UINT dock_idx;
+	void ConsumeEvent();
+	void SetDockIdx(UINT _dock_idx);
+	UINT GetDockIdx();
+	void SetNext(bool set);
+	bool GetNext();
+};
 
+class Reset_Met :public Event {
+public:
+	Reset_Met(VesselBuilder1* VB1, bool now = true, double newmjd0 = 0);
+	~Reset_Met();
+	TYPE Type() const { return RESET_MET; }
+	bool now;
+	double newmjd0;
+	void ConsumeEvent();
+	void SetNow(bool set);
+	bool GetNow();
+	void SetNewMJD0(double _newmjd0);
+	double GetNewMJD0();
+};
+
+class Reconfiguration :public Event {
+public:
+	Reconfiguration(VesselBuilder1* VB1, bitset<N_SECTIONS>Sections, string newfilename);
+	~Reconfiguration();
+	TYPE Type() const { return RECONFIG; }
+	bitset<N_SECTIONS>Sections;
+	string newfilename;
+	void ConsumeEvent();
+	void SetSections(bitset<N_SECTIONS>newSections);
+	bitset<N_SECTIONS> GetSections();
+	void SetNewFileName(string _newfilename);
+	string GetNewFileName();
+};
 class EventManager {
 public:
 	EventManager(VesselBuilder1 *_VB1);
@@ -124,6 +167,9 @@ public:
 	Event* CreateAnimTriggerEvent(string name, Event::TRIGGER _Trigger, UINT _anim_idx, bool _forward);
 	Event* CreateThrusterFireEvent(string name, Event::TRIGGER _Trigger, THRUSTER_HANDLE th, double level = 1);
 	Event* CreateThrusterGroupLevelEvent(string name, Event::TRIGGER _Trigger, THGROUP_TYPE thgroup_type, double level = 1);
+	Event* CreatePayloadJettisonEvent(string name, Event::TRIGGER _Trigger, bool next = true, UINT dock_idx = (UINT)-1);
+	Event* CreateResetMetEvent(string name, Event::TRIGGER _Trigger, bool now = true, double newmjd0 = 0);
+	Event* CreateReconfigurationEvent(string name, Event::TRIGGER _Trigger, bitset<N_SECTIONS>_Sections, string _newfilename);
 	void DeleteEvent(Event* ev);
 	void PreStep(double simt, double simdt, double mjd);
 	void ConsumeBufferedKey(DWORD key, bool down, char *kstate);

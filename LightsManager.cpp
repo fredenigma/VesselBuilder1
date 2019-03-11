@@ -631,3 +631,14 @@ vector<UINT> LightsManager::GetBeaconsOn() {
 	}
 	return on_count;
 }
+
+void LightsManager::Clear() {
+	ClearBeaconsDefs();
+	VB1->ClearLightEmitters();
+	for (UINT i = 0; i < GetLightsCount(); i++) {
+		delete lights_def[i].pos_ptr;
+		delete lights_def[i].dir_ptr;
+	}
+	lights_def.clear();
+	
+}

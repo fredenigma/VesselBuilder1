@@ -28,6 +28,9 @@ UINT DockManager::AddDockDef(string name, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot,
 	*dd.pos_ptr = pos;
 	*dd.antidir_ptr = dir*(-1);
 	*dd.antirot_ptr = rot*(-1);
+	dd.pos = pos;
+	dd.dir = dir;
+	dd.rot = rot;
 	dd.dh = VB1->CreateDock(pos, dir, rot);
 	UINT index = dock_defs.size();
 	dock_defs.push_back(dd);
@@ -46,8 +49,11 @@ bool DockManager::DeleteDockDef(def_idx d_idx) {
 	return true;
 }
 void DockManager::GetDockParams(def_idx d_idx, VECTOR3 &pos, VECTOR3 &dir, VECTOR3 &rot) {
-	if (dock_defs[d_idx].dh == NULL) { return; }
-	VB1->GetDockParams(dock_defs[d_idx].dh, pos, dir, rot);
+	//if (dock_defs[d_idx].dh == NULL) { return; }
+	//VB1->GetDockParams(dock_defs[d_idx].dh, pos, dir, rot);
+	pos = dock_defs[d_idx].pos;
+	dir = dock_defs[d_idx].dir;
+	rot = dock_defs[d_idx].rot;
 	return;
 }
 void DockManager::SetDockParams(def_idx d_idx, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot) {
@@ -55,6 +61,9 @@ void DockManager::SetDockParams(def_idx d_idx, VECTOR3 pos, VECTOR3 dir, VECTOR3
 	*dock_defs[d_idx].pos_ptr = pos;
 	*dock_defs[d_idx].antidir_ptr = dir*(-1);
 	*dock_defs[d_idx].antirot_ptr = rot*(-1);
+	dock_defs[d_idx].pos = pos;
+	dock_defs[d_idx].dir = dir;
+	dock_defs[d_idx].rot = rot;
 	VB1->SetDockParams(dock_defs[d_idx].dh, pos, dir, rot);
 	return;
 }
@@ -195,12 +204,27 @@ VECTOR3 *DockManager::GetDockAntiRotPtr(def_idx d_idx) {
 }
 
 void DockManager::DockEvent(int dock, OBJHANDLE mate) {
-	if (mate != NULL) { return; }
+	if (mate != NULL) { 
+		return; }
 	DOCKHANDLE dh = VB1->GetDockHandle(dock);
 	def_idx d_idx = GetDockIdx(dh);
 	if (IsDockJettisonable(d_idx)) {
-		VB1->DelDock(dock_defs[d_idx].dh);
+		VB1->docks_to_del.push_back(dock_defs[d_idx].dh);
+		VB1->docks_jettisoned.push_back(d_idx);
+	//	VB1->DelDock(dock_defs[d_idx].dh);
 		dock_defs[d_idx].dh = NULL;
 	}
 	return;
+}
+
+DOCKHANDLE DockManager::GetDH(def_idx d_idx) {
+	return dock_defs[d_idx].dh;
+}
+UINT DockManager::GetOrbiterDockIdx(DOCKHANDLE dh) {
+	for (UINT i = 0; i < VB1->DockCount(); i++) {
+		if (VB1->GetDockHandle(i) == dh) {
+			return i;
+		}
+	}
+	return (UINT)-1;
 }

@@ -4,6 +4,7 @@ struct DCK_DEF {
 	string name;
 	bool IsDockJett;
 	DOCKHANDLE dh;
+	VECTOR3 pos, dir, rot;
 	VECTOR3 *pos_ptr;
 	VECTOR3 *antidir_ptr;
 	VECTOR3 *antirot_ptr;
@@ -14,6 +15,9 @@ struct DCK_DEF {
 		pos_ptr = new VECTOR3;
 		antidir_ptr = new VECTOR3;
 		antirot_ptr = new VECTOR3;
+		pos = _V(0, 0, 0);
+		dir = _V(0, 0, 1);
+		rot = _V(0, 1, 0);
 	}
 };
 
@@ -40,10 +44,12 @@ public:
 	void ParseCfgFile(FILEHANDLE fh);
 	void WriteCfg(FILEHANDLE fh);
 	UINT GetDockCount();
+	DOCKHANDLE GetDH(def_idx d_idx);
 	void DockEvent(int dock, OBJHANDLE mate);
 	def_idx GetDockIdx(DOCKHANDLE dh);
 	VECTOR3* GetDockPosPtr(def_idx d_idx);
 	VECTOR3* GetDockAntiDirPtr(def_idx d_idx);
 	VECTOR3* GetDockAntiRotPtr(def_idx d_idx);
+	UINT GetOrbiterDockIdx(DOCKHANDLE dh);
 	void Clear();
 };

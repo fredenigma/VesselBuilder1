@@ -105,5 +105,5 @@ public:
 	UINT CurrentLight;
 	vector<UINT>GetLightsOn();
 	vector<UINT>GetBeaconsOn();
-
+	void Clear();
 };

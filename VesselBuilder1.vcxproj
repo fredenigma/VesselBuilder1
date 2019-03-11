@@ -151,6 +151,7 @@
     <ClInclude Include="ParticleManager.h" />
     <ClInclude Include="PropellantManager.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="TextReaderDlg.h" />
     <ClInclude Include="VariableDragManager.h" />
     <ClInclude Include="VCManager.h" />
     <ClInclude Include="VesselBuilder1.h" />
@@ -190,6 +191,7 @@
     <ClCompile Include="PropellantManager.cpp" />
     <ClCompile Include="PrpDlgProc.cpp" />
     <ClCompile Include="SettingsDlgProc.cpp" />
+    <ClCompile Include="TextReaderDlg.cpp" />
     <ClCompile Include="VariableDragDlgProc.cpp" />
     <ClCompile Include="VariableDragManager.cpp" />
     <ClCompile Include="VCHUDDlgProc.cpp" />

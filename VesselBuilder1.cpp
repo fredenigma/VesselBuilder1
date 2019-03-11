@@ -10,6 +10,7 @@
 #include "LaserManager.h"
 #include "DialogControl.h"
 #include "FollowMeDlg.h"
+#include "TextReaderDlg.h"
 #include "resource.h"
 #include "DlgCtrl.h"
 #include "gcAPI.h"
@@ -91,16 +92,20 @@ VesselBuilder1::VesselBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
 	follow_me_noteh = oapiCreateAnnotation(false, 1, _V(1, 1, 1));
 	Dlg = new DialogControl(this);
 	FMDlg = new FollowMeDlg(this);
-	
+	TextDlg = new TextReaderDlg();
+
 	vclip = V_CLIPBOARD();
 	
-	
-	
+	docks_to_del.clear();
+	docks_jettisoned.clear();
 
 	GrabMode = false;
 	currentGrabAtt = 0;
 	NoEditor = false;
 	level1 = 1.0;
+	redL = oapiRegisterExhaustTexture("red_L");
+	greenL = oapiRegisterExhaustTexture("green_L");
+	blueL = oapiRegisterExhaustTexture("blue_L");
 	LogV("Class Initialized");
 //	SBLog("Class Initialize");
 	return;
@@ -112,6 +117,8 @@ VesselBuilder1::~VesselBuilder1(){
 	Dlg = NULL;
 	delete FMDlg;
 	FMDlg = NULL;
+	delete TextDlg;
+	TextDlg = NULL;
 	delete MshMng;
 	MshMng = NULL;
 	delete DckMng;
@@ -245,15 +252,13 @@ void VesselBuilder1::clbkSetClassCaps(FILEHANDLE cfg){
 	SetEmptyMass(1000);
 	SetSize(10);
 	
-	redL = oapiRegisterExhaustTexture("red_L");
-	greenL = oapiRegisterExhaustTexture("green_L");
-	blueL = oapiRegisterExhaustTexture("blue_L");
+
 
 //	SBLog("ClassName:%s", GetClassName());
 	
-	ResetVehicle();
+	//ResetVehicle();
 	ParseCfgFile(cfg);
-	VehicleSetup();
+	//VehicleSetup();
 	if (!NoEditor) {
 		WriteBackupFile();
 	}
@@ -288,6 +293,15 @@ void VesselBuilder1::clbkLoadStateEx(FILEHANDLE scn,void *vs)
 			else if (status == -1) {
 				AnimMng->StartAnimation(seq);
 				AnimMng->SetAnimationBackward(seq, true);
+			}
+		}
+		else if (!_strnicmp(line, "DOCKS_JETTISONED", 16)) {
+			char docks_gone[256] = { '\0' };
+			sscanf(line + 16, "%s", docks_gone);
+			string dcg(docks_gone);
+			docks_jettisoned = readVectorUINT(dcg);
+			for (UINT i = 0; i < docks_jettisoned.size(); i++) {
+				docks_to_del.push_back(DckMng->GetDH(docks_jettisoned[i]));
 			}
 		}
 		else if (!_strnicmp(line, "CURRENT_CAM",11)) {
@@ -352,6 +366,14 @@ void VesselBuilder1::clbkSaveState(FILEHANDLE scn)
 		char buf[256] = { '\0' };
 		sprintf(buf, "CURRENT_CAM");
 		oapiWriteScenario_int(scn, buf, CamMng->GetCurrentCamera());
+	}
+	if (docks_jettisoned.size() > 0) {
+		string docks_gone = WriteVectorUINT(docks_jettisoned, false);
+		char cbuf[256] = { '\0' };
+		sprintf(cbuf, "DOCKS_JETTISONED");
+		char d_buff[256] = { '\0' };
+		sprintf(d_buff, "%s", docks_gone.c_str());
+		oapiWriteScenario_string(scn, cbuf, d_buff);
 	}
 	if (LightsMng->GetBeaconCount() > 0) {
 		char cbuf[256] = { '\0' };
@@ -616,8 +638,12 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 		LightsMng->ToggleAllBeaconsActive();
 		return 1;
 	}
+	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == OAPI_KEY_J) {
+		if (JettisonNextDock()) { return 1; }
+		else { return 0; }
+	}
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == OAPI_KEY_K) {
-		Met->SetMJD0(oapiGetSimMJD() + 0.01);
+		//Met->SetMJD0(oapiGetSimMJD() + 0.01);
 	/*	DWORD td_count = this->GetTouchdownPointCount();
 		for (UINT i = 0; i < td_count; i++) {
 			oapiWriteLogV("td:%i", i);
@@ -661,11 +687,17 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 		//Trig.repeat_mode = Event::TRIGGER::REPEAT_MODE::ALWAYS;
 		//EvMng->CreateChildSpawnEvent("TestSpawn", Trig, "SLS\\core", "stage");
 		//EvMng->CreateAnimTriggerEvent("TESTANIM", Trig, 5, true);
-		THRUSTER_HANDLE th = ThrMng->GetThrTH(3);
+		//THRUSTER_HANDLE th = ThrMng->GetThrTH(3);
 		//EvMng->CreateThrusterFireEvent("TEST", Trig, th);
-		EvMng->CreateThrusterGroupLevelEvent("TEST", Trig, THGROUP_MAIN);
+		string fn("\\Vessels\\VesselBuilder1\\Cupola_VB.cfg");
+		bitset<N_SECTIONS>Sects;
+		for (UINT i = 0; i < N_SECTIONS; i++) {
+			Sects.set(i);
+		}
+		EvMng->CreateReconfigurationEvent("test_reconfig", Trig, Sects, fn);
+		/*EvMng->CreateThrusterGroupLevelEvent("TEST", Trig, THGROUP_MAIN);
 		Trig.TriggerValue = 15;
-		EvMng->CreateThrusterGroupLevelEvent("TEST", Trig, THGROUP_MAIN,0);
+		EvMng->CreateThrusterGroupLevelEvent("TEST", Trig, THGROUP_MAIN,0);*/
 		//EvMng->CreateThrusterFireEvent("TEST", Trig, th,0);
 	/*	ResetVehicle();
 		MshMng->msh_defs.clear();
@@ -738,7 +770,9 @@ void VesselBuilder1::clbkPreStep(double simt, double simdt, double mjd) {
 	}
 	EvMng->PreStep(simt, simdt, mjd);
 	
-	
+	if (docks_to_del.size() > 0) {
+		DelDock(docks_to_del[0]); //needed because other wise crash on scenario close
+	}
 	/*
 	int sign, hrs, mins, secs;
 	Met->GetHMS(sign, hrs, mins, secs);
@@ -764,9 +798,10 @@ void VesselBuilder1::clbkVisualCreated(VISHANDLE vis, int refcount) {
 	return;
 }
 void VesselBuilder1::clbkVisualDestroyed(VISHANDLE vis, int refcount) {
+	LogV("Visual Destroyed");
 	visual = NULL;
 	MshMng->VisualDestroyed(vis, refcount);
-
+	LogV("Visual Destroyed Finished");
 	return;
 }
 bool VesselBuilder1::clbkLoadVC(int id) {
@@ -777,8 +812,35 @@ bool VesselBuilder1::clbkVCMouseEvent(int id, int event, VECTOR3 &p) {
 	return VCMng->VCMouseEvent(id, event, p);	
 }
 void VesselBuilder1::clbkDockEvent(int dock, OBJHANDLE mate) {
+	LogV("Dock Event");
 	DckMng->DockEvent(dock, mate);
+	LogV("Dock Event Finished");
 	return;
+}
+
+bool VesselBuilder1::JettisonNextDock() {
+	for (UINT i = 0; i < DckMng->GetDockCount(); i++) {
+		if (DckMng->IsDockJettisonable(i) && (DckMng->GetDH(i) != NULL)) {
+			if (GetDockStatus(DckMng->GetDH(i)) != NULL) {
+				UINT orb_dock_idx = DckMng->GetOrbiterDockIdx(DckMng->GetDH(i));
+				if (orb_dock_idx != (UINT)-1) {
+					Undock(orb_dock_idx);
+					return true;
+				}
+
+			}
+		}
+	}
+	return false;
+}
+bool VesselBuilder1::JettisonDock(UINT idx) {
+	if (!DckMng->IsDockJettisonable(idx)) { return false; }
+	if (DckMng->GetDH(idx) == NULL) { return false; }
+	if (GetDockStatus(DckMng->GetDH(idx)) == NULL) { return false; }
+	UINT orb_dock_idx = DckMng->GetOrbiterDockIdx(DckMng->GetDH(idx));
+	if (orb_dock_idx == (UINT)-1) { return false; }
+	Undock(orb_dock_idx);
+	return true;
 }
 void VesselBuilder1::VehicleSetup() {
 	//SBLog("Vehicle Setup Started...");
@@ -840,7 +902,26 @@ void VesselBuilder1::FindDirRot(MATRIX3 rm, VECTOR3 &dir, VECTOR3 &rot) {
 void VesselBuilder1::ResetVehicle() {
 	//SBLog("Resetting Vehicle...");
 	LogV("Resetting entirely the Vehicle");
-	ClearMeshes();
+	VardMng->Clear();
+	VCMng->Clear();
+	CamMng->Clear();
+	LightsMng->Clear();
+	CtrSurfMng->Clear();
+	AirfoilMng->Clear();
+	TdpMng->Clear();
+	ThrMng->Clear();
+	ThrGrpMng->ResetDefine();
+	PartMng->Clear();
+	ExTMng->Clear();
+	PrpMng->Clear();
+	AnimMng->Clear();
+	AttMng->Clear();
+	DckMng->Clear();
+	MshMng->Clear();
+
+	//SETTINGS????
+
+	/*ClearMeshes();
 	ClearAttachments();
 	ClearDockDefinitions();
 	ClearLightEmitters();
@@ -850,7 +931,7 @@ void VesselBuilder1::ResetVehicle() {
 	ClearThrusterDefinitions();
 	ClearLightEmitters();
 	ClearPropellantResources();
-	ClearVariableDragElements();
+	ClearVariableDragElements();*/
 	LogV("Reset Complete");
 	//SBLog("Reset Complete");
 }
@@ -861,6 +942,7 @@ void VesselBuilder1::ParseCfgFile(FILEHANDLE fh) {
 	char cbuf[256] = { '\0' };
 
 	MshMng->ParseCfgFile(fh);
+	MshMng->LoadMeshes();
 	DckMng->ParseCfgFile(fh);
 	AttMng->ParseCfgFile(fh);
 	AnimMng->ParseCfgFile(fh);

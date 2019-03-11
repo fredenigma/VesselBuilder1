@@ -23,12 +23,31 @@
 #define HIGHLIGHTCOLORBLUE 1
 #define HIGHLIGHTCOLORRED 2
 
+#define SETTINGS_SECTION 0
+#define MESH_SECTION 1
+#define DOCK_SECTION 2
+#define ATT_SECTION 3
+#define ANIM_SECTION 4
+#define PROP_SECTION 5
+#define EXTEX_SECTION 6
+#define PART_SECTION 7
+#define THRUST_SECTION 8
+#define TDP_SECTION 9
+#define AIRFOIL_SECTION 10
+#define CTRLSURF_SECTION 11
+#define LIGHTS_SECTION 12
+#define CAMERAS_SECTION 13
+#define VC_SECTION 14
+#define VARDRAG_SECTION 15
+#define EVENTS_SECTION 16
+#define N_SECTIONS 17
 
 #include <Orbitersdk.h>
 #include <string>
 #include <vector>
 #include <map>
 #include <iostream>
+#include <bitset>
 #include "Log.h"
 using namespace std;
 
@@ -62,6 +81,7 @@ class Logger;
 
 class DialogControl;
 class FollowMeDlg;
+class TextReaderDlg;
 class AnimCompDef;
 class MeshManager;
 class DockManager;
@@ -166,7 +186,8 @@ public:
 
  DialogControl *Dlg;
  FollowMeDlg *FMDlg;
-
+ TextReaderDlg *TextDlg;
+ 
  string OrbiterRoot;
  void GetOrbiterDirs();
  string meshdir;
@@ -176,7 +197,9 @@ public:
  string scenariodir;
  SURFHANDLE greenL, redL, blueL, whiteL;
  
- 
+ vector<DOCKHANDLE>docks_to_del;
+ vector<UINT>docks_jettisoned;
+
  string WriteVectorUINT(vector<UINT> v,bool spaces=true);
  vector<UINT> readVectorUINT(string s);
  bool IsUintInVector(UINT u, vector<UINT>v);
@@ -194,6 +217,8 @@ public:
  
  void AddDefaultRCS();
  double GetMET();
+ bool JettisonNextDock();
+ bool JettisonDock(UINT idx);
 };
 
 
