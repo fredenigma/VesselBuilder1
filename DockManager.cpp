@@ -7,6 +7,8 @@
 DockManager::DockManager(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;
 	dock_defs.clear();
+	docks_to_del.clear();
+	docks_jettisoned.clear();
 	return;
 }
 DockManager::~DockManager() {
@@ -116,7 +118,12 @@ void DockManager::SetDockRot(def_idx d_idx, VECTOR3 rot) {
 	SetDockParams(d_idx, pos, dir, rot);
 	return;
 }
-
+void DockManager::DockPreStep(double simt, double simdt, double mjd) {
+	if (docks_to_del.size() > 0) {
+		VB1->DelDock(docks_to_del[0]); //needed because other wise crash on scenario close
+	}
+	return;
+}
 
 void DockManager::ParseCfgFile(FILEHANDLE fh) {
 	LogV("Parsing Docks Section Started");
@@ -178,6 +185,8 @@ void DockManager::Clear() {
 	LogV("Clearing Docks Section");
 	VB1->ClearDockDefinitions();
 	dock_defs.clear();
+	docks_to_del.clear();
+	docks_jettisoned.clear();
 	LogV("Clearing Docks Section Completed");
 	return;
 }
@@ -209,8 +218,8 @@ void DockManager::DockEvent(int dock, OBJHANDLE mate) {
 	DOCKHANDLE dh = VB1->GetDockHandle(dock);
 	def_idx d_idx = GetDockIdx(dh);
 	if (IsDockJettisonable(d_idx)) {
-		VB1->docks_to_del.push_back(dock_defs[d_idx].dh);
-		VB1->docks_jettisoned.push_back(d_idx);
+		docks_to_del.push_back(dock_defs[d_idx].dh);
+		docks_jettisoned.push_back(d_idx);
 	//	VB1->DelDock(dock_defs[d_idx].dh);
 		dock_defs[d_idx].dh = NULL;
 	}

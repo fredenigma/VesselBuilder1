@@ -172,8 +172,16 @@ void MeshManager::AddMeshDef(string meshname, VECTOR3 pos, VECTOR3 dir, VECTOR3 
 	return AddMeshDef(md);
 }
 
-
-void MeshManager::LoadMeshes() {
+void MeshManager::PreLoadMesh(string meshname, VECTOR3 dir, VECTOR3 rot) {
+	if ((VB1->AreVector3Equal(dir, _V(0, 0, 1))) && (VB1->AreVector3Equal(rot, _V(0, 1, 0)))) {
+		oapiLoadMeshGlobal(meshname.c_str());
+	}
+	else {
+		g_RM = VB1->FindRM(dir, rot);
+		oapiLoadMeshGlobal(meshname.c_str(), LoadMeshClbk);
+	}
+}
+void MeshManager::PreLoadMeshes() {
 	LogV("Load Meshes Started");
 //	SBLog("Loading of %i Meshes...",nMeshes);
 	if (msh_defs.size() <= 0) {
@@ -189,10 +197,15 @@ void MeshManager::LoadMeshes() {
 	for (UINT i = 0; i < msh_defs.size(); i++) {
 		//loading_msh_counter = i;
 		g_RM = msh_defs[i].rm;
-		msh_defs[i].msh_h = oapiLoadMeshGlobal(msh_defs[i].meshname.c_str(), LoadMeshClbk);
+		if ((VB1->AreVector3Equal(msh_defs[i].dir, _V(0, 0, 1))) && (VB1->AreVector3Equal(msh_defs[i].rot, _V(0, 1, 0)))) {
+			msh_defs[i].msh_h = oapiLoadMeshGlobal(msh_defs[i].meshname.c_str());
+		}
+		else {
+			msh_defs[i].msh_h = oapiLoadMeshGlobal(msh_defs[i].meshname.c_str(), LoadMeshClbk);
+		}
+		
 		msh_defs[i].ngrps = oapiMeshGroupCount(msh_defs[i].msh_h);
-		msh_defs[i].msh_idx = VB1->AddMesh(msh_defs[i].msh_h, &msh_defs[i].ofs);
-		VB1->SetMeshVisibilityMode(msh_defs[i].msh_idx, msh_defs[i].visibility);
+		
 		msh_defs[i].template_msh_h = VB1->CopyMeshFromTemplate(msh_defs[i].msh_idx);
 		if (msh_defs[i].ngrps > 0) {
 			msh_defs[i].HighlightedGrps = new bool[msh_defs[i].ngrps];
@@ -202,7 +215,7 @@ void MeshManager::LoadMeshes() {
 		}
 		
 		if (msh_defs[i].msh_h != NULL) {
-			LogV("Loaded Mesh : %s @:%.3f %.3f %.3f", msh_defs[i].meshname.c_str(), msh_defs[i].ofs.x, msh_defs[i].ofs.y, msh_defs[i].ofs.z);
+			LogV("PreLoaded Mesh : %s", msh_defs[i].meshname.c_str());
 	//		SBLog("Loaded Mesh: %s @:%.3f %.3f %.3f", msh_defs[i].meshname.c_str(), msh_defs[i].ofs.x, msh_defs[i].ofs.y, msh_defs[i].ofs.z);
 		}
 		else {
@@ -210,8 +223,16 @@ void MeshManager::LoadMeshes() {
 		//	SBLog("WARNING: Unable to load mesh %s", msh_defs[i].meshname.c_str());
 		}
 	}
-	LogV("Loading of %i Meshes Completed", msh_defs.size());
+	LogV("PreLoading of %i Meshes Completed", msh_defs.size());
 	//SBLog("Loading of %i Meshes Complete", msh_defs.size());
+	return;
+}
+void MeshManager::AddMeshes() {
+	for (UINT i = 0; i < msh_defs.size(); i++) {
+		msh_defs[i].msh_idx = VB1->AddMesh(msh_defs[i].msh_h, &msh_defs[i].ofs);
+		VB1->SetMeshVisibilityMode(msh_defs[i].msh_idx, msh_defs[i].visibility);
+		LogV("Added Mesh:%i @:%.3f %.3f %.3f", i, msh_defs[i].ofs.x, msh_defs[i].ofs.y, msh_defs[i].ofs.z);
+	}
 	return;
 }
 

@@ -31,6 +31,7 @@
 #include "VariableDragManager.h"
 #include "MET.h"
 #include "EventManager.h"
+#include "ConfigurationManager.h"
 
 #define LogV(x,...) Log->Log(x,##__VA_ARGS__)
 
@@ -77,6 +78,7 @@ VesselBuilder1::VesselBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
 	VardMng = new VariableDragManager(this);
 	EvMng = new EventManager(this);
 	Met = new MET();
+	ConfigMng = new ConfigurationManager(this);
 
 	cfgfilename.clear();
 	follow_me_pos = _V(0, 0, 0);
@@ -96,9 +98,7 @@ VesselBuilder1::VesselBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
 
 	vclip = V_CLIPBOARD();
 	
-	docks_to_del.clear();
-	docks_jettisoned.clear();
-
+	
 	GrabMode = false;
 	currentGrabAtt = 0;
 	NoEditor = false;
@@ -157,6 +157,8 @@ VesselBuilder1::~VesselBuilder1(){
 	EvMng = NULL;
 	delete Met;
 	Met = NULL;
+	delete ConfigMng;
+	ConfigMng = NULL;
 	LogV("Destructor Completed");
 	Log->CloseLog();
 	delete Log;
@@ -251,9 +253,16 @@ void VesselBuilder1::clbkSetClassCaps(FILEHANDLE cfg){
 	LogV("Set Class Caps Started");
 	SetEmptyMass(1000);
 	SetSize(10);
+	map<ItemType, bool>Sects;
+	Sects[MESH] = true;
+	Sects[DOCK] = true;
+	Sects[ATTACHMENT] = true;
+	ConfigMng->AddConfiguration(this, Sects,cfg);
+	ConfigMng->ApplyDefaultConfiguration(true);
 	
-
-
+	ConfigMng->AddConfiguration(this, Sects, cfg);
+	//string filename = "\\Vessels\\VesselBuilder1\\ISS_AtoZ_UV.cfg";
+	//ConfigMng->AddConfiguration(this, filename);
 //	SBLog("ClassName:%s", GetClassName());
 	
 	//ResetVehicle();
@@ -299,9 +308,9 @@ void VesselBuilder1::clbkLoadStateEx(FILEHANDLE scn,void *vs)
 			char docks_gone[256] = { '\0' };
 			sscanf(line + 16, "%s", docks_gone);
 			string dcg(docks_gone);
-			docks_jettisoned = readVectorUINT(dcg);
-			for (UINT i = 0; i < docks_jettisoned.size(); i++) {
-				docks_to_del.push_back(DckMng->GetDH(docks_jettisoned[i]));
+			DckMng->docks_jettisoned = readVectorUINT(dcg);
+			for (UINT i = 0; i < DckMng->docks_jettisoned.size(); i++) {
+				DckMng->docks_to_del.push_back(DckMng->GetDH(DckMng->docks_jettisoned[i]));
 			}
 		}
 		else if (!_strnicmp(line, "CURRENT_CAM",11)) {
@@ -367,8 +376,8 @@ void VesselBuilder1::clbkSaveState(FILEHANDLE scn)
 		sprintf(buf, "CURRENT_CAM");
 		oapiWriteScenario_int(scn, buf, CamMng->GetCurrentCamera());
 	}
-	if (docks_jettisoned.size() > 0) {
-		string docks_gone = WriteVectorUINT(docks_jettisoned, false);
+	if (DckMng->docks_jettisoned.size() > 0) {
+		string docks_gone = WriteVectorUINT(DckMng->docks_jettisoned, false);
 		char cbuf[256] = { '\0' };
 		sprintf(cbuf, "DOCKS_JETTISONED");
 		char d_buff[256] = { '\0' };
@@ -643,6 +652,13 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 		else { return 0; }
 	}
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == OAPI_KEY_K) {
+		if (ConfigMng->GetCurrentConfiguration() == 0) {
+			ConfigMng->ApplyConfiguration(1);
+		}
+		else {
+			ConfigMng->ApplyConfiguration(0);
+		}
+	//	ConfigMng->ApplyConfiguration(1);
 		//Met->SetMJD0(oapiGetSimMJD() + 0.01);
 	/*	DWORD td_count = this->GetTouchdownPointCount();
 		for (UINT i = 0; i < td_count; i++) {
@@ -677,10 +693,10 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 		return 1;
 	}
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && KEYMOD_CONTROL(kstate) && key == OAPI_KEY_K) {
-		Event::TRIGGER Trig = Event::TRIGGER();
+		/*Event::TRIGGER Trig = Event::TRIGGER();
 		Trig.Type = Event::TRIGGER::TIME;
 		Trig.time_mode = Event::TRIGGER::TIME_MODE::MET;
-		Trig.TriggerValue = 10;
+		Trig.TriggerValue = 10;*/
 		//Trig.Type = Event::TRIGGER::TRIGGERTYPE::KEYPRESS;
 		//Trig.Key = OAPI_KEY_M;
 		//Trig.KeyMods.Alt = true;
@@ -689,12 +705,12 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 		//EvMng->CreateAnimTriggerEvent("TESTANIM", Trig, 5, true);
 		//THRUSTER_HANDLE th = ThrMng->GetThrTH(3);
 		//EvMng->CreateThrusterFireEvent("TEST", Trig, th);
-		string fn("\\Vessels\\VesselBuilder1\\Cupola_VB.cfg");
+	/*	string fn("\\Vessels\\VesselBuilder1\\Cupola_VB.cfg");
 		bitset<N_SECTIONS>Sects;
 		for (UINT i = 0; i < N_SECTIONS; i++) {
 			Sects.set(i);
 		}
-		EvMng->CreateReconfigurationEvent("test_reconfig", Trig, Sects, fn);
+		EvMng->CreateReconfigurationEvent("test_reconfig", Trig, Sects, fn);*/
 		/*EvMng->CreateThrusterGroupLevelEvent("TEST", Trig, THGROUP_MAIN);
 		Trig.TriggerValue = 15;
 		EvMng->CreateThrusterGroupLevelEvent("TEST", Trig, THGROUP_MAIN,0);*/
@@ -768,11 +784,11 @@ void VesselBuilder1::clbkPreStep(double simt, double simdt, double mjd) {
 	if (follow_me) {
 		UpdateFollowMe();
 	}
+	DckMng->DockPreStep(simt, simdt, mjd);
+
 	EvMng->PreStep(simt, simdt, mjd);
 	
-	if (docks_to_del.size() > 0) {
-		DelDock(docks_to_del[0]); //needed because other wise crash on scenario close
-	}
+	
 	/*
 	int sign, hrs, mins, secs;
 	Met->GetHMS(sign, hrs, mins, secs);
@@ -788,6 +804,9 @@ void VesselBuilder1::clbkPostStep(double simt, double simdt, double mjd) {
 	VECTOR3 rd;
 	GetRotDrag(rd);
 	sprintf(oapiDebugString(), "GGD:%.3f CS:%.3f %.3f %.3f RD:%.3f %.3f %.3f cw:%.3f %.3f %.3f %.3f", GetGravityGradientDamping(), CS.x, CS.y, CS.z, rd.x, rd.y, rd.z, cw_zp, cw_zm, cw_x, cw_y);*/
+	
+	
+	
 	
 	return;
 }
@@ -845,7 +864,7 @@ bool VesselBuilder1::JettisonDock(UINT idx) {
 void VesselBuilder1::VehicleSetup() {
 	//SBLog("Vehicle Setup Started...");
 //	ResetVehicle();
-	MshMng->LoadMeshes();
+	//MshMng->LoadMeshes();
 	//SBLog("Vehicle Setup Finished...");
 }
 MATRIX3 VesselBuilder1::FindRM(VECTOR3 dir2, VECTOR3 rot2) {
@@ -941,10 +960,12 @@ void VesselBuilder1::ParseCfgFile(FILEHANDLE fh) {
 //	if (fh == NULL) { SBLog("WARNING: cfg file handle NULL!"); }
 	char cbuf[256] = { '\0' };
 
-	MshMng->ParseCfgFile(fh);
-	MshMng->LoadMeshes();
-	DckMng->ParseCfgFile(fh);
-	AttMng->ParseCfgFile(fh);
+	
+//	MshMng->ParseCfgFile(fh);
+//	MshMng->PreLoadMeshes();
+//	MshMng->AddMeshes();
+//	DckMng->ParseCfgFile(fh);
+//	AttMng->ParseCfgFile(fh);
 	AnimMng->ParseCfgFile(fh);
 	PrpMng->ParseCfgFile(fh);
 	ExTMng->ParseCfgFile(fh);
@@ -993,9 +1014,13 @@ void VesselBuilder1::WriteCfgFile(string filename) {
 	oapiWriteItem_vec(fh, "RotResistance", rd);
 	oapiWriteLine(fh, " ");
 
-	MshMng->WriteCfg(fh);
-	DckMng->WriteCfg(fh);
-	AttMng->WriteCfg(fh);
+	//MshMng->WriteCfg(fh);
+	for (UINT i = 0; i < ConfigMng->GetConfigurationsCount();i++) {
+		ConfigMng->WriteConfiguration(i, fh);
+	}
+	
+//	DckMng->WriteCfg(fh);
+//	AttMng->WriteCfg(fh);
 	AnimMng->WriteCfg(fh);
 	PrpMng->WriteCfg(fh);
 	ExTMng->WriteCfg(fh);	

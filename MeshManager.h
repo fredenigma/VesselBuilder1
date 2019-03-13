@@ -41,7 +41,8 @@ public:
 	~MeshManager();
 	vector<MSH_DEF> msh_defs;
 	VesselBuilder1 *VB1;
-	void LoadMeshes();
+	void PreLoadMeshes();
+	void AddMeshes();
 	//UINT loading_msh_counter;
 	//void RotateMeshLoading(MESHHANDLE mesh, MATRIX3 rm);
 	void RotateMesh(MESHHANDLE mesh, DEVMESHHANDLE devmesh, MATRIX3 rm);
@@ -92,5 +93,6 @@ public:
 	void ParseCfgFile(FILEHANDLE fh);
 	WORD GetMeshVisibility(def_idx d_idx);
 	void SetMeshVisibility(def_idx d_idx, WORD visibility);
+	void PreLoadMesh(string meshname,VECTOR3 dir, VECTOR3 rot);
 	void Clear();
 };

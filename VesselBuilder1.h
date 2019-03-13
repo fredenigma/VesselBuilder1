@@ -101,6 +101,7 @@ class LightsManager;
 class LaserManager;
 class VariableDragManager;
 class EventManager;
+class ConfigurationManager;
 
 class MET;
 
@@ -144,7 +145,7 @@ public:
  
  MET *Met;
  EventManager *EvMng;
-
+ ConfigurationManager* ConfigMng;
 
  VISHANDLE visual;
  
@@ -197,8 +198,7 @@ public:
  string scenariodir;
  SURFHANDLE greenL, redL, blueL, whiteL;
  
- vector<DOCKHANDLE>docks_to_del;
- vector<UINT>docks_jettisoned;
+ 
 
  string WriteVectorUINT(vector<UINT> v,bool spaces=true);
  vector<UINT> readVectorUINT(string s);

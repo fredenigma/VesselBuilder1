@@ -137,6 +137,7 @@
     <ClInclude Include="AnimationManager.h" />
     <ClInclude Include="AttachmentManager.h" />
     <ClInclude Include="CameraManager.h" />
+    <ClInclude Include="ConfigurationManager.h" />
     <ClInclude Include="ControlSurfacesManager.h" />
     <ClInclude Include="DialogControl.h" />
     <ClInclude Include="DockManager.h" />
@@ -169,6 +170,7 @@
     <ClCompile Include="BeaconDlgProc.cpp" />
     <ClCompile Include="CamDlgProc.cpp" />
     <ClCompile Include="CameraManager.cpp" />
+    <ClCompile Include="ConfigurationManager.cpp" />
     <ClCompile Include="ControlSurfacesManager.cpp" />
     <ClCompile Include="CtrlSurfDlgProc.cpp" />
     <ClCompile Include="DialogControl.cpp" />

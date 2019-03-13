@@ -76,6 +76,9 @@
     <ClInclude Include="TextReaderDlg.h">
       <Filter>Dialog\TextReader</Filter>
     </ClInclude>
+    <ClInclude Include="ConfigurationManager.h">
+      <Filter>Vessel\Managers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\Orbitersdk\lib\orbiter.lib">
@@ -246,6 +249,9 @@
     </ClCompile>
     <ClCompile Include="TextReaderDlg.cpp">
       <Filter>Dialog\TextReader</Filter>
+    </ClCompile>
+    <ClCompile Include="ConfigurationManager.cpp">
+      <Filter>Vessel\Managers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

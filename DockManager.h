@@ -46,10 +46,13 @@ public:
 	UINT GetDockCount();
 	DOCKHANDLE GetDH(def_idx d_idx);
 	void DockEvent(int dock, OBJHANDLE mate);
+	void DockPreStep(double simt, double simdt, double mjd);
 	def_idx GetDockIdx(DOCKHANDLE dh);
 	VECTOR3* GetDockPosPtr(def_idx d_idx);
 	VECTOR3* GetDockAntiDirPtr(def_idx d_idx);
 	VECTOR3* GetDockAntiRotPtr(def_idx d_idx);
 	UINT GetOrbiterDockIdx(DOCKHANDLE dh);
+	vector<DOCKHANDLE>docks_to_del;
+	vector<UINT>docks_jettisoned;
 	void Clear();
 };

@@ -251,7 +251,7 @@ void DialogControl::Open(HINSTANCE hDLL) {
 }
 void DialogControl::Close() {
 	open = false;
-	VB1->MshMng->ResetHighlights();
+	MshMng->ResetHighlights();
 	ClearLasers(DockLaserMap);
 	ClearLasers(AttLaserMap);
 	ClearLasers(ThLaserMap);
@@ -1393,7 +1393,7 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 	//SB1->AnimEditingMode = false;
 	if (type != MESH) {
 		ShowWindow(hwnd_Mesh, SW_HIDE);
-		VB1->MshMng->ResetHighlights();
+		MshMng->ResetHighlights();
 	}
 	if (type != DOCK) {
 		ShowWindow(hWnd_Dock, SW_HIDE);
@@ -1577,7 +1577,7 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 		case IDC_BUTTON_ADD:
 		{
 			if (CurrentSelection.hitem == hrootMeshes) {
-				VB1->MshMng->AddMeshDef();
+				MshMng->AddMeshDef();
 				UpdateTree(hWnd, MESH,hrootMeshes);
 			}
 			else if (CurrentSelection.hitem == hrootDocks) {
@@ -1805,10 +1805,10 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 					switch (CurrentSelection.Type) {
 						case MESH:
 						{
-							VB1->MshMng->ResetHighlights();
+							MshMng->ResetHighlights();
 							LRESULT getcheck = SendDlgItemMessage(hwnd_Mesh, IDC_CHECK_HIGHLIGHT_MSH, BM_GETCHECK, 0, 0);
 							if (getcheck == BST_CHECKED) {
-								VB1->MshMng->HighlightMesh(VB1->MshMng->IdxDef2Msh(CurrentSelection.idx),true);
+								MshMng->HighlightMesh(MshMng->IdxDef2Msh(CurrentSelection.idx),true);
 							}
 							UpdateMeshDialog(hwnd_Mesh);
 							break;

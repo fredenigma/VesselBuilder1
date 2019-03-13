@@ -125,7 +125,7 @@ void DialogControl::MeshNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) {
 			speedrotation = atof(cbuf) *RAD;
 			VECTOR3 axis = _V(0, 0, -1);
 			double angle = speedrotation*(double)lpd->iDelta;
-			DlgRotateMesh(VB1->MshMng->IdxDef2Msh(idx), axis, angle);
+			DlgRotateMesh(MshMng->IdxDef2Msh(idx), axis, angle);
 			UpdateMeshDialog(hWnd);
 			SendDlgItemMessage(hWnd, IDC_SPIN_ROLL, UDM_SETPOS, 0, 0);
 		}
@@ -142,7 +142,7 @@ void DialogControl::MeshNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) {
 			speedrotation = atof(cbuf) *RAD;
 			VECTOR3 axis = _V(-1, 0, 0);
 			double angle = speedrotation*(double)lpd->iDelta;
-			DlgRotateMesh(VB1->MshMng->IdxDef2Msh(idx), axis, angle);
+			DlgRotateMesh(MshMng->IdxDef2Msh(idx), axis, angle);
 			UpdateMeshDialog(hWnd);
 			SendDlgItemMessage(hWnd, IDC_SPIN_PITCH, UDM_SETPOS, 0, 0);
 		}
@@ -159,7 +159,7 @@ void DialogControl::MeshNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) {
 			speedrotation = atof(cbuf) *RAD;
 			VECTOR3 axis = _V(0, 1, 0);
 			double angle = speedrotation*(double)lpd->iDelta;
-			DlgRotateMesh(VB1->MshMng->IdxDef2Msh(idx), axis, angle);
+			DlgRotateMesh(MshMng->IdxDef2Msh(idx), axis, angle);
 			UpdateMeshDialog(hWnd);
 			SendDlgItemMessage(hWnd, IDC_SPIN_YAW, UDM_SETPOS, 0, 0);
 		}
@@ -173,7 +173,7 @@ void DialogControl::MeshNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) {
 			double speed = 0.5;
 			double delta = (double)lpd->iDelta*speed;
 			VECTOR3 delta_pos = _V(delta, 0, 0);
-			VB1->MshMng->MoveMeshDef(idx, delta_pos);
+			MshMng->MoveMeshDef(idx, delta_pos);
 			UpdateMeshDialog(hWnd);
 
 			SendDlgItemMessage(hWnd, IDC_SPIN_POSX_L, UDM_SETPOS, 0, 0);
@@ -188,7 +188,7 @@ void DialogControl::MeshNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) {
 			double speed = 0.1;
 			double delta = (double)lpd->iDelta*speed;
 			VECTOR3 delta_pos = _V(delta, 0, 0);
-			VB1->MshMng->MoveMeshDef(idx, delta_pos);
+			MshMng->MoveMeshDef(idx, delta_pos);
 			UpdateMeshDialog(hWnd);
 
 			SendDlgItemMessage(hWnd, IDC_SPIN_POSX_S, UDM_SETPOS, 0, 0);
@@ -203,7 +203,7 @@ void DialogControl::MeshNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) {
 			double speed = 0.5;
 			double delta = (double)lpd->iDelta*speed;
 			VECTOR3 delta_pos = _V(0, delta, 0);
-			VB1->MshMng->MoveMeshDef(idx, delta_pos);
+			MshMng->MoveMeshDef(idx, delta_pos);
 			UpdateMeshDialog(hWnd);
 
 			SendDlgItemMessage(hWnd, IDC_SPIN_POSY_L, UDM_SETPOS, 0, 0);
@@ -218,7 +218,7 @@ void DialogControl::MeshNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) {
 			double speed = 0.1;
 			double delta = (double)lpd->iDelta*speed;
 			VECTOR3 delta_pos = _V(0, delta, 0);
-			VB1->MshMng->MoveMeshDef(idx, delta_pos);
+			MshMng->MoveMeshDef(idx, delta_pos);
 			UpdateMeshDialog(hWnd);
 
 			SendDlgItemMessage(hWnd, IDC_SPIN_POSY_S, UDM_SETPOS, 0, 0);
@@ -233,7 +233,7 @@ void DialogControl::MeshNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) {
 			double speed = 0.5;
 			double delta = (double)lpd->iDelta*speed;
 			VECTOR3 delta_pos = _V(0, 0, delta);
-			VB1->MshMng->MoveMeshDef(idx, delta_pos);
+			MshMng->MoveMeshDef(idx, delta_pos);
 			UpdateMeshDialog(hWnd);
 
 			SendDlgItemMessage(hWnd, IDC_SPIN_POSZ_L, UDM_SETPOS, 0, 0);
@@ -248,7 +248,7 @@ void DialogControl::MeshNotify(HWND hWnd, WPARAM wParam, LPARAM lParam) {
 			double speed = 0.1;
 			double delta = (double)lpd->iDelta*speed;
 			VECTOR3 delta_pos = _V(0, 0, delta);
-			VB1->MshMng->MoveMeshDef(idx, delta_pos);
+			MshMng->MoveMeshDef(idx, delta_pos);
 			UpdateMeshDialog(hWnd);
 
 			SendDlgItemMessage(hWnd, IDC_SPIN_POSZ_S, UDM_SETPOS, 0, 0);
