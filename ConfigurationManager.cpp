@@ -1,9 +1,10 @@
 #include "VesselBuilder1.h"
 #include "DialogControl.h"
-#include "ConfigurationManager.h"
 #include "MeshManager.h"
 #include "DockManager.h"
 #include "AttachmentManager.h"
+#include "AnimationManager.h"
+#include "ConfigurationManager.h"
 
 #define LogV(x,...) VB1->Log->Log(x,##__VA_ARGS__)
 
@@ -371,6 +372,195 @@ void AttachmentSection::UpdateSection() {
 		Defs.push_back(d);
 	}
 }
+
+AnimationSection::AnimationSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg) :Section(VB1, config, cfg) {
+	AnimDefs.clear();
+	AnimCompDefs.clear();
+	AnimMng = VB1->AnimMng;
+	ParseSection(cfg);
+	return;
+}
+AnimationSection::~AnimationSection() { AnimMng = NULL; }
+void AnimationSection::ParseSection(FILEHANDLE fh) {
+	UINT anim_counter = 0;
+	char cbuf[256] = { '\0' };
+	int id;
+	sprintf(cbuf, "ANIM_%i_ID", anim_counter);
+	ConfigCheck(cbuf, Config_idx);
+	while (oapiReadItem_int(fh, cbuf, id)) {
+		sprintf(cbuf, "ANIM_%i_NAME", anim_counter);
+		ConfigCheck(cbuf, Config_idx);
+		char namebuf[256] = { '\0' };
+		oapiReadItem_string(fh, cbuf, namebuf);
+		string name(namebuf);
+		double defstate, duration;
+		DWORD key;
+		AnimCycleType Cycle;
+		sprintf(cbuf, "ANIM_%i_DEFSTATE", anim_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_float(fh, cbuf, defstate);
+		sprintf(cbuf, "ANIM_%i_DURATION", anim_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_float(fh, cbuf, duration);
+		sprintf(cbuf, "ANIM_%i_KEY", anim_counter);
+		ConfigCheck(cbuf, Config_idx);
+		int kk;
+		oapiReadItem_int(fh, cbuf, kk);
+		key = (DWORD)kk;
+		int Cyc;
+		sprintf(cbuf, "ANIM_%i_CYCLE", anim_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_int(fh, cbuf, Cyc);
+		Cycle = (AnimCycleType)Cyc;
+		AnimDefinitions ad = AnimDefinitions();
+		ad.anim_name = name;
+		ad.anim_duration = duration;
+		ad.Cycle = Cycle;
+		ad.anim_key = key;
+		ad.anim_defstate = defstate;
+		AnimDefs.push_back(ad);
+		//AddAnimDef(name, duration, Cycle, key, defstate);
+
+		anim_counter++;
+		sprintf(cbuf, "ANIM_%i_ID", anim_counter);
+		ConfigCheck(cbuf, Config_idx);
+	}
+
+	for (UINT i = 0; i < 256; i++) {
+		cbuf[i] = '\0';
+	}
+	UINT animcompdef_counter = 0;
+	sprintf(cbuf, "ANIMCOMP_%i_ID", animcompdef_counter);
+	ConfigCheck(cbuf, Config_idx);
+	while (oapiReadItem_int(fh, cbuf, id)) {
+		char namebuf[256] = { '\0' };
+		int seq, parent_idx, armatt, mesh, type_int, ngrps;
+		bool arm_tip;
+		double state0, state1, angle;
+		VECTOR3 ref, axis, scale, shift;
+		vector<UINT>grps;
+		MGROUP_TRANSFORM::TYPE type;
+		sprintf(cbuf, "ANIMCOMP_%i_NAME", animcompdef_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_string(fh, cbuf, namebuf);
+		string name(namebuf);
+		sprintf(cbuf, "ANIMCOMP_%i_SEQ", animcompdef_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_int(fh, cbuf, seq);
+		sprintf(cbuf, "ANIMCOMP_%i_STATE0", animcompdef_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_float(fh, cbuf, state0);
+		sprintf(cbuf, "ANIMCOMP_%i_STATE1", animcompdef_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_float(fh, cbuf, state1);
+		sprintf(cbuf, "ANIMCOMP_%i_MESH", animcompdef_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_int(fh, cbuf, mesh);
+		sprintf(cbuf, "ANIMCOMP_%i_NGRPS", animcompdef_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_int(fh, cbuf, ngrps);
+
+		grps.clear();
+		if (ngrps > 0) {
+			sprintf(cbuf, "ANIMCOMP_%i_GRPS", animcompdef_counter);
+			ConfigCheck(cbuf, Config_idx);
+			char grpsbuf[256] = { '\0' };
+			oapiReadItem_string(fh, cbuf, grpsbuf);
+			string grpsbuf_s(grpsbuf);
+			grps = VB1->readVectorUINT(grpsbuf_s);
+			if ((grps.size() == 1) && (grps[0] == -1)) {
+				mesh = LOCALVERTEXLIST;
+			}
+		}
+		sprintf(cbuf, "ANIMCOMP_%i_TYPE", animcompdef_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_int(fh, cbuf, type_int);
+		type = (MGROUP_TRANSFORM::TYPE)type_int;
+		if (type_int == 1) { //ROTATE
+			sprintf(cbuf, "ANIMCOMP_%i_REF", animcompdef_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_vec(fh, cbuf, ref);
+			sprintf(cbuf, "ANIMCOMP_%i_AXIS", animcompdef_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_vec(fh, cbuf, axis);
+			sprintf(cbuf, "ANIMCOMP_%i_ANGLE", animcompdef_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_float(fh, cbuf, angle);
+			angle *= RAD;
+		}
+		else if (type_int == 2) { //TRANSLATE
+			sprintf(cbuf, "ANIMCOMP_%i_SHIFT", animcompdef_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_vec(fh, cbuf, shift);
+		}
+		else if (type_int == 3) { //SCALE
+			sprintf(cbuf, "ANIMCOMP_%i_REF", animcompdef_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_vec(fh, cbuf, ref);
+			sprintf(cbuf, "ANIMCOMP_%i_SCALE", animcompdef_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_vec(fh, cbuf, scale);
+		}
+		sprintf(cbuf, "ANIMCOMP_%i_ARMTIP", animcompdef_counter);
+		ConfigCheck(cbuf, Config_idx);
+		if (!oapiReadItem_bool(fh, cbuf, arm_tip)) { arm_tip = false; }
+		if (arm_tip) {
+			sprintf(cbuf, "ANIMCOMP_%i_ARMATT", animcompdef_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_int(fh, cbuf, armatt);
+		}
+
+		sprintf(cbuf, "ANIMCOMP_%i_PARENT", animcompdef_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_int(fh, cbuf, parent_idx);
+		AnimCompDefinitions acd = AnimCompDefinitions();
+		acd.animcomp_seq = seq;
+		acd.animcomp_name = name;
+		acd.animcomp_state0 = state0;
+		acd.animcomp_state1 = state1;
+		acd.animcomp_mesh = mesh;
+		acd.animcomp_ngrps = ngrps;
+		acd.animcomp_grps = grps;
+		acd.parent_idx = parent_idx;
+		acd.type = type_int;
+		acd.ref = ref;
+		acd.axis = axis;
+		acd.scale = scale;
+		acd.shift = shift;
+		acd.angle = angle;
+		acd.arm_tip = arm_tip;
+		acd.arm_att = armatt;
+		AnimCompDefs.push_back(acd);
+	//	UINT index = AddAnimCompDef(seq, name, state0, state1, mesh, ngrps, grps, parent_idx, type_int, ref, axis, scale, shift, angle);
+	//	if (arm_tip) {
+		//	SetAnimCompDefArmTip(index, armatt);
+	//	}
+
+
+		animcompdef_counter++;
+		sprintf(cbuf, "ANIMCOMP_%i_ID", animcompdef_counter);
+		ConfigCheck(cbuf, Config_idx);
+	}
+
+	return;
+}
+
+void AnimationSection::WriteSection(FILEHANDLE fh) {
+	return;
+}
+void AnimationSection::ApplySection() {
+	return;
+}
+void AnimationSection::UpdateSection() {
+	return;
+}
+
+
+
+
+
+
+
 Configuration::Configuration(VesselBuilder1 *_VB1, map<ItemType, bool> _Sections, UINT _config, FILEHANDLE _cfg) {
 	VB1 = _VB1;
 	Configuration_Sections = _Sections;

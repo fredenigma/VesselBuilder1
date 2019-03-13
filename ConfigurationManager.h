@@ -95,6 +95,67 @@ public:
 	AttachmentManager *AttMng;
 };
 
+class AnimationSection: public Section {
+public:
+	AnimationSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg);
+	~AnimationSection();
+	void ParseSection(FILEHANDLE fh);
+	void WriteSection(FILEHANDLE fh);
+	void ApplySection();
+	void UpdateSection();
+	struct AnimDefinitions {
+		string anim_name;
+		double anim_defstate;
+		double anim_duration;
+		DWORD anim_key;
+		AnimCycleType Cycle;
+		AnimDefinitions() {
+			anim_name.clear();
+			anim_defstate = 0;
+			anim_duration = 10;
+			anim_key = OAPI_KEY_K;
+			Cycle = AnimCycleType::GOANDSTOP;
+		}
+	};
+	struct AnimCompDefinitions{	
+	string animcomp_name;
+		int animcomp_seq;
+		double animcomp_state0;
+		double animcomp_state1;
+		int animcomp_mesh;
+		int animcomp_ngrps;
+		vector<UINT> animcomp_grps;
+		int type;
+		VECTOR3 ref;
+		VECTOR3 axis;
+		double angle;
+		VECTOR3 shift;
+		VECTOR3 scale;
+		bool arm_tip;
+		int arm_att;
+		int parent_idx;
+		AnimCompDefinitions() {
+			animcomp_name.clear();
+			animcomp_seq = -1;
+			animcomp_state0 = 0;
+			animcomp_state1 = 1;
+			animcomp_mesh = -1;
+			animcomp_ngrps = 0;
+			animcomp_grps.clear();
+			type = 1;
+			ref = _V(0, 0, 0);
+			axis = _V(0, 0, 1);
+			shift = _V(0, 0, 0);
+			scale = _V(1, 1, 1);
+			arm_tip = false;
+			arm_att = -1;
+			parent_idx = -1;
+		}
+	};
+	vector<AnimDefinitions>AnimDefs;
+	vector<AnimCompDefinitions>AnimCompDefs;
+	AnimationManager *AnimMng;
+};
 
 class Configuration {
 public:
