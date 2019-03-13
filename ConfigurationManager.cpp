@@ -130,9 +130,9 @@ void MeshSection::ApplySection() {
 	MshMng->Clear();
 	for (UINT i = 0; i < Defs.size(); i++) {
 		MshMng->AddMeshDef(Defs[i].meshname, Defs[i].pos, Defs[i].dir, Defs[i].rot, Defs[i].visibility);
-		MshMng->PreLoadMeshes();
-		MshMng->AddMeshes();
 	}
+	MshMng->PreLoadMeshes();
+	MshMng->AddMeshes();
 }
 
 DockSection::DockSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg) :Section(VB1, config, cfg) {
@@ -189,7 +189,7 @@ void DockSection::WriteSection(FILEHANDLE fh) {
 	UINT config = Config_idx;
 	for (UINT i = 0; i <Defs.size(); i++) {
 		char cbuf[256] = { '\0' };
-		VECTOR3 pos, dir, rot;
+//		VECTOR3 pos, dir, rot;
 		sprintf(cbuf, "DOCK_%i_ID", i);
 		ConfigCheck(cbuf, config);
 		oapiWriteItem_int(fh, cbuf, i);
@@ -546,12 +546,143 @@ void AnimationSection::ParseSection(FILEHANDLE fh) {
 }
 
 void AnimationSection::WriteSection(FILEHANDLE fh) {
+
+	oapiWriteLine(fh, " ");
+	oapiWriteLine(fh, ";<-------------------------ANIMATIONS DEFINITIONS------------------------->");
+	oapiWriteLine(fh, " ");
+
+	char cbuf[256] = { '\0' };
+	char cbuf2[256] = { '\0' };
+	
+	for (UINT i = 0; i < AnimDefs.size(); i++) {
+		sprintf(cbuf, "ANIM_%i_ID", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_int(fh, cbuf, i);
+		sprintf(cbuf, "ANIM_%i_NAME", i);
+		ConfigCheck(cbuf, Config_idx);
+		sprintf(cbuf2, "%s", AnimDefs[i].anim_name.c_str());
+		oapiWriteItem_string(fh, cbuf, cbuf2);
+		sprintf(cbuf, "ANIM_%i_DEFSTATE", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_float(fh, cbuf, AnimDefs[i].anim_defstate);
+		sprintf(cbuf, "ANIM_%i_DURATION", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_float(fh, cbuf, AnimDefs[i].anim_duration);
+		sprintf(cbuf, "ANIM_%i_KEY", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_int(fh, cbuf, AnimDefs[i].anim_key);
+		sprintf(cbuf, "ANIM_%i_CYCLE", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_int(fh, cbuf, (int)AnimDefs[i].Cycle);
+		oapiWriteLine(fh, " ");
+
+	}
+
+	for (UINT i = 0; i < AnimCompDefs.size(); i++) {
+		sprintf(cbuf, "ANIMCOMP_%i_ID", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_int(fh, cbuf, i);
+		sprintf(cbuf, "ANIMCOMP_%i_SEQ", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_int(fh, cbuf, AnimCompDefs[i].animcomp_seq);
+		sprintf(cbuf, "ANIMCOMP_%i_NAME", i);
+		ConfigCheck(cbuf, Config_idx);
+		sprintf(cbuf2, "%s", AnimCompDefs[i].animcomp_name.c_str());
+		oapiWriteItem_string(fh, cbuf, cbuf2);
+		sprintf(cbuf, "ANIMCOMP_%i_STATE0", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_float(fh, cbuf, AnimCompDefs[i].animcomp_state0);
+		sprintf(cbuf, "ANIMCOMP_%i_STATE1", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_float(fh, cbuf, AnimCompDefs[i].animcomp_state1);
+		bool isArmTip = AnimCompDefs[i].arm_tip;
+		sprintf(cbuf, "ANIMCOMP_%i_ARMTIP", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_bool(fh, cbuf, isArmTip);
+		if (isArmTip) {
+			sprintf(cbuf, "ANIMCOMP_%i_ARMATT", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_int(fh, cbuf, AnimCompDefs[i].arm_att);
+		}
+		sprintf(cbuf, "ANIMCOMP_%i_MESH", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_int(fh, cbuf, AnimCompDefs[i].animcomp_mesh);
+		sprintf(cbuf, "ANIMCOMP_%i_TYPE", i);
+		ConfigCheck(cbuf, Config_idx);
+		int type = AnimCompDefs[i].type;
+		oapiWriteItem_int(fh, cbuf, type);
+		if (type == 1) { //ROTATE
+			sprintf(cbuf, "ANIMCOMP_%i_REF", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_vec(fh, cbuf, AnimCompDefs[i].ref);
+			sprintf(cbuf, "ANIMCOMP_%i_AXIS", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_vec(fh, cbuf, AnimCompDefs[i].axis);
+			sprintf(cbuf, "ANIMCOMP_%i_ANGLE", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_float(fh, cbuf, AnimCompDefs[i].angle*DEG);
+		}
+		else if (type == 2) { //TRANSLATE
+			sprintf(cbuf, "ANIMCOMP_%i_SHIFT", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_vec(fh, cbuf, AnimCompDefs[i].shift);
+		}
+		else if (type == 3) { //SCALE
+			sprintf(cbuf, "ANIMCOMP_%i_REF", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_vec(fh, cbuf, AnimCompDefs[i].ref);
+			sprintf(cbuf, "ANIMCOMP_%i_SCALE", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_vec(fh, cbuf, AnimCompDefs[i].scale);
+		}
+		sprintf(cbuf, "ANIMCOMP_%i_NGRPS", i);
+		ConfigCheck(cbuf, Config_idx);
+		int ngrps = AnimCompDefs[i].animcomp_ngrps;
+		oapiWriteItem_int(fh, cbuf, ngrps);
+		vector<UINT> grps = AnimCompDefs[i].animcomp_grps;
+		string line = VB1->WriteVectorUINT(grps);
+		sprintf(cbuf2, "%s", line.c_str());
+		sprintf(cbuf, "ANIMCOMP_%i_GRPS", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_string(fh, cbuf, cbuf2);
+		sprintf(cbuf, "ANIMCOMP_%i_PARENT", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_int(fh, cbuf, AnimCompDefs[i].parent_idx);
+		oapiWriteLine(fh, " ");
+	}
+
 	return;
 }
 void AnimationSection::ApplySection() {
+	AnimMng->Clear();
+	for (UINT i = 0; i < AnimDefs.size(); i++) {
+		AnimMng->AddAnimDef(AnimDefs[i].anim_name, AnimDefs[i].anim_duration, AnimDefs[i].Cycle, AnimDefs[i].anim_key, AnimDefs[i].anim_defstate);
+	}
+	for (UINT i = 0; i < AnimCompDefs.size(); i++) {
+		UINT index = AnimMng->AddAnimCompDef(AnimCompDefs[i].animcomp_seq, AnimCompDefs[i].animcomp_name, AnimCompDefs[i].animcomp_state0, AnimCompDefs[i].animcomp_state1, AnimCompDefs[i].animcomp_mesh, AnimCompDefs[i].animcomp_ngrps, AnimCompDefs[i].animcomp_grps, AnimCompDefs[i].parent_idx, AnimCompDefs[i].type, AnimCompDefs[i].ref, AnimCompDefs[i].axis, AnimCompDefs[i].scale, AnimCompDefs[i].shift, AnimCompDefs[i].angle);
+		if (AnimCompDefs[i].arm_tip) {
+			AnimMng->SetAnimCompDefArmTip(index, AnimCompDefs[i].arm_att);
+		}
+	}
 	return;
 }
 void AnimationSection::UpdateSection() {
+	AnimDefs.clear();
+	for(UINT i=0;i<AnimMng->GetAnimDefsCount();i++){
+		if (!AnimMng->IsAnimValid(i)) { continue; }
+		AnimDefinitions ad = AnimDefinitions();
+		ad.anim_name = AnimMng->GetAnimName(i);
+		ad.anim_defstate = AnimMng->GetAnimDefState(i);
+		ad.anim_duration = AnimMng->GetAnimDuration(i);
+		ad.anim_key = AnimMng->GetAnimKey(i);
+		ad.Cycle = AnimMng->GetAnimCycle(i);
+		AnimDefs.push_back(ad);
+	}
+	AnimCompDefs.clear();
+	for (UINT i = 0; i < AnimMng->GetAnimCompDefsCount(); i++) {
+		if (!AnimMng->IsAnimCompDefValid(i)) { continue; }
+
+	}
 	return;
 }
 

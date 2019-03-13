@@ -14,9 +14,9 @@ Logger::~Logger(){
 }
 void Logger::Log(std::string str) {
 	FILEHANDLE fh = oapiOpenFile(filename.c_str(), FILE_APP, ROOT);
-	char line[MAX_PATH] = { '\0' };
+	char line[CMAXLEN] = { '\0' };
 	sprintf(line, str.c_str());
-	char buf2[MAX_PATH] = { '\0' };
+	char buf2[CMAXLEN] = { '\0' };
 	sprintf_s(buf2, "%.3f - %s: %s", oapiGetSimTime(), v->GetName(), line);
 	oapiWriteLine(fh, buf2);
 	oapiCloseFile(fh, FILE_APP);
@@ -24,11 +24,11 @@ void Logger::Log(std::string str) {
 }
 void Logger::Log(const char* str, ...) {
 	FILEHANDLE fh = oapiOpenFile(filename.c_str(), FILE_APP, ROOT);
-	char buf[MAX_PATH] = { '\0' };
+	char buf[CMAXLEN] = { '\0' };
 	va_list va;
 	va_start(va, str);
 	vsprintf(buf, str, va);
-	char buf2[MAX_PATH] = { '\0' };
+	char buf2[CMAXLEN] = { '\0' };
 	sprintf(buf2, "%.3f - %s: %s", oapiGetSimTime(), v->GetName(),buf);
 	oapiWriteLine(fh, buf2);
 	oapiCloseFile(fh, FILE_APP);
