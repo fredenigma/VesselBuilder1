@@ -215,7 +215,7 @@ public:
  int currentGrabAtt;
  bool ToggleGrapple();
  bool NoEditor;
- 
+ bool DlgOpened;
  double level1;
  
  void AddDefaultRCS();

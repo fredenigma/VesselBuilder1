@@ -116,10 +116,14 @@ void PropellantManager::ParseCfgFile(FILEHANDLE fh) {
 		string name(namebuf);
 		AddTankDef(name, maxmass, efficiency, -1);
 		sprintf(cbuf, "PRP_%i_PRIMARY", prp_counter);
-		oapiReadItem_bool(fh, cbuf, primary);
+		if (!oapiReadItem_bool(fh, cbuf, primary)) { primary = false; }
 		if (primary) {
 			MakePrimary(prp_counter);
 		}
+		sprintf(cbuf, "PRP_%i_RETAINFL", prp_counter);
+		bool retain;
+		if (!oapiReadItem_bool(fh, cbuf, retain)) { retain = false; }
+		SetPrpRetainFuel(prp_counter, retain);
 
 		prp_counter++;
 		sprintf(cbuf, "PRP_%i_ID", prp_counter);
@@ -140,12 +144,23 @@ void PropellantManager::WriteCfg(FILEHANDLE fh) {
 		oapiWriteItem_float(fh, cbuf, GetTankEfficiency(i));
 		sprintf(cbuf, "PRP_%i_PRIMARY", i);
 		oapiWriteItem_bool(fh, cbuf, IsPrimary(i));
+		if (GetPrpRetainFuel(i)) {
+			sprintf(cbuf, "PRP_%i_RETAINFL", i);
+			oapiWriteItem_bool(fh, cbuf, GetPrpRetainFuel(i));
+		}
 		sprintf(cbuf, "PRP_%i_NAME", i);
 		char name[256] = { '\0' };
 		sprintf(name,"%s", GetTankName(i).c_str());
 		oapiWriteItem_string(fh, cbuf, name);
 		oapiWriteLine(fh, " ");
 	}
+	return;
+}
+bool PropellantManager::GetPrpRetainFuel(def_idx d_idx) {
+	return tanks[d_idx].retain_fuel;
+}
+void PropellantManager::SetPrpRetainFuel(def_idx d_idx, bool set) {
+	tanks[d_idx].retain_fuel = set;
 	return;
 }
 void PropellantManager::Clear() {

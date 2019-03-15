@@ -2,9 +2,11 @@
 struct PRP_DEF {
 	PROPELLANT_HANDLE ph;
 	string name;
+	bool retain_fuel;
 	PRP_DEF() {
 		ph = NULL;
 		name.clear();
+		retain_fuel = false;
 	}
 };
 
@@ -33,5 +35,7 @@ public:
 	PROPELLANT_HANDLE GetTankPH(def_idx d_idx);
 	PROPELLANT_HANDLE GetMainTankPH();
 	int GetPrpIdx(PROPELLANT_HANDLE ph);
+	bool GetPrpRetainFuel(def_idx d_idx);
+	void SetPrpRetainFuel(def_idx d_idx, bool set);
 	void Clear();
 };

@@ -8,6 +8,7 @@ public:
 	virtual void ParseSection(FILEHANDLE fh);
 	virtual void ApplySection();
 	virtual void UpdateSection();
+	virtual void ManagerClear();
 	void ConfigCheck(char* cbuf, UINT config);
 	UINT Config_idx;
 	VesselBuilder1* VB1;
@@ -21,6 +22,7 @@ public:
 	void ParseSection(FILEHANDLE fh);
 	void ApplySection();
 	void UpdateSection();
+	void ManagerClear();
 	struct Definitions {
 		string meshname;
 		VECTOR3 pos;
@@ -46,6 +48,7 @@ public:
 	void WriteSection(FILEHANDLE fh);
 	void ApplySection();
 	void UpdateSection();
+	void ManagerClear();
 	struct Definitions {
 		string name;
 		VECTOR3 pos;
@@ -72,6 +75,7 @@ public:
 	void WriteSection(FILEHANDLE fh);
 	void ApplySection();
 	void UpdateSection();
+	void ManagerClear();
 	struct Definitions {
 		VECTOR3 pos;
 		VECTOR3 dir;
@@ -103,6 +107,7 @@ public:
 	void WriteSection(FILEHANDLE fh);
 	void ApplySection();
 	void UpdateSection();
+	void ManagerClear();
 	struct AnimDefinitions {
 		string anim_name;
 		double anim_defstate;
@@ -156,6 +161,90 @@ public:
 	vector<AnimCompDefinitions>AnimCompDefs;
 	AnimationManager *AnimMng;
 };
+
+class PropellantSection : public Section {
+public:
+	PropellantSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg);
+	~PropellantSection();
+	void ParseSection(FILEHANDLE fh);
+	void WriteSection(FILEHANDLE fh);
+	void ApplySection();
+	void UpdateSection();
+	void ManagerClear();
+	struct Definitions {
+		double maxmass;
+		double efficiency;
+		bool primary;
+		bool retainfl;
+		string name;
+		double currentmass;
+		Definitions() {
+			maxmass = 100;
+			efficiency = 1;
+			primary = false;
+			retainfl = false;
+			name.clear();
+			currentmass = -1;
+		}
+	};
+	vector<Definitions> Defs;
+	PropellantManager *PrpMng;
+};
+
+class ThrusterSection : public Section {
+public:
+	ThrusterSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg);
+	~ThrusterSection();
+	void ParseSection(FILEHANDLE fh);
+	void WriteSection(FILEHANDLE fh);
+	void ApplySection();
+	void UpdateSection();
+	void ManagerClear();
+	struct Definitions {
+		string name;
+		VECTOR3 pos;
+		VECTOR3 dir;
+		double max0;
+		double isp0;
+		double ispref;
+		double pref;
+		int tank;
+		bool hasexhaust;
+		struct ExhaustDefs {
+			double lsize;
+			double wsize;
+			int extex;
+			bool customposdir;
+			VECTOR3 pos;
+			VECTOR3 dir;
+		};
+		vector<ExhaustDefs>Exhausts;
+		bool hasparticle;
+		struct ParticleDefs {
+			int pss_int;
+			bool custompos;
+			VECTOR3 pos;
+		};
+		vector<ParticleDefs>Particles;
+		Definitions() {
+			name.clear();
+			pos = _V(0, 0, 0);
+			dir = _V(0, 0, 1);
+			max0 = 100;
+			isp0 = 1000;
+			ispref = 1000;
+			pref = 101400;
+			tank = -1;
+			hasexhaust = false;
+			Exhausts.clear();
+			hasparticle = false;
+			Particles.clear();
+		}
+	};
+	vector<Definitions> Defs;
+	ThrusterManager *ThrMng;
+};
+
 
 class Configuration {
 public:

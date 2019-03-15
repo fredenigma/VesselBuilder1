@@ -5,6 +5,11 @@
 #include "AttachmentManager.h"
 #include "AnimationManager.h"
 #include "ConfigurationManager.h"
+#include "PropellantManager.h"
+#include "ExTexManager.h"
+#include "ParticleManager.h"
+#include "ThrusterManager.h"
+
 
 #define LogV(x,...) VB1->Log->Log(x,##__VA_ARGS__)
 
@@ -20,6 +25,7 @@ void Section::WriteSection(FILEHANDLE fh){}
 void Section::ParseSection(FILEHANDLE fh) {}
 void Section::ApplySection() {}
 void Section::UpdateSection(){}
+void Section::ManagerClear(){}
 
 void Section::ConfigCheck(char* cbuf, UINT config) {
 	char abuf[256] = { '\0' };
@@ -126,8 +132,10 @@ void MeshSection::UpdateSection() {
 		Defs.push_back(d);
 	}
 }
-void MeshSection::ApplySection() {
+void MeshSection::ManagerClear() {
 	MshMng->Clear();
+}
+void MeshSection::ApplySection() {
 	for (UINT i = 0; i < Defs.size(); i++) {
 		MshMng->AddMeshDef(Defs[i].meshname, Defs[i].pos, Defs[i].dir, Defs[i].rot, Defs[i].visibility);
 	}
@@ -228,9 +236,10 @@ void DockSection::UpdateSection() {
 		Defs.push_back(d);
 	}
 }
-
-void DockSection::ApplySection() {
+void DockSection::ManagerClear() {
 	DckMng->Clear();
+}
+void DockSection::ApplySection() {
 	for (UINT i = 0; i < Defs.size(); i++) {
 		DckMng->AddDockDef(Defs[i].name, Defs[i].pos, Defs[i].dir, Defs[i].rot, Defs[i].jettisonable);
 	}
@@ -349,9 +358,10 @@ void AttachmentSection::WriteSection(FILEHANDLE fh) {
 	}
 	return;
 }
-
-void AttachmentSection::ApplySection() {
+void AttachmentSection::ManagerClear() {
 	AttMng->Clear();
+}
+void AttachmentSection::ApplySection() {
 	for (UINT i = 0; i < Defs.size(); i++) {
 		AttMng->CreateAttDef(Defs[i].toparent, Defs[i].pos, Defs[i].dir, Defs[i].rot, Defs[i].id, Defs[i].range, false, Defs[i].idcheck, Defs[i].idcheck_string);
 	}
@@ -653,8 +663,11 @@ void AnimationSection::WriteSection(FILEHANDLE fh) {
 
 	return;
 }
-void AnimationSection::ApplySection() {
+
+void AnimationSection::ManagerClear() {
 	AnimMng->Clear();
+}
+void AnimationSection::ApplySection() {
 	for (UINT i = 0; i < AnimDefs.size(); i++) {
 		AnimMng->AddAnimDef(AnimDefs[i].anim_name, AnimDefs[i].anim_duration, AnimDefs[i].Cycle, AnimDefs[i].anim_key, AnimDefs[i].anim_defstate);
 	}
@@ -681,41 +694,474 @@ void AnimationSection::UpdateSection() {
 	AnimCompDefs.clear();
 	for (UINT i = 0; i < AnimMng->GetAnimCompDefsCount(); i++) {
 		if (!AnimMng->IsAnimCompDefValid(i)) { continue; }
-
+		AnimCompDefinitions acd = AnimCompDefinitions();
+		acd.animcomp_name = AnimMng->GetAnimCompDefName(i);
+		acd.animcomp_seq = AnimMng->GetAnimCompDefSeqIdx(i);
+		acd.animcomp_state0 = AnimMng->GetAnimCompDefState0(i);
+		acd.animcomp_state1 = AnimMng->GetAnimCompDefState1(i);
+		acd.arm_tip = AnimMng->IsAnimCompArmTip(i);
+		if (acd.arm_tip) {
+			acd.arm_att = AnimMng->GetAnimCompDefAttTip(i);
+		}
+		else {
+			acd.arm_att = -1;
+		}
+		acd.animcomp_mesh = AnimMng->GetAnimCompDefMesh(i);
+		acd.type = (int)AnimMng->GetAnimCompDefType(i);
+		if (acd.type == 1) {
+			acd.ref = AnimMng->GetAnimCompDefRef(i);
+			acd.axis = AnimMng->GetAnimCompDefAxis(i);
+			acd.angle = AnimMng->GetAnimCompDefAngle(i);
+		}
+		else if (acd.type == 2) {
+			acd.shift = AnimMng->GetAnimCompDefShift(i);
+		}
+		else if (acd.type == 3) {
+			acd.ref = AnimMng->GetAnimCompDefRef(i);
+			acd.scale = AnimMng->GetAnimCompDefScale(i);
+		}
+		acd.animcomp_ngrps = AnimMng->GetAnimCompDefNGroups(i);
+		acd.animcomp_grps = AnimMng->GetAnimCompDefGroups(i);
+		acd.parent_idx = AnimMng->GetParentCompDefIdx(AnimMng->GetAnimCompDefParent(i));
 	}
 	return;
 }
 
 
+PropellantSection::PropellantSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg) :Section(VB1, config, cfg) {
+	Defs.clear();
+	PrpMng = VB1->PrpMng;
+	ParseSection(cfg);
+	return;
+}
+PropellantSection::~PropellantSection() { PrpMng = NULL; }
+void PropellantSection::ParseSection(FILEHANDLE fh) {
+	UINT prp_counter = 0;
+	char cbuf[256] = { '\0' };
+	sprintf(cbuf, "PRP_%i_ID", prp_counter);
+	ConfigCheck(cbuf, Config_idx);
+	int id;
+	while (oapiReadItem_int(fh, cbuf, id)) {
+		double maxmass = 0;
+		double efficiency = 1;
+		bool primary = false;
+		char namebuf[256] = { '\0' };
+		sprintf(cbuf, "PRP_%i_MAXMASS", prp_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_float(fh, cbuf, maxmass);
+		sprintf(cbuf, "PRP_%i_EFFICIENCY", prp_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_float(fh, cbuf, efficiency);
+		sprintf(cbuf, "PRP_%i_NAME", prp_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_string(fh, cbuf, namebuf);
+		string name(namebuf);
+		sprintf(cbuf, "PRP_%i_PRIMARY", prp_counter);
+		ConfigCheck(cbuf, Config_idx);
+		if (!oapiReadItem_bool(fh, cbuf, primary)) { primary = false; }
+		sprintf(cbuf, "PRP_%i_RETAINFL", prp_counter);
+		ConfigCheck(cbuf, Config_idx);
+		bool retain;
+		if (!oapiReadItem_bool(fh, cbuf, retain)) { retain = false; }
+
+		Definitions d = Definitions();
+		d.name = name;
+		d.maxmass = maxmass;
+		d.efficiency = efficiency;
+		d.primary = primary;
+		d.retainfl = retain;
+		Defs.push_back(d);
+		
+		
+		prp_counter++;
+		sprintf(cbuf, "PRP_%i_ID", prp_counter);
+		ConfigCheck(cbuf, Config_idx);
+	}
+}
+void PropellantSection::WriteSection(FILEHANDLE fh) {
+	oapiWriteLine(fh, ";<-------------------------PROPELLANT DEFINITIONS------------------------->");
+	oapiWriteLine(fh, " ");
+	for (DWORD i = 0; i < Defs.size(); i++) {
+		char cbuf[256] = { '\0' };
+		sprintf(cbuf, "PRP_%i_ID", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_int(fh, cbuf, i);
+		sprintf(cbuf, "PRP_%i_MAXMASS", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_float(fh, cbuf, Defs[i].maxmass);
+		sprintf(cbuf, "PRP_%i_EFFICIENCY", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_float(fh, cbuf, Defs[i].efficiency);
+		sprintf(cbuf, "PRP_%i_PRIMARY", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_bool(fh, cbuf, Defs[i].primary);
+		if (Defs[i].retainfl) {
+			sprintf(cbuf, "PRP_%i_RETAINFL", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_bool(fh, cbuf, Defs[i].retainfl);
+		}
+		sprintf(cbuf, "PRP_%i_NAME", i);
+		ConfigCheck(cbuf, Config_idx);
+		char name[256] = { '\0' };
+		sprintf(name, "%s", Defs[i].name.c_str());
+		oapiWriteItem_string(fh, cbuf, name);
+		oapiWriteLine(fh, " ");
+	}
+
+}
+void PropellantSection::ManagerClear() {
+	for (UINT i = 0; i < Defs.size(); i++) {
+		if (Defs[i].retainfl) {
+			if (i >= PrpMng->GetPropCount()) { continue; }
+			double curmass = PrpMng->GetTankCurrentMass(i);
+			double maxmass = PrpMng->GetTankMaxMass(i);
+			double level = curmass / maxmass;
+			Defs[i].currentmass = Defs[i].maxmass*level;
+		}
+		else {
+			Defs[i].currentmass = -1;
+		}
+	}
+	PrpMng->Clear();
+}
+void PropellantSection::ApplySection() {
+		
+	for (UINT i = 0; i < Defs.size(); i++) {
+		PrpMng->AddTankDef(Defs[i].name, Defs[i].maxmass, Defs[i].efficiency,Defs[i].currentmass);
+		if (Defs[i].primary) {
+			PrpMng->MakePrimary(i);
+		}
+		PrpMng->SetPrpRetainFuel(i, Defs[i].retainfl);
+	}
+	return;
+}
+void PropellantSection::UpdateSection() {
+	Defs.clear();
+	for (DWORD i = 0; i < PrpMng->GetPropCount(); i++) {
+		Definitions d = Definitions();
+		d.name = PrpMng->GetTankName(i);
+		d.maxmass = PrpMng->GetTankMaxMass(i);
+		d.efficiency = PrpMng->GetTankEfficiency(i);
+		d.primary = PrpMng->IsPrimary(i);
+		d.retainfl = PrpMng->GetPrpRetainFuel(i);
+		Defs.push_back(d);
+	}
+	return;
+}
 
 
+ThrusterSection::ThrusterSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg) :Section(VB1, config, cfg) {
+	Defs.clear();
+	ThrMng = VB1->ThrMng;
+	ParseSection(cfg);
+	return;
+}
+ThrusterSection::~ThrusterSection() { ThrMng = NULL; }
+void ThrusterSection::ParseSection(FILEHANDLE fh) {
+	UINT thr_counter = 0;
+	char cbuf[256] = { '\0' };
+	sprintf(cbuf, "THR_%i_ID", thr_counter);
+	ConfigCheck(cbuf, Config_idx);
+	int id;
+	while (oapiReadItem_int(fh, cbuf, id)) {
+		VECTOR3 pos, dir;
+		double Max0, isp, ispref, pref;
+		int ph_idx;
+		char namebuf[256] = { '\0' };
+		sprintf(cbuf, "THR_%i_NAME", thr_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_string(fh, cbuf, namebuf);
+		string name(namebuf);
+		sprintf(cbuf, "THR_%i_POS", thr_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_vec(fh, cbuf, pos);
+		sprintf(cbuf, "THR_%i_DIR", thr_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_vec(fh, cbuf, dir);
+		sprintf(cbuf, "THR_%i_MAX0", thr_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_float(fh, cbuf, Max0);
+		sprintf(cbuf, "THR_%i_ISP0", thr_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_float(fh, cbuf, isp);
+		sprintf(cbuf, "THR_%i_ISPREF", thr_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_float(fh, cbuf, ispref);
+		sprintf(cbuf, "THR_%i_PREF", thr_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_float(fh, cbuf, pref);
+		sprintf(cbuf, "THR_%i_TANK", thr_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_int(fh, cbuf, ph_idx);
+		PROPELLANT_HANDLE ph = NULL;
+		if (ph_idx != -1) {
+			ph = VB1->PrpMng->GetTankPH(ph_idx);
+		}
+		//UINT thidx = AddThrDef(name, pos, dir, Max0, ph, isp, ispref, pref);
+		Definitions d = Definitions();
+		d.name = name;
+		d.pos = pos;
+		d.dir = dir;
+		d.max0 = Max0;
+		d.tank = ph_idx;
+		d.isp0 = isp;
+		d.ispref = ispref;
+		d.pref = pref;
+		bool hasexh;
+		sprintf(cbuf, "THR_%i_HASEXHAUST", thr_counter);
+		ConfigCheck(cbuf, Config_idx);
+		if (!oapiReadItem_bool(fh, cbuf, hasexh)) { hasexh = false; }
+		d.hasexhaust = hasexh;
+
+		if (hasexh) {
+			UINT ex_counter = 0;
+			int ex_id;
+			sprintf(cbuf, "THR_%i_EX_%i_ID", thr_counter, ex_counter);
+			ConfigCheck(cbuf, Config_idx);
+			while (oapiReadItem_int(fh, cbuf, ex_id))
+			{
+				double lsize, wsize;
+				bool customposdir;
+				VECTOR3 pos, dir;
+				int extex;
+				sprintf(cbuf, "THR_%i_EX_%i_LSIZE", thr_counter, ex_counter);
+				ConfigCheck(cbuf, Config_idx);
+				oapiReadItem_float(fh, cbuf, lsize);
+				sprintf(cbuf, "THR_%i_EX_%i_WSIZE", thr_counter, ex_counter);
+				ConfigCheck(cbuf, Config_idx);
+				oapiReadItem_float(fh, cbuf, wsize);
+				sprintf(cbuf, "THR_%i_EX_%i_EXTEX", thr_counter, ex_counter);
+				ConfigCheck(cbuf, Config_idx);
+				oapiReadItem_int(fh, cbuf, extex);
+				sprintf(cbuf, "THR_%i_EX_%i_CUSTOMPOSDIR", thr_counter, ex_counter);
+				ConfigCheck(cbuf, Config_idx);
+				oapiReadItem_bool(fh, cbuf, customposdir);
+				if (customposdir) {
+					sprintf(cbuf, "THR_%i_EX_%i_POS", thr_counter, ex_counter);
+					ConfigCheck(cbuf, Config_idx);
+					oapiReadItem_vec(fh, cbuf, pos);
+					sprintf(cbuf, "THR_%i_EX_%i_DIR", thr_counter, ex_counter);
+					ConfigCheck(cbuf, Config_idx);
+					oapiReadItem_vec(fh, cbuf, dir);
+				}
+		//		SURFHANDLE tex = extex == -1 ? NULL : VB1->ExTMng->GetExTexSurf(extex);
+		//		AddThrExhaust(thidx, lsize, wsize, tex, customposdir, pos, dir);
+				Definitions::ExhaustDefs ed;
+				ed.lsize = lsize;
+				ed.wsize = wsize;
+				ed.extex = extex;
+				ed.customposdir = customposdir;
+				ed.pos = pos;
+				ed.dir = dir;
+				d.Exhausts.push_back(ed);
+				ex_counter++;
+				sprintf(cbuf, "THR_%i_EX_%i_ID", thr_counter, ex_counter);
+				ConfigCheck(cbuf, Config_idx);
+			}
+		}
+		bool haspart;
+		sprintf(cbuf, "THR_%i_HASPARTICLES", thr_counter);
+		ConfigCheck(cbuf, Config_idx);
+		if (!oapiReadItem_bool(fh, cbuf, haspart)) { haspart = false; }
+		d.hasparticle = haspart;
+		if (haspart) {
+			UINT part_counter = 0;
+			int part_id;
+			sprintf(cbuf, "THR_%i_PART_%i_ID", thr_counter, part_counter);
+			ConfigCheck(cbuf, Config_idx);
+			while (oapiReadItem_int(fh, cbuf, part_id))
+			{
+				UINT pss_index;
+				bool custompos;
+				VECTOR3 pos;
+				sprintf(cbuf, "THR_%i_PART_%i_PSSIDX", thr_counter, part_counter);
+				ConfigCheck(cbuf, Config_idx);
+				int pss_int;
+				oapiReadItem_int(fh, cbuf, pss_int);
+				pss_index = (UINT)pss_int;
+				sprintf(cbuf, "THR_%i_PART_%i_CUSTOMPOS", thr_counter, part_counter);
+				ConfigCheck(cbuf, Config_idx);
+				oapiReadItem_bool(fh, cbuf, custompos);
+				if (custompos) {
+					sprintf(cbuf, "THR_%i_PART_%i_POS", thr_counter, part_counter);
+					ConfigCheck(cbuf, Config_idx);
+					oapiReadItem_vec(fh, cbuf, pos);
+				}
+				//AddThrParticle(thidx, pss_index, custompos, pos);
+				Definitions::ParticleDefs pd;
+				pd.pss_int = pss_int;
+				pd.custompos = custompos;
+				pd.pos = pos;
+				d.Particles.push_back(pd);
+				part_counter++;
+				sprintf(cbuf, "THR_%i_PART_%i_ID", thr_counter, part_counter);
+				ConfigCheck(cbuf, Config_idx);
+			}
+		}
+		Defs.push_back(d);
+		thr_counter++;
+		sprintf(cbuf, "THR_%i_ID", thr_counter);
+		ConfigCheck(cbuf, Config_idx);
+
+	}
+}
+void ThrusterSection::WriteSection(FILEHANDLE fh) {
+	oapiWriteLine(fh, " ");
+	oapiWriteLine(fh, ";<-------------------------THRUSTERS DEFINITIONS------------------------->");
+	oapiWriteLine(fh, " ");
+	for (UINT i = 0; i < Defs.size(); i++) {
+		char cbuf[256] = { '\0' };
+		sprintf(cbuf, "THR_%i_ID", i);
+		oapiWriteItem_int(fh, cbuf, i);
+		sprintf(cbuf, "THR_%i_NAME", i);
+		char namebuf[256] = { '\0' };
+		sprintf(namebuf, "%s", Defs[i].name.c_str());
+		oapiWriteItem_string(fh, cbuf, namebuf);
+		sprintf(cbuf, "THR_%i_POS", i);
+		oapiWriteItem_vec(fh, cbuf, Defs[i].pos);
+		sprintf(cbuf, "THR_%i_DIR", i);
+		oapiWriteItem_vec(fh, cbuf, Defs[i].dir);
+		sprintf(cbuf, "THR_%i_MAX0", i);
+		oapiWriteItem_float(fh, cbuf, Defs[i].max0);
+		sprintf(cbuf, "THR_%i_ISP0", i);
+		oapiWriteItem_float(fh, cbuf, Defs[i].isp0);
+		sprintf(cbuf, "THR_%i_ISPREF", i);
+		oapiWriteItem_float(fh, cbuf, Defs[i].ispref);
+		sprintf(cbuf, "THR_%i_PREF", i);
+		oapiWriteItem_float(fh, cbuf, Defs[i].pref);
+		sprintf(cbuf, "THR_%i_TANK", i);
+		oapiWriteItem_int(fh, cbuf, Defs[i].tank);
+		sprintf(cbuf, "THR_%i_HASEXHAUST", i);
+		bool hasexh = Defs[i].hasexhaust;
+		oapiWriteItem_bool(fh, cbuf, hasexh);
+		if (hasexh) {
+			for (UINT j = 0; j < Defs[i].Exhausts.size(); j++) {
+				sprintf(cbuf, "THR_%i_EX_%i_ID", i, j);
+				oapiWriteItem_int(fh, cbuf, j);
+				sprintf(cbuf, "THR_%i_EX_%i_LSIZE", i, j);
+				oapiWriteItem_float(fh, cbuf, Defs[i].Exhausts[j].lsize);
+				sprintf(cbuf, "THR_%i_EX_%i_WSIZE", i, j);
+				oapiWriteItem_float(fh, cbuf, Defs[i].Exhausts[j].wsize);
+				sprintf(cbuf, "THR_%i_EX_%i_EXTEX", i, j);
+				oapiWriteItem_int(fh, cbuf, Defs[i].Exhausts[j].extex);
+				sprintf(cbuf, "THR_%i_EX_%i_CUSTOMPOSDIR", i, j);
+				oapiWriteItem_bool(fh, cbuf, Defs[i].Exhausts[j].customposdir);
+				if (Defs[i].Exhausts[j].customposdir) {
+					sprintf(cbuf, "THR_%i_EX_%i_POS", i, j);
+					oapiWriteItem_vec(fh, cbuf, Defs[i].Exhausts[j].pos);
+					sprintf(cbuf, "THR_%i_EX_%i_DIR", i, j);
+					oapiWriteItem_vec(fh, cbuf, Defs[i].Exhausts[j].dir);
+				}
+			}
+		}
+		sprintf(cbuf, "THR_%i_HASPARTICLES", i);
+		bool haspart = Defs[i].hasparticle;
+		oapiWriteItem_bool(fh, cbuf, haspart);
+		if (haspart) {
+			for (UINT j = 0; j < Defs[i].Particles.size(); j++) {
+				sprintf(cbuf, "THR_%i_PART_%i_ID", i, j);
+				oapiWriteItem_int(fh, cbuf, j);
+				sprintf(cbuf, "THR_%i_PART_%i_PSSIDX", i, j);
+				oapiWriteItem_int(fh, cbuf, Defs[i].Particles[j].pss_int);
+				sprintf(cbuf, "THR_%i_PART_%i_CUSTOMPOS", i, j);
+				oapiWriteItem_bool(fh, cbuf, Defs[i].Particles[j].custompos);
+				if (Defs[i].Particles[j].custompos) {
+					sprintf(cbuf, "THR_%i_PART_%i_POS", i, j);
+					oapiWriteItem_vec(fh, cbuf, Defs[i].Particles[j].pos);
+				}
+			}
+		}
+
+		oapiWriteLine(fh, " ");
+	}
+
+}
+void ThrusterSection::ApplySection() {
+	for (UINT i = 0; i < Defs.size(); i++) {
+		PROPELLANT_HANDLE ph = NULL;
+		if (Defs[i].tank != -1) {
+			ph = VB1->PrpMng->GetTankPH(Defs[i].tank);
+		}
+		UINT thidx = ThrMng->AddThrDef(Defs[i].name, Defs[i].pos, Defs[i].dir, Defs[i].max0, ph, Defs[i].isp0, Defs[i].ispref, Defs[i].pref);
+		for (UINT j = 0; j < Defs[i].Exhausts.size(); j++) {
+			SURFHANDLE tex = Defs[i].Exhausts[j].extex == -1 ? NULL : VB1->ExTMng->GetExTexSurf(Defs[i].Exhausts[j].extex);
+			ThrMng->AddThrExhaust(thidx, Defs[i].Exhausts[j].lsize, Defs[i].Exhausts[j].wsize, tex, Defs[i].Exhausts[j].customposdir, Defs[i].Exhausts[j].pos, Defs[i].Exhausts[j].dir);
+		}
+		for (UINT j = 0; j < Defs[i].Particles.size(); j++) {
+			ThrMng->AddThrParticle(thidx, Defs[i].Particles[j].pss_int, Defs[i].Particles[j].custompos, Defs[i].Particles[j].pos);
+		}
+	}
+}
+void ThrusterSection::UpdateSection() {
+	Defs.clear();
+	for (DWORD i = 0; i < ThrMng->GetThrCount(); i++) {
+		Definitions d = Definitions();
+		d.name = ThrMng->GetThrName(i);
+		d.pos = ThrMng->GetThrPos(i);
+		d.dir = ThrMng->GetThrDir(i);
+		d.max0 = ThrMng->GetThrMax0(i);
+		d.isp0 = ThrMng->GetThrIsp0(i);
+		d.ispref = ThrMng->GetThrIspRef(i);
+		d.pref = ThrMng->GetThrPRef(i);
+		d.tank = VB1->PrpMng->GetPrpIdx(ThrMng->GetThrPh(i));
+		d.hasexhaust = ThrMng->HasThrExhausts(i);
+		if (d.hasexhaust) {
+			for (UINT j = 0; j < ThrMng->GetThrExCount(i); j++) {
+				SURFHANDLE tex;
+				Definitions::ExhaustDefs ed;
+				ThrMng->GetThrExParams(i, j, ed.lsize, ed.wsize, tex, ed.customposdir, ed.pos, ed.dir);
+				d.Exhausts.push_back(ed);
+			}	
+		}
+		d.hasparticle = ThrMng->HasThrParticles(i);
+		if (d.hasparticle) {
+			for (UINT j = 0; j < ThrMng->GetThrParticlesCount(i); j++) {
+				Definitions::ParticleDefs pd;
+				UINT pss_idx = (UINT)pd.pss_int;
+				ThrMng->GetThrParticleParams(i, j, pss_idx, pd.custompos, pd.pos);
+				d.Particles.push_back(pd);
+			}
+		}
+		Defs.push_back(d);
+	}
+}
+void ThrusterSection::ManagerClear() {
+	ThrMng->Clear();
+}
 
 
 
 Configuration::Configuration(VesselBuilder1 *_VB1, map<ItemType, bool> _Sections, UINT _config, FILEHANDLE _cfg) {
 	VB1 = _VB1;
 	Configuration_Sections = _Sections;
-	/*Msh_Sect = NULL;
-	Dck_Sect = NULL;
-	Att_Sect = NULL;*/
+	LogV("Adding Configuration n:%i", _config);
 	if (Configuration_Sections[MESH]) {
-		//Msh_Sect = new MeshSection(_VB1,_config, _cfg);
-		//Sections.push_back(Msh_Sect);
+		LogV("Mesh Section included");
 		Sections.push_back(new MeshSection(_VB1, _config, _cfg));
 	}
 	if (Configuration_Sections[DOCK]) {
-		//Dck_Sect = new DockSection(_VB1, _config, _cfg);
-		//Sections.push_back(Dck_Sect);
+		LogV("Dock Section included");
 		Sections.push_back(new DockSection(_VB1, _config, _cfg));
 	}
 	if (Configuration_Sections[ATTACHMENT]) {
-		//Att_Sect = new AttachmentSection(_VB1, _config, _cfg);
-		//Sections.push_back(Att_Sect);
+		LogV("Attachments Section included");
 		Sections.push_back(new AttachmentSection(_VB1, _config, _cfg));
+	}
+	if (Configuration_Sections[ANIMATIONS]) {
+		LogV("Animations Section included");
+		Sections.push_back(new AnimationSection(_VB1, _config, _cfg));
+	}
+	if (Configuration_Sections[PROPELLANT]) {
+		LogV("Propellants Section included");
+		Sections.push_back(new PropellantSection(_VB1, _config, _cfg));
+	}
+	if (Configuration_Sections[THRUSTERS]) {
+		LogV("Thrusters Section included");
+		Sections.push_back(new ThrusterSection(_VB1, _config, _cfg));
 	}
 	Config_idx = _config;
 	return;
-	//CommonInit();
+	
 }
 
 
@@ -725,55 +1171,30 @@ Configuration::~Configuration(){
 		delete Sections[i];
 	}
 	Sections.clear();
-	/*delete Msh_Sect;
-	Msh_Sect = NULL;
-	delete Dck_Sect;
-	Dck_Sect = NULL;
-	delete Att_Sect;
-	Att_Sect = NULL;*/
+	
 }
 void Configuration::Apply(){
 	for (UINT i = 0; i < Sections.size(); i++) {
+		UINT p = Sections.size() -1- i;
+		Sections[p]->ManagerClear();
+	}
+	for (UINT i = 0; i < Sections.size(); i++) {
 		Sections[i]->ApplySection();
 	}
-/*	if (Configuration_Sections[MESH]) {
-		Msh_Sect->ApplySection();
-	}
-	if (Configuration_Sections[DOCK]) {
-		Dck_Sect->ApplySection();
-	}
-	if (Configuration_Sections[ATTACHMENT]) {
-		Att_Sect->ApplySection();
-	}*/
+
 }
 void Configuration::Write(FILEHANDLE cfg) {
 	for (UINT i = 0; i < Sections.size(); i++) {
 		Sections[i]->WriteSection(cfg);
 	}
-	/*if (Configuration_Sections[MESH]) {
-		Msh_Sect->WriteSection(cfg);
-	}
-	if (Configuration_Sections[DOCK]) {
-		Dck_Sect->WriteSection(cfg);
-	}
-	if (Configuration_Sections[ATTACHMENT]) {
-		Att_Sect->WriteSection(cfg);
-	}*/
+	
 
 }
 void Configuration::Update() {
 	for (UINT i = 0; i < Sections.size(); i++) {
 		Sections[i]->UpdateSection();
 	}
-	/*if (Configuration_Sections[MESH]) {
-		Msh_Sect->UpdateSection();
-	}
-	if (Configuration_Sections[DOCK]) {
-		Dck_Sect->UpdateSection();
-	}
-	if (Configuration_Sections[ATTACHMENT]) {
-		Att_Sect->UpdateSection();
-	}*/
+	
 }
 ConfigurationManager::ConfigurationManager(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;

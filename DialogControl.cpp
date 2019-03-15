@@ -246,7 +246,8 @@ DialogControl::~DialogControl() {
 }
 void DialogControl::Open(HINSTANCE hDLL) {
 	hDlg = oapiOpenDialogEx(hDLL, IDD_DIALOG1, DlgProcHook, DLG_CAPTIONHELP|DLG_CAPTIONCLOSE, this);
-	
+	VB1->DlgOpened = true;
+	VB1->WriteBackupFile();
 	open = true;
 }
 void DialogControl::Close() {

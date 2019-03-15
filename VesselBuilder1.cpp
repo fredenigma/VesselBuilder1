@@ -102,6 +102,7 @@ VesselBuilder1::VesselBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
 	GrabMode = false;
 	currentGrabAtt = 0;
 	NoEditor = false;
+	DlgOpened = false;
 	level1 = 1.0;
 	redL = oapiRegisterExhaustTexture("red_L");
 	greenL = oapiRegisterExhaustTexture("green_L");
@@ -253,13 +254,27 @@ void VesselBuilder1::clbkSetClassCaps(FILEHANDLE cfg){
 	LogV("Set Class Caps Started");
 	SetEmptyMass(1000);
 	SetSize(10);
+	
+	ExTMng->ParseCfgFile(cfg);
+	PartMng->ParseCfgFile(cfg);
+
 	map<ItemType, bool>Sects;
 	Sects[MESH] = true;
 	Sects[DOCK] = true;
 	Sects[ATTACHMENT] = true;
+	Sects[ANIMATIONS] = true;
+	Sects[PROPELLANT] = true;
+	Sects[THRUSTERS] = true;
 	ConfigMng->AddConfiguration(this, Sects,cfg);
 	ConfigMng->ApplyDefaultConfiguration(true);
 	
+	Sects[MESH] = false;
+	Sects[DOCK] = false;
+	Sects[ATTACHMENT] = false;
+	Sects[ANIMATIONS] = false;
+	Sects[PROPELLANT] = true;
+	Sects[THRUSTERS] = false;
+
 	ConfigMng->AddConfiguration(this, Sects, cfg);
 	//string filename = "\\Vessels\\VesselBuilder1\\ISS_AtoZ_UV.cfg";
 	//ConfigMng->AddConfiguration(this, filename);
@@ -268,9 +283,12 @@ void VesselBuilder1::clbkSetClassCaps(FILEHANDLE cfg){
 	//ResetVehicle();
 	ParseCfgFile(cfg);
 	//VehicleSetup();
-	if (!NoEditor) {
-		WriteBackupFile();
-	}
+	
+	//if (!NoEditor) {
+	//	WriteBackupFile();
+	//}
+	
+	
 	SetNosewheelSteering(true);
 	SetMaxWheelbrakeForce(2e5);
 	//SetCW(0.09, 0.09, 2, 1.4);
@@ -412,11 +430,11 @@ void VesselBuilder1::clbkSaveState(FILEHANDLE scn)
 	if (follow_me) {
 		DeleteFollowMe();
 	}
-	string fn("\\Vessels\\");
-	string cn(GetClassName());
-	fn += cn;
-	fn += ".cfg";
-	if (!NoEditor) {
+	if (DlgOpened) {
+		string fn("\\Vessels\\");
+		string cn(GetClassName());
+		fn += cn;
+		fn += ".cfg";
 		WriteCfgFile(fn);
 	}
 	
@@ -966,11 +984,11 @@ void VesselBuilder1::ParseCfgFile(FILEHANDLE fh) {
 //	MshMng->AddMeshes();
 //	DckMng->ParseCfgFile(fh);
 //	AttMng->ParseCfgFile(fh);
-	AnimMng->ParseCfgFile(fh);
-	PrpMng->ParseCfgFile(fh);
-	ExTMng->ParseCfgFile(fh);
-	PartMng->ParseCfgFile(fh);
-	ThrMng->ParseCfgFile(fh);
+//	AnimMng->ParseCfgFile(fh);
+//	PrpMng->ParseCfgFile(fh);
+//	ExTMng->ParseCfgFile(fh);
+//	PartMng->ParseCfgFile(fh);
+//	ThrMng->ParseCfgFile(fh);
 	ThrGrpMng->ParseCfgFile(fh);
 	TdpMng->ParseCfgFile(fh);
 	AirfoilMng->ParseCfgFile(fh);
@@ -1021,11 +1039,11 @@ void VesselBuilder1::WriteCfgFile(string filename) {
 	
 //	DckMng->WriteCfg(fh);
 //	AttMng->WriteCfg(fh);
-	AnimMng->WriteCfg(fh);
-	PrpMng->WriteCfg(fh);
+//	AnimMng->WriteCfg(fh);
+//	PrpMng->WriteCfg(fh);
 	ExTMng->WriteCfg(fh);	
 	PartMng->WriteCfg(fh);
-	ThrMng->WriteCfg(fh);
+//	ThrMng->WriteCfg(fh);
 	ThrGrpMng->WriteCfg(fh);
 	TdpMng->WriteCfg(fh);
 	AirfoilMng->WriteCfg(fh);
