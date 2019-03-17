@@ -10,6 +10,9 @@
 #include "ParticleManager.h"
 #include "ThrusterManager.h"
 #include "TouchdownPointsManager.h"
+#include "AirfoilsManager.h"
+#include "ControlSurfacesManager.h"
+#include "CameraManager.h"
 
 #define LogV(x,...) VB1->Log->Log(x,##__VA_ARGS__)
 
@@ -1831,7 +1834,398 @@ void TouchDownPointSection::ManagerClear() {
 	TdpMng->Clear();
 }
 
+AirfoilSection::AirfoilSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg) : Section(VB1, config, cfg) {
+	Defs.clear();
+	AirfoilMng = VB1->AirfoilMng;
+	ParseSection(cfg);
+	return;
+}
+AirfoilSection::~AirfoilSection() { AirfoilMng = NULL; }
+void AirfoilSection::ParseSection(FILEHANDLE fh) {
+	char cbuf[256] = { '\0' };
+	char namebuf[256] = { '\0' };
+	int id;
+	UINT airfoil_counter = 0;
+	sprintf(cbuf, "AIRFOIL_%i_ID", airfoil_counter);
+	ConfigCheck(cbuf, Config_idx);
+	while (oapiReadItem_int(fh, cbuf, id)) {
+		VECTOR3 ref;
+		double c, S, A;
+		sprintf(cbuf, "AIRFOIL_%i_NAME", airfoil_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_string(fh, cbuf, namebuf);
+		string name(namebuf);
+		sprintf(cbuf, "AIRFOIL_%i_ORIENTATION", airfoil_counter);
+		ConfigCheck(cbuf, Config_idx);
+		int al;
+		oapiReadItem_int(fh, cbuf, al);
+		AIRFOIL_ORIENTATION align = (AIRFOIL_ORIENTATION)al;
+		sprintf(cbuf, "AIRFOIL_%i_REF", airfoil_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_vec(fh, cbuf, ref);
+		sprintf(cbuf, "AIRFOIL_%i_C", airfoil_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_float(fh, cbuf, c);
+		sprintf(cbuf, "AIRFOIL_%i_S", airfoil_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_float(fh, cbuf, S);
+		sprintf(cbuf, "AIRFOIL_%i_A", airfoil_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_float(fh, cbuf, A);
+		Definitions d = Definitions();
+		d.name = name;
+		d.align = al;
+		d.ref = ref;
+		d.c = c;
+		d.S = S;
+		d.A = A;
 
+		//UINT index = CreateAirfoilDef(name, align, ref, c, S, A);
+		UINT point_counter = 0;
+		sprintf(cbuf, "AIRFOIL_%i_POINT_%i_AOA", airfoil_counter, point_counter);
+		ConfigCheck(cbuf, Config_idx);
+		double aoa, cl, cm;
+		while (oapiReadItem_float(fh, cbuf, aoa)) {
+			sprintf(cbuf, "AIRFOIL_%i_POINT_%i_CL", airfoil_counter, point_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_float(fh, cbuf, cl);
+			sprintf(cbuf, "AIRFOIL_%i_POINT_%i_CM", airfoil_counter, point_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_float(fh, cbuf, cm);
+			aoa *= RAD;
+			//AddPointAirfoiDef(index, aoa, cl, cm);
+			Definitions::LC_Point P;
+			P.aoa = aoa;
+			P.cl = cl;
+			P.cm = cm;
+			d.Points.push_back(P);
+			point_counter++;
+			sprintf(cbuf, "AIRFOIL_%i_POINT_%i_AOA", airfoil_counter, point_counter);
+			ConfigCheck(cbuf, Config_idx);
+		}
+		Defs.push_back(d);
+		airfoil_counter++;
+		sprintf(cbuf, "AIRFOIL_%i_ID", airfoil_counter);
+		ConfigCheck(cbuf, Config_idx);
+	}
+}
+void AirfoilSection::WriteSection(FILEHANDLE fh) {
+	oapiWriteLine(fh, " ");
+	oapiWriteLine(fh, ";<-------------------------AIRFOILS DEFINITIONS------------------------->");
+	oapiWriteLine(fh, " ");
+	for (UINT i = 0; i < Defs.size(); i++) {
+		char cbuf[256] = { '\0' };
+		sprintf(cbuf, "AIRFOIL_%i_ID", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_int(fh, cbuf, i);
+		sprintf(cbuf, "AIRFOIL_%i_NAME", i);
+		ConfigCheck(cbuf, Config_idx);
+		char namebuf[256] = { '\0' };
+		sprintf(namebuf, "%s", Defs[i].name.c_str());
+		oapiWriteItem_string(fh, cbuf, namebuf);
+//		VECTOR3 ref;
+	//	double c, S, A;
+		//AIRFOIL_ORIENTATION align = GetAirfoilDefOrientation(i);
+		//GetAirfoilDefParams(i, ref, c, S, A);
+		sprintf(cbuf, "AIRFOIL_%i_ORIENTATION", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_int(fh, cbuf, Defs[i].align);
+		sprintf(cbuf, "AIRFOIL_%i_REF", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_vec(fh, cbuf, Defs[i].ref);
+		sprintf(cbuf, "AIRFOIL_%i_C", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_float(fh, cbuf, Defs[i].c);
+		sprintf(cbuf, "AIRFOIL_%i_S", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_float(fh, cbuf, Defs[i].S);
+		sprintf(cbuf, "AIRFOIL_%i_A", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_float(fh, cbuf, Defs[i].A);
+		for (UINT j = 0; j < Defs[i].Points.size(); j++) {
+			//double aoa, cl, cm;
+			//GetAirfoilDefPoint(i, j, aoa, cl, cm);
+			sprintf(cbuf, "AIRFOIL_%i_POINT_%i_AOA", i, j);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_float(fh, cbuf, Defs[i].Points[j].aoa*DEG);
+			sprintf(cbuf, "AIRFOIL_%i_POINT_%i_CL", i, j);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_float(fh, cbuf, Defs[i].Points[j].cl);
+			sprintf(cbuf, "AIRFOIL_%i_POINT_%i_CM", i, j);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_float(fh, cbuf, Defs[i].Points[j].cm);
+		}
+		oapiWriteLine(fh, " ");
+	}
+
+}
+void AirfoilSection::ApplySection() {
+	for (UINT i = 0; i < Defs.size(); i++) {
+		AIRFOIL_ORIENTATION align = (AIRFOIL_ORIENTATION)Defs[i].align;
+		UINT index = AirfoilMng->CreateAirfoilDef(Defs[i].name, align, Defs[i].ref, Defs[i].c, Defs[i].S, Defs[i].A);
+		for (UINT j = 0; j < Defs[i].Points.size(); j++) {
+			AirfoilMng->AddPointAirfoiDef(index, Defs[i].Points[j].aoa, Defs[i].Points[j].cl, Defs[i].Points[j].cm);
+		}
+	}
+}
+void AirfoilSection::UpdateSection() {
+	Defs.clear();
+	for (UINT i = 0; i < AirfoilMng->GetAirfoilDefCount(); i++) {
+		Definitions d = Definitions();
+		d.name = AirfoilMng->GetAirfoilDefName(i);
+		d.align = (int)AirfoilMng->GetAirfoilDefOrientation(i);
+		double c, S, A;
+		VECTOR3 ref;
+		AirfoilMng->GetAirfoilDefParams(i, ref, c, S, A);
+		d.ref = ref;
+		d.c = c;
+		d.S = S;
+		d.A = A;
+		for (UINT j = 0; j < AirfoilMng->GetAirfoilDefPointsCount(i); j++) {
+			double aoa, cl, cm;
+			AirfoilMng->GetAirfoilDefPoint(i, j, aoa, cl, cm);
+			Definitions::LC_Point P;
+			P.aoa = aoa;
+			P.cl = cl;
+			P.cm = cm;
+			d.Points.push_back(P);
+		}
+		Defs.push_back(d);
+	}
+}
+void AirfoilSection::ManagerClear() {
+	AirfoilMng->Clear();
+}
+
+CtrlSurfaceSection::CtrlSurfaceSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg) : Section(VB1,config,cfg) {
+	Defs.clear();
+	CtrSurfMng = VB1->CtrSurfMng;
+	ParseSection(cfg);
+	return;
+}
+CtrlSurfaceSection::~CtrlSurfaceSection() { CtrSurfMng = NULL; }
+
+void CtrlSurfaceSection::ParseSection(FILEHANDLE fh) {
+	char cbuf[256] = { '\0' };
+	UINT ctr_counter = 0;
+	int id;
+	sprintf(cbuf, "CTRL_SURFACES_%i_ID", ctr_counter);
+	ConfigCheck(cbuf, Config_idx);
+	while (oapiReadItem_int(fh, cbuf, id)) {
+		AIRCTRL_TYPE type;
+		double area, dcl, delay;
+		int axis;
+		//UINT anim;
+		VECTOR3 ref;
+		char namebuf[256] = { '\0' };
+		sprintf(cbuf, "CTRL_SURFACES_%i_NAME", ctr_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_string(fh, cbuf, namebuf);
+		string name(namebuf);
+		sprintf(cbuf, "CTRL_SURFACES_%i_TYPE", ctr_counter);
+		ConfigCheck(cbuf, Config_idx);
+		int tp;
+		oapiReadItem_int(fh, cbuf, tp);
+		type = (AIRCTRL_TYPE)tp;
+		sprintf(cbuf, "CTRL_SURFACES_%i_AREA", ctr_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_float(fh, cbuf, area);
+		sprintf(cbuf, "CTRL_SURFACES_%i_DCL", ctr_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_float(fh, cbuf, dcl);
+		sprintf(cbuf, "CTRL_SURFACES_%i_REF", ctr_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_vec(fh, cbuf, ref);
+		sprintf(cbuf, "CTRL_SURFACES_%i_AXIS", ctr_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_int(fh, cbuf, axis);
+		sprintf(cbuf, "CTRL_SURFACES_%i_DELAY", ctr_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_float(fh, cbuf, delay);
+		sprintf(cbuf, "CTRL_SURFACES_%i_ANIM", ctr_counter);
+		ConfigCheck(cbuf, Config_idx);
+		int anim;
+		oapiReadItem_int(fh, cbuf, anim);
+		//anim = (UINT)an;
+		Definitions d = Definitions();
+		d.name = name;
+		d.type = tp;
+		d.area = area;
+		d.dcl = dcl;
+		d.ref = ref;
+		d.axis = axis;
+		d.delay = delay;
+		d.anim = anim;
+		Defs.push_back(d);
+		//UINT index = CreateUndefinedCtrlSurfDef(name, type, area, dcl, ref, axis, delay, anim);
+		//DefineCtrlSurface(index);
+
+		ctr_counter++;
+		sprintf(cbuf, "CTRL_SURFACES_%i_ID", ctr_counter);
+		ConfigCheck(cbuf, Config_idx);
+	}
+	return;
+}
+void CtrlSurfaceSection::WriteSection(FILEHANDLE fh) {
+	oapiWriteLine(fh, " ");
+	oapiWriteLine(fh, ";<-------------------------CONTROL SURFACES DEFINITIONS------------------------->");
+	oapiWriteLine(fh, " ");
+	
+	for (UINT i = 0; i < Defs.size(); i++) {
+		char cbuf[256] = { '\0' };
+		sprintf(cbuf, "CTRL_SURFACES_%i_ID", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_int(fh, cbuf, i);
+		sprintf(cbuf, "CTRL_SURFACES_%i_NAME", i);
+		ConfigCheck(cbuf, Config_idx);
+		char namebuf[256] = { '\0' };
+		sprintf(namebuf, "%s", Defs[i].name.c_str());
+		oapiWriteItem_string(fh, cbuf, namebuf);
+		sprintf(cbuf, "CTRL_SURFACES_%i_TYPE", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_int(fh, cbuf, Defs[i].type);
+		sprintf(cbuf, "CTRL_SURFACES_%i_AREA", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_float(fh, cbuf, Defs[i].area);
+		sprintf(cbuf, "CTRL_SURFACES_%i_DCL", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_float(fh, cbuf, Defs[i].dcl);
+		sprintf(cbuf, "CTRL_SURFACES_%i_REF", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_vec(fh, cbuf, Defs[i].ref);
+		sprintf(cbuf, "CTRL_SURFACES_%i_AXIS", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_int(fh, cbuf, Defs[i].axis);
+		sprintf(cbuf, "CTRL_SURFACES_%i_DELAY", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_float(fh, cbuf, Defs[i].delay);
+		sprintf(cbuf, "CTRL_SURFACES_%i_ANIM", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_int(fh, cbuf, Defs[i].anim);
+		oapiWriteLine(fh, " ");
+	}
+
+	return;
+}
+void CtrlSurfaceSection::ApplySection() {
+	for (UINT i = 0; i < Defs.size(); i++) {
+		AIRCTRL_TYPE tp = (AIRCTRL_TYPE)Defs[i].type;
+		UINT index = CtrSurfMng->CreateUndefinedCtrlSurfDef(Defs[i].name, tp, Defs[i].area, Defs[i].dcl, Defs[i].ref, Defs[i].axis, Defs[i].delay, Defs[i].anim);
+		CtrSurfMng->DefineCtrlSurface(index);
+	}
+}
+void CtrlSurfaceSection::UpdateSection() {
+	Defs.clear();
+	for (UINT i = 0; i < CtrSurfMng->CtrlSurfDefCount(); i++) {
+		if (!CtrSurfMng->IsCtrlSurfDefDefined(i)) { continue; }
+		AIRCTRL_TYPE type;
+		double area, dcl, delay;
+		int axis;
+		UINT anim;
+		VECTOR3 ref;
+		string name;
+		name = CtrSurfMng->GetCtrlSurfDefName(i);
+		CtrSurfMng->GetCtrlSurfDefParams(i, type, area, dcl, ref, axis, delay, anim);
+		Definitions d = Definitions();
+		d.name = name;
+		d.ref = ref;
+		d.area = area;
+		d.dcl = dcl;
+		d.axis = axis;
+		d.delay = delay;
+		d.anim = anim;
+		d.type = (int)type;
+		Defs.push_back(d);
+	}
+	
+}
+void CtrlSurfaceSection::ManagerClear() {
+	CtrSurfMng->Clear();
+}
+
+CameraSection::CameraSection(VesselBuilder1 *VB1, UINT config, FILEHANDLE cfg) : Section(VB1, config, cfg) {
+	Defs.clear();
+	CamMng = VB1->CamMng;
+	ParseSection(cfg);
+	return;
+}
+CameraSection::~CameraSection() { CamMng = NULL; }
+void CameraSection::ParseSection(FILEHANDLE fh) {
+	char cbuf[256] = { '\0' };
+	UINT cam_counter = 0;
+	sprintf(cbuf, "CAM_%i_ID", cam_counter);
+	ConfigCheck(cbuf, Config_idx);
+	int id;
+	while (oapiReadItem_int(fh, cbuf, id)) {
+		char namebuf[256] = { '\0' };
+		VECTOR3 pos, dir;
+		double tilt;
+		sprintf(cbuf, "CAM_%i_NAME", cam_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_string(fh, cbuf, namebuf);
+		string name(namebuf);
+		sprintf(cbuf, "CAM_%i_POS", cam_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_vec(fh, cbuf, pos);
+		sprintf(cbuf, "CAM_%i_DIR", cam_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_vec(fh, cbuf, dir);
+		sprintf(cbuf, "CAM_%i_TILT", cam_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_float(fh, cbuf, tilt);
+		tilt *= RAD;
+		//AddCamDef(name, pos, dir, tilt);
+		Definitions d = Definitions();
+		d.name = name;
+		d.pos = pos;
+		d.dir = dir;
+		d.tilt = tilt;
+		Defs.push_back(d);
+		cam_counter++;
+		sprintf(cbuf, "CAM_%i_ID", cam_counter);
+		ConfigCheck(cbuf, Config_idx);
+	}
+}
+void CameraSection::WriteSection(FILEHANDLE fh){
+	oapiWriteLine(fh, " ");
+	oapiWriteLine(fh, ";<-------------------------CAMERA DEFINITIONS------------------------->");
+	oapiWriteLine(fh, " ");
+	for (UINT i = 0; i < Defs.size(); i++) {
+		char cbuf[256] = { '\0' };
+		sprintf(cbuf, "CAM_%i_ID", i);
+		oapiWriteItem_int(fh, cbuf, i);
+		sprintf(cbuf, "CAM_%i_NAME", i);
+		char namebuf[256] = { '\0' };
+		sprintf(namebuf, "%s", Defs[i].name.c_str());
+		oapiWriteItem_string(fh, cbuf, namebuf);
+		sprintf(cbuf, "CAM_%i_POS", i);
+		oapiWriteItem_vec(fh, cbuf, Defs[i].pos);
+		sprintf(cbuf, "CAM_%i_DIR", i);
+		oapiWriteItem_vec(fh, cbuf, Defs[i].dir);
+		sprintf(cbuf, "CAM_%i_TILT", i);
+		oapiWriteItem_float(fh, cbuf, Defs[i].tilt*DEG);
+		oapiWriteLine(fh, " ");
+	}
+}
+void CameraSection::ApplySection() {
+	for (UINT i = 0; i < Defs.size(); i++) {
+		CamMng->AddCamDef(Defs[i].name, Defs[i].pos, Defs[i].dir, Defs[i].tilt);
+	}
+}
+void CameraSection::UpdateSection() {
+	Defs.clear();
+	for (UINT i = 0; i < CamMng->GetCamCount(); i++) {
+		Definitions d = Definitions();
+		d.name = CamMng->GetCamName(i);
+		d.pos = CamMng->GetCamPos(i);
+		d.dir = CamMng->GetCamDir(i);
+		d.tilt = CamMng->GetCamTilt(i);
+		Defs.push_back(d);
+	}
+}
+void CameraSection::ManagerClear() {
+	CamMng->Clear();
+}
 
 
 Configuration::Configuration(VesselBuilder1 *_VB1, map<ItemType, bool> _Sections, UINT _config, FILEHANDLE _cfg) {
@@ -1869,6 +2263,18 @@ Configuration::Configuration(VesselBuilder1 *_VB1, map<ItemType, bool> _Sections
 	if (Configuration_Sections[TOUCHDOWNPOINTS]) {
 		LogV("Touchdown Points Section included");
 		Sections.push_back(new TouchDownPointSection(_VB1, _config, _cfg));
+	}
+	if (Configuration_Sections[AIRFOILS]) {
+		LogV("Airfoils Section included");
+		Sections.push_back(new AirfoilSection(_VB1, _config, _cfg));
+	}
+	if (Configuration_Sections[CTRLSURFACES]) {
+		LogV("Control Surfaces Section included");
+		Sections.push_back(new CtrlSurfaceSection(_VB1, _config, _cfg));
+	}
+	if (Configuration_Sections[CAMERA]) {
+		LogV("Camera Section included");
+		Sections.push_back(new CameraSection(_VB1, _config, _cfg));
 	}
 	Config_idx = _config;
 	return;

@@ -291,6 +291,98 @@ public:
 	TouchdownPointsManager *TdpMng;
 };
 
+class AirfoilSection : public Section {
+public:
+	AirfoilSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg);
+	~AirfoilSection();
+	void ParseSection(FILEHANDLE fh);
+	void WriteSection(FILEHANDLE fh);
+	void ApplySection();
+	void UpdateSection();
+	void ManagerClear();
+	struct Definitions {
+		string name;
+		int align;
+		VECTOR3 ref;
+		double c;
+		double S;
+		double A;
+		struct LC_Point {
+			double aoa;
+			double cl;
+			double cm;
+		};
+		vector<LC_Point>Points;
+		Definitions() {
+			name.clear();
+			align = 0;
+			ref = _V(0, 0, 0);
+			c = 0;
+			S = 0;
+			A = 0;
+			Points.clear();
+		}
+	};
+
+	vector<Definitions> Defs;
+	AirfoilsManager *AirfoilMng;
+};
+
+class CtrlSurfaceSection : public Section {
+public:
+	CtrlSurfaceSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg);
+	~CtrlSurfaceSection();
+	void ParseSection(FILEHANDLE fh);
+	void WriteSection(FILEHANDLE fh);
+	void ApplySection();
+	void UpdateSection();
+	void ManagerClear();
+	struct Definitions {
+		string name;
+		int type;
+		double area, dcl, delay;
+		int anim;
+		int axis;
+		VECTOR3 ref;
+		Definitions() {
+			name.clear();
+			type = 0;
+			area = 0;
+			dcl = 0;
+			axis = 0;
+			delay = 1;
+			anim = -1;
+			ref = _V(0, 0, 0);
+		}
+	};
+	vector<Definitions> Defs;
+	ControlSurfacesManager *CtrSurfMng;
+};
+
+class CameraSection : public Section {
+public:
+	CameraSection(VesselBuilder1 *VB1, UINT config, FILEHANDLE cfg);
+	~CameraSection();
+	void ParseSection(FILEHANDLE fh);
+	void WriteSection(FILEHANDLE fh);
+	void ApplySection();
+	void UpdateSection();
+	void ManagerClear();
+	struct Definitions {
+		string name;
+		VECTOR3 pos;
+		VECTOR3 dir;
+		double tilt;
+		Definitions() {
+			name.clear();
+			pos = _V(0, 0, 0);
+			dir = _V(0, 0, 1);
+			tilt = 0;
+		}
+	};
+	vector<Definitions> Defs;
+	CameraManager *CamMng;
+};
 
 class Configuration {
 public:

@@ -267,6 +267,9 @@ void VesselBuilder1::clbkSetClassCaps(FILEHANDLE cfg){
 	Sects[THRUSTERS] = true;
 	Sects[THRUSTERGROUPS] = true;
 	Sects[TOUCHDOWNPOINTS] = true;
+	Sects[AIRFOILS] = true;
+	Sects[CTRLSURFACES] = true;
+	Sects[CAMERA] = true;
 	ConfigMng->AddConfiguration(this, Sects,cfg);
 	ConfigMng->ApplyDefaultConfiguration(true);
 	
@@ -993,9 +996,9 @@ void VesselBuilder1::ParseCfgFile(FILEHANDLE fh) {
 //	ThrMng->ParseCfgFile(fh);
 //	ThrGrpMng->ParseCfgFile(fh);
 //	TdpMng->ParseCfgFile(fh);
-	AirfoilMng->ParseCfgFile(fh);
-	CtrSurfMng->ParseCfgFile(fh);
-	CamMng->ParseCfgFile(fh);
+//	AirfoilMng->ParseCfgFile(fh);
+//	CtrSurfMng->ParseCfgFile(fh);
+//	CamMng->ParseCfgFile(fh);
 	VCMng->ParseCfgFile(fh);
 	LightsMng->ParseCfgFile(fh);
 	VardMng->ParseCfgFile(fh);
@@ -1049,9 +1052,9 @@ void VesselBuilder1::WriteCfgFile(string filename) {
 	//ThrMng->WriteCfg(fh);
 //	ThrGrpMng->WriteCfg(fh);
 //	TdpMng->WriteCfg(fh);
-	AirfoilMng->WriteCfg(fh);
-	CtrSurfMng->WriteCfg(fh);
-	CamMng->WriteCfg(fh);
+//	AirfoilMng->WriteCfg(fh);
+//	CtrSurfMng->WriteCfg(fh);
+//	CamMng->WriteCfg(fh);
 	VCMng->WriteCfg(fh);
 	LightsMng->WriteCfg(fh);
 	VardMng->WriteCfg(fh);
