@@ -324,9 +324,9 @@ BOOL DialogControl::TdpDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 		{
 			if (HIWORD(wParam) == CBN_SELCHANGE) {
 				int index = SendDlgItemMessage(hWnd, IDC_COMBO_TDPCHANGEOVERANIM, CB_GETCURSEL, 0, 0);
-				UINT anim_indx = (UINT)SendDlgItemMessage(hWnd, IDC_COMBO_TDPCHANGEOVERANIM, CB_GETITEMDATA, index, 0);
-				if (anim_indx >= 0) {
-					TdpMng->SetChangeOverAnimation(anim_indx);
+				UINT anim_dindx = (UINT)SendDlgItemMessage(hWnd, IDC_COMBO_TDPCHANGEOVERANIM, CB_GETITEMDATA, index, 0);
+				if (anim_dindx >= 0) {
+					TdpMng->SetChangeOverAnimation(anim_dindx);
 				}
 			}
 			break;

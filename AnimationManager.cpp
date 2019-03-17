@@ -35,21 +35,23 @@ UINT AnimationManager::AddAnimDef(string name, double duration, AnimCycleType Cy
 	ad.CycleType = Cycle;
 	ad.Key = Key;
 	ad.idx = VB1->CreateAnimation(defstate);
+	*ad.state_ptr = defstate;
 	UINT index = anim_defs.size();
 	anim_defs.push_back(ad);
 	return index;
 }
-void AnimationManager::DeleteAnimDef(anim_idx a_idx) {
-	LogV("Deleting Animation %i", a_idx);
+void AnimationManager::DeleteAnimDef(def_idx d_idx) {
+	LogV("Deleting Animation %i", d_idx);
+	anim_idx a_idx = anim_defs[d_idx].idx;
 	ANIMATION *anims;
 	UINT nanims = VB1->GetAnimPtr(&anims);
 	for (UINT i = 0; i < anims[a_idx].ncomp; i++) {
-		def_idx d_idx = GetAnimCompDefIdx(anims[a_idx].comp[i]);
-		InvalidateComponent(d_idx);
+		def_idx dc_idx = GetAnimCompDefIdx(anims[a_idx].comp[i]);
+		InvalidateComponent(dc_idx);
 	}
-	delete anim_defs[a_idx].state_ptr; //? not so sure it won't trigger issues
+	delete anim_defs[d_idx].state_ptr; //? not so sure it won't trigger issues
 	VB1->DelAnimation(a_idx);
-	anim_defs[a_idx].Valid = false;
+	anim_defs[d_idx].Valid = false;
 	LogV("Deleted");
 	return;
 }
@@ -57,85 +59,88 @@ void AnimationManager::InvalidateComponent(def_idx d_idx) {
 	animcomp_defs[d_idx].Valid = false;
 	return;
 }
-double AnimationManager::GetAnimDefState(anim_idx a_idx) {
+double AnimationManager::GetAnimDefState(def_idx d_idx) {
+	anim_idx a_idx = anim_defs[d_idx].idx;
 	ANIMATION *anims;
 	VB1->GetAnimPtr(&anims);
 	return anims[a_idx].defstate;
 }
-void AnimationManager::SetAnimDefState(anim_idx a_idx, double newdefstate) {
+void AnimationManager::SetAnimDefState(def_idx d_idx, double newdefstate) {
+	anim_idx a_idx = anim_defs[d_idx].idx;
 	ANIMATION *anims;
 	VB1->GetAnimPtr(&anims);
 	anims[a_idx].state = newdefstate;
 	anims[a_idx].defstate = newdefstate;
-	*anim_defs[a_idx].state_ptr = newdefstate;
+	*anim_defs[d_idx].state_ptr = newdefstate;
 	return;
 }
-bool AnimationManager::IsAnimValid(anim_idx a_idx) {
-	return anim_defs[a_idx].Valid;
+bool AnimationManager::IsAnimValid(def_idx d_idx) {
+	return anim_defs[d_idx].Valid;
 }
-void AnimationManager::SetAnimName(anim_idx a_idx, string newname) {
-	anim_defs[a_idx].name = newname;
+void AnimationManager::SetAnimName(def_idx d_idx, string newname) {
+	anim_defs[d_idx].name = newname;
 	return;
 }
-string AnimationManager::GetAnimName(anim_idx a_idx) {
-	return anim_defs[a_idx].name;
+string AnimationManager::GetAnimName(def_idx d_idx) {
+	return anim_defs[d_idx].name;
 }
-void AnimationManager::SetAnimCycle(anim_idx a_idx, AnimCycleType Cycle) {
-	anim_defs[a_idx].CycleType = Cycle;
+void AnimationManager::SetAnimCycle(def_idx d_idx, AnimCycleType Cycle) {
+	anim_defs[d_idx].CycleType = Cycle;
 	return;
 }
-AnimCycleType AnimationManager::GetAnimCycle(anim_idx a_idx) {
-	return anim_defs[a_idx].CycleType;
+AnimCycleType AnimationManager::GetAnimCycle(def_idx d_idx) {
+	return anim_defs[d_idx].CycleType;
 }
-void AnimationManager::SetAnimDuration(anim_idx a_idx, double newduration) {
-	anim_defs[a_idx].duration = newduration;
-	anim_defs[a_idx].speed = 1 / newduration;
+void AnimationManager::SetAnimDuration(def_idx d_idx, double newduration) {
+	anim_defs[d_idx].duration = newduration;
+	anim_defs[d_idx].speed = 1 / newduration;
 	return;
 }
-double AnimationManager::GetAnimDuration(anim_idx a_idx) {
-	return anim_defs[a_idx].duration;
+double AnimationManager::GetAnimDuration(def_idx d_idx) {
+	return anim_defs[d_idx].duration;
 }
-void AnimationManager::SetAnimKey(anim_idx a_idx, DWORD newKey) {
-	anim_defs[a_idx].Key = newKey;
+void AnimationManager::SetAnimKey(def_idx d_idx, DWORD newKey) {
+	anim_defs[d_idx].Key = newKey;
 	return;
 }
-DWORD AnimationManager::GetAnimKey(anim_idx a_idx) {
-	return anim_defs[a_idx].Key;
+DWORD AnimationManager::GetAnimKey(def_idx d_idx) {
+	return anim_defs[d_idx].Key;
 }
-void AnimationManager::SetAnimParams(anim_idx a_idx, double duration, AnimCycleType Cycle, DWORD Key) {
-	anim_defs[a_idx].duration = duration;
-	anim_defs[a_idx].speed = 1 / duration;
-	anim_defs[a_idx].CycleType = Cycle;
-	anim_defs[a_idx].Key = Key;
+void AnimationManager::SetAnimParams(def_idx d_idx, double duration, AnimCycleType Cycle, DWORD Key) {
+	anim_defs[d_idx].duration = duration;
+	anim_defs[d_idx].speed = 1 / duration;
+	anim_defs[d_idx].CycleType = Cycle;
+	anim_defs[d_idx].Key = Key;
 	return;
 }
-void AnimationManager::GetAnimParams(anim_idx a_idx, double &duration, AnimCycleType &Cycle, DWORD &Key) {
-	duration = anim_defs[a_idx].duration;
-	Cycle = anim_defs[a_idx].CycleType;
-	Key = anim_defs[a_idx].Key;
+void AnimationManager::GetAnimParams(def_idx d_idx, double &duration, AnimCycleType &Cycle, DWORD &Key) {
+	duration = anim_defs[d_idx].duration;
+	Cycle = anim_defs[d_idx].CycleType;
+	Key = anim_defs[d_idx].Key;
 	return;
 }
-void AnimationManager::SetAnimationState(anim_idx a_idx, double newstate) {
+void AnimationManager::SetAnimationState(def_idx d_idx, double newstate) {
+	anim_idx a_idx = anim_defs[d_idx].idx;
 	VB1->SetAnimation(a_idx, newstate);
-	*anim_defs[a_idx].state_ptr = newstate;
-	
-	
+	*anim_defs[d_idx].state_ptr = newstate;
+		
 	return;
 }
-double AnimationManager::GetAnimationState(anim_idx a_idx) {
+double AnimationManager::GetAnimationState(def_idx d_idx) {
+	anim_idx a_idx = anim_defs[d_idx].idx;
 	return VB1->GetAnimation(a_idx);
 }
 
-UINT AnimationManager::AddAnimCompDef(anim_idx a_idx, MGROUP_TRANSFORM::TYPE type) { 
+UINT AnimationManager::AddAnimCompDef(def_idx d_idx, MGROUP_TRANSFORM::TYPE type) { 
 	char cbuf[256] = { '\0' };
 	int index = animcomp_defs.size();
 	sprintf(cbuf, "AnimComp_%i", index);
 	string name(cbuf);
 	vector<UINT>empty;
 	empty.clear();
-	return AddAnimCompDef(a_idx, name, 0, 1, 0, 0, empty, -1, (int)type, _V(0, 0, 0), _V(0, 0, 1), _V(1, 1, 1), _V(0, 0, 0), 0);
+	return AddAnimCompDef(d_idx, name, 0, 1, 0, 0, empty, -1, (int)type, _V(0, 0, 0), _V(0, 0, 1), _V(1, 1, 1), _V(0, 0, 0), 0);
 }
-UINT AnimationManager::AddAnimCompDef(anim_idx a_idx, string name, double state0, double state1, int mesh, int ngrps, vector<UINT>grps, int parent, int type, VECTOR3 ref, VECTOR3 axis, VECTOR3 scale, VECTOR3 shift, double angle) {
+UINT AnimationManager::AddAnimCompDef(def_idx d_idx, string name, double state0, double state1, int mesh, int ngrps, vector<UINT>grps, int parent, int type, VECTOR3 ref, VECTOR3 axis, VECTOR3 scale, VECTOR3 shift, double angle) {
 	LogV("Adding AnimComp: name:%s",name.c_str());
 	ANIMCOMP_DEF acd = ANIMCOMP_DEF();
 	acd.name = name;
@@ -171,7 +176,7 @@ UINT AnimationManager::AddAnimCompDef(anim_idx a_idx, string name, double state0
 	}
 	}
 	ANIMATIONCOMPONENT_HANDLE parent_ach = GetAnimCompDefACH(parent);
-
+	anim_idx a_idx = anim_defs[d_idx].idx;
 	acd.ach = VB1->AddAnimationComponent(a_idx, state0, state1, mgt, parent_ach);
 	acd.a_idx = a_idx;
 	UINT index = animcomp_defs.size();
@@ -416,7 +421,7 @@ UINT AnimationManager::GetAnimCompDefsCount(){
 }
 
 ANIMATIONCOMPONENT_HANDLE AnimationManager::GetAnimCompDefACH(int d_idx) {
-	if (d_idx < 0) {
+	if ((d_idx < 0)||(d_idx >=animcomp_defs.size())) {
 		return NULL;
 	}
 	else {
@@ -434,7 +439,7 @@ UINT AnimationManager::GetAnimCompDefIdx(ANIMATIONCOMPONENT_HANDLE ach) {
 UINT AnimationManager::GetAnimCompDefSeqIdx(def_idx d_idx) {
 	UINT a_counter = 0;
 	for (UINT i = 0; i < GetAnimDefsCount(); i++) {
-		if (i == animcomp_defs[d_idx].a_idx) {
+		if (anim_defs[i].idx == animcomp_defs[d_idx].a_idx) {
 			return a_counter;
 		}
 		if (IsAnimValid(i)) {
@@ -458,38 +463,38 @@ int AnimationManager::GetParentCompDefIdx(ANIMATIONCOMPONENT_HANDLE parent_ach) 
 }
 
 
-bool AnimationManager::IsAnimRunning(anim_idx a_idx) {
-	return anim_defs[a_idx].running;
+bool AnimationManager::IsAnimRunning(def_idx d_idx) {
+	return anim_defs[d_idx].running;
 }
-bool AnimationManager::IsAnimBackward(anim_idx a_idx) {
-	return anim_defs[a_idx].backward;
+bool AnimationManager::IsAnimBackward(def_idx d_idx) {
+	return anim_defs[d_idx].backward;
 }
-double AnimationManager::GetAnimSpeed(anim_idx a_idx) {
-	return anim_defs[a_idx].speed;
+double AnimationManager::GetAnimSpeed(def_idx d_idx) {
+	return anim_defs[d_idx].speed;
 }
-void AnimationManager::StartAnimation(anim_idx a_idx) {
-	anim_defs[a_idx].running = true;
+void AnimationManager::StartAnimation(def_idx d_idx) {
+	anim_defs[d_idx].running = true;
 }
-void AnimationManager::StartAnimationForward(anim_idx a_idx) {
-	anim_defs[a_idx].running = true;
-	anim_defs[a_idx].backward = false;
+void AnimationManager::StartAnimationForward(def_idx d_idx) {
+	anim_defs[d_idx].running = true;
+	anim_defs[d_idx].backward = false;
 	return;
 }
-void AnimationManager::StartAnimationBackward(anim_idx a_idx) {
-	anim_defs[a_idx].running = true;
-	anim_defs[a_idx].backward = true;
+void AnimationManager::StartAnimationBackward(def_idx d_idx) {
+	anim_defs[d_idx].running = true;
+	anim_defs[d_idx].backward = true;
 	return;
 }
-void AnimationManager::StopAnimation(anim_idx a_idx) {
-	anim_defs[a_idx].running = false;
+void AnimationManager::StopAnimation(def_idx d_idx) {
+	anim_defs[d_idx].running = false;
 }
-void AnimationManager::SetAnimationBackward(anim_idx a_idx, bool backward) {
-	anim_defs[a_idx].backward = backward;
+void AnimationManager::SetAnimationBackward(def_idx d_idx, bool backward) {
+	anim_defs[d_idx].backward = backward;
 	return;
 }
-void AnimationManager::ResetAnimation(anim_idx a_idx) {
-	double defstate = GetAnimDefState(a_idx);
-	SetAnimationState(a_idx, defstate);
+void AnimationManager::ResetAnimation(def_idx d_idx) {
+	double defstate = GetAnimDefState(d_idx);
+	SetAnimationState(d_idx, defstate);
 	return;
 }
 void AnimationManager::StartManualArm() {
@@ -981,12 +986,14 @@ void AnimationManager::WriteCfg(FILEHANDLE fh) {
 
 	return;
 }
-UINT AnimationManager::GetAnimNComps(anim_idx a_idx) {
+UINT AnimationManager::GetAnimNComps(def_idx d_idx) {
+	anim_idx a_idx = anim_defs[d_idx].idx;
 	ANIMATION* anims;
 	VB1->GetAnimPtr(&anims);
 	return anims[a_idx].ncomp;
 }
-ANIMATIONCOMPONENT_HANDLE AnimationManager::GetAnimComp(anim_idx a_idx, UINT comp_idx) {
+ANIMATIONCOMPONENT_HANDLE AnimationManager::GetAnimComp(def_idx d_idx, UINT comp_idx) {
+	anim_idx a_idx = anim_defs[d_idx].idx;
 	ANIMATION* anims;
 	VB1->GetAnimPtr(&anims);
 	return anims[a_idx].comp[comp_idx];
@@ -994,9 +1001,9 @@ ANIMATIONCOMPONENT_HANDLE AnimationManager::GetAnimComp(anim_idx a_idx, UINT com
 MGROUP_TRANSFORM::TYPE AnimationManager::GetAnimCompDefType(def_idx d_idx) {
 	return ((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->Type();
 }
-int AnimationManager::AnimationRunStatus(anim_idx a_idx) {
-	if ((IsAnimRunning(a_idx)) && (!IsAnimBackward(a_idx))) { return 1; }
-	else if ((IsAnimRunning(a_idx)) && (IsAnimBackward(a_idx))) { return -1; }
+int AnimationManager::AnimationRunStatus(def_idx d_idx) {
+	if ((IsAnimRunning(d_idx)) && (!IsAnimBackward(d_idx))) { return 1; }
+	else if ((IsAnimRunning(d_idx)) && (IsAnimBackward(d_idx))) { return -1; }
 	else { return 0; }
 }
 
@@ -1006,15 +1013,21 @@ void AnimationManager::Clear() {
 	UINT nanims = VB1->GetAnimPtr(&anims);
 	for (UINT i = 0; i < nanims; i++) {
 		VB1->DelAnimation(i);
+		//delete anim_defs[i].state_ptr;
+	}
+	for (UINT i = 0; i < anim_defs.size(); i++) {
 		delete anim_defs[i].state_ptr;
 	}
-	
 	anim_defs.clear();
 	animcomp_defs.clear();
 	LogV("Clearing Animation Section Completed");
 	return;
 }
 
-double* AnimationManager::GetAnimStatePtr(anim_idx a_idx) {
-	return anim_defs[a_idx].state_ptr;
+anim_idx AnimationManager::GetAnimIdx(def_idx d_idx) {
+	return anim_defs[d_idx].idx;
+}
+
+double* AnimationManager::GetAnimStatePtr(def_idx d_idx) {
+	return anim_defs[d_idx].state_ptr;
 }

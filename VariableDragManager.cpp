@@ -39,6 +39,7 @@ UINT VariableDragManager::AddVardDef(string name, UINT anim_idx, double factor, 
 void VariableDragManager::DefineVarDef(def_idx d_idx) {
 	double *state_ptr = VB1->AnimMng->GetAnimStatePtr(vard_def[d_idx].anim_idx);
 	VB1->CreateVariableDragElement(state_ptr, vard_def[d_idx].factor, vard_def[d_idx].ref);
+//	LogV("state pointer value:%.3f", *state_ptr);
 	vard_def[d_idx].defined = true;
 	return;
 }

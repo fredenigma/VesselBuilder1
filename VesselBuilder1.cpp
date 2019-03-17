@@ -265,6 +265,8 @@ void VesselBuilder1::clbkSetClassCaps(FILEHANDLE cfg){
 	Sects[ANIMATIONS] = true;
 	Sects[PROPELLANT] = true;
 	Sects[THRUSTERS] = true;
+	Sects[THRUSTERGROUPS] = true;
+	Sects[TOUCHDOWNPOINTS] = true;
 	ConfigMng->AddConfiguration(this, Sects,cfg);
 	ConfigMng->ApplyDefaultConfiguration(true);
 	
@@ -275,7 +277,7 @@ void VesselBuilder1::clbkSetClassCaps(FILEHANDLE cfg){
 	Sects[PROPELLANT] = true;
 	Sects[THRUSTERS] = false;
 
-	ConfigMng->AddConfiguration(this, Sects, cfg);
+	//ConfigMng->AddConfiguration(this, Sects, cfg);
 	//string filename = "\\Vessels\\VesselBuilder1\\ISS_AtoZ_UV.cfg";
 	//ConfigMng->AddConfiguration(this, filename);
 //	SBLog("ClassName:%s", GetClassName());
@@ -803,10 +805,7 @@ void VesselBuilder1::clbkPreStep(double simt, double simdt, double mjd) {
 		UpdateFollowMe();
 	}
 	DckMng->DockPreStep(simt, simdt, mjd);
-
 	EvMng->PreStep(simt, simdt, mjd);
-	
-	
 	/*
 	int sign, hrs, mins, secs;
 	Met->GetHMS(sign, hrs, mins, secs);
@@ -829,6 +828,7 @@ void VesselBuilder1::clbkPostStep(double simt, double simdt, double mjd) {
 	return;
 }
 void VesselBuilder1::clbkVisualCreated(VISHANDLE vis, int refcount) {
+	LogV("VisualCreated");
 	visual = vis;
 	MshMng->VisualCreated(vis, refcount);
 
@@ -842,10 +842,12 @@ void VesselBuilder1::clbkVisualDestroyed(VISHANDLE vis, int refcount) {
 	return;
 }
 bool VesselBuilder1::clbkLoadVC(int id) {
+	LogV("LoadVC");
 	VCMng->LoadVC(id);
 	return true;
 }
 bool VesselBuilder1::clbkVCMouseEvent(int id, int event, VECTOR3 &p) {
+	LogV("VCMouseEvent");
 	return VCMng->VCMouseEvent(id, event, p);	
 }
 void VesselBuilder1::clbkDockEvent(int dock, OBJHANDLE mate) {
@@ -989,8 +991,8 @@ void VesselBuilder1::ParseCfgFile(FILEHANDLE fh) {
 //	ExTMng->ParseCfgFile(fh);
 //	PartMng->ParseCfgFile(fh);
 //	ThrMng->ParseCfgFile(fh);
-	ThrGrpMng->ParseCfgFile(fh);
-	TdpMng->ParseCfgFile(fh);
+//	ThrGrpMng->ParseCfgFile(fh);
+//	TdpMng->ParseCfgFile(fh);
 	AirfoilMng->ParseCfgFile(fh);
 	CtrSurfMng->ParseCfgFile(fh);
 	CamMng->ParseCfgFile(fh);
@@ -1032,20 +1034,21 @@ void VesselBuilder1::WriteCfgFile(string filename) {
 	oapiWriteItem_vec(fh, "RotResistance", rd);
 	oapiWriteLine(fh, " ");
 
-	//MshMng->WriteCfg(fh);
+//	MshMng->WriteCfg(fh);
+
 	for (UINT i = 0; i < ConfigMng->GetConfigurationsCount();i++) {
 		ConfigMng->WriteConfiguration(i, fh);
 	}
-	
-//	DckMng->WriteCfg(fh);
-//	AttMng->WriteCfg(fh);
-//	AnimMng->WriteCfg(fh);
-//	PrpMng->WriteCfg(fh);
-	ExTMng->WriteCfg(fh);	
+	ExTMng->WriteCfg(fh);
 	PartMng->WriteCfg(fh);
-//	ThrMng->WriteCfg(fh);
-	ThrGrpMng->WriteCfg(fh);
-	TdpMng->WriteCfg(fh);
+	//DckMng->WriteCfg(fh);
+	//AttMng->WriteCfg(fh);
+	//AnimMng->WriteCfg(fh);
+	//PrpMng->WriteCfg(fh);
+	
+	//ThrMng->WriteCfg(fh);
+//	ThrGrpMng->WriteCfg(fh);
+//	TdpMng->WriteCfg(fh);
 	AirfoilMng->WriteCfg(fh);
 	CtrSurfMng->WriteCfg(fh);
 	CamMng->WriteCfg(fh);

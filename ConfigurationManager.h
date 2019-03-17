@@ -245,6 +245,52 @@ public:
 	ThrusterManager *ThrMng;
 };
 
+class ThrusterGroupSection : public Section {
+public:
+	ThrusterGroupSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg);
+	~ThrusterGroupSection();
+	void ParseSection(FILEHANDLE fh);
+	void WriteSection(FILEHANDLE fh);
+	void ApplySection();
+	void UpdateSection();
+	void ManagerClear();
+	map<THGROUP_TYPE, bool> Defined;
+	map<THGROUP_TYPE, vector<UINT> >Thrusters;
+	
+	ThrusterGroupManager *ThrGrpMng;
+};
+
+class TouchDownPointSection : public Section {
+public:
+	TouchDownPointSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg);
+	~TouchDownPointSection();
+	void ParseSection(FILEHANDLE fh);
+	void WriteSection(FILEHANDLE fh);
+	void ApplySection();
+	void UpdateSection();
+	void ManagerClear();
+	struct Definitions {
+		VECTOR3 pos;
+		double stiffness;
+		double damping;
+		double mu;
+		double mu_lng;
+		Definitions() {
+			pos = _V(0, 0, 0);
+			stiffness = 1e5;
+			damping = 1e7;
+			mu = 3;
+			mu_lng = 1.5;
+		}
+	};
+	vector<Definitions>Set1;
+	vector<Definitions>Set2;
+	bool SecondSetEnabled;
+	int changeoveranim;
+
+	TouchdownPointsManager *TdpMng;
+};
+
 
 class Configuration {
 public:

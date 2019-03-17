@@ -187,9 +187,9 @@ void TouchdownPointsManager::EnableSecondSet(bool enable) {
 	Set2Enabled = enable;
 	if (!enable) { state_chk = NULL; }
 }
-void TouchdownPointsManager::SetChangeOverAnimation(anim_idx a_idx) {
-	change_anim_idx = a_idx;
-	state_chk = VB1->AnimMng->anim_defs[a_idx].state_ptr;
+void TouchdownPointsManager::SetChangeOverAnimation(def_idx animd_idx) {
+	change_anim_idx = animd_idx;
+	state_chk = VB1->AnimMng->anim_defs[animd_idx].state_ptr;
 	return;
 }
 UINT TouchdownPointsManager::GetChangeOverAnimation() {
@@ -259,7 +259,7 @@ void TouchdownPointsManager::TouchDownPointsPreStep(double simt, double simdt, d
 			SetCurrentSet(1);
 		}
 	}
-	
+	//sprintf(oapiDebugString(), "State check:%.3f", *state_chk);
 	return;
 }
 void TouchdownPointsManager::Clear() {

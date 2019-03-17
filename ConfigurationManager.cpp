@@ -9,7 +9,7 @@
 #include "ExTexManager.h"
 #include "ParticleManager.h"
 #include "ThrusterManager.h"
-
+#include "TouchdownPointsManager.h"
 
 #define LogV(x,...) VB1->Log->Log(x,##__VA_ARGS__)
 
@@ -893,10 +893,10 @@ void ThrusterSection::ParseSection(FILEHANDLE fh) {
 		sprintf(cbuf, "THR_%i_TANK", thr_counter);
 		ConfigCheck(cbuf, Config_idx);
 		oapiReadItem_int(fh, cbuf, ph_idx);
-		PROPELLANT_HANDLE ph = NULL;
-		if (ph_idx != -1) {
-			ph = VB1->PrpMng->GetTankPH(ph_idx);
-		}
+	//	PROPELLANT_HANDLE ph = NULL;
+	//	if (ph_idx != -1) {
+	//		ph = VB1->PrpMng->GetTankPH(ph_idx);
+	//	}
 		//UINT thidx = AddThrDef(name, pos, dir, Max0, ph, isp, ispref, pref);
 		Definitions d = Definitions();
 		d.name = name;
@@ -1012,61 +1012,83 @@ void ThrusterSection::WriteSection(FILEHANDLE fh) {
 	for (UINT i = 0; i < Defs.size(); i++) {
 		char cbuf[256] = { '\0' };
 		sprintf(cbuf, "THR_%i_ID", i);
+		ConfigCheck(cbuf, Config_idx);
 		oapiWriteItem_int(fh, cbuf, i);
 		sprintf(cbuf, "THR_%i_NAME", i);
+		ConfigCheck(cbuf, Config_idx);
 		char namebuf[256] = { '\0' };
 		sprintf(namebuf, "%s", Defs[i].name.c_str());
 		oapiWriteItem_string(fh, cbuf, namebuf);
 		sprintf(cbuf, "THR_%i_POS", i);
+		ConfigCheck(cbuf, Config_idx);
 		oapiWriteItem_vec(fh, cbuf, Defs[i].pos);
 		sprintf(cbuf, "THR_%i_DIR", i);
+		ConfigCheck(cbuf, Config_idx);
 		oapiWriteItem_vec(fh, cbuf, Defs[i].dir);
 		sprintf(cbuf, "THR_%i_MAX0", i);
+		ConfigCheck(cbuf, Config_idx);
 		oapiWriteItem_float(fh, cbuf, Defs[i].max0);
 		sprintf(cbuf, "THR_%i_ISP0", i);
+		ConfigCheck(cbuf, Config_idx);
 		oapiWriteItem_float(fh, cbuf, Defs[i].isp0);
 		sprintf(cbuf, "THR_%i_ISPREF", i);
+		ConfigCheck(cbuf, Config_idx);
 		oapiWriteItem_float(fh, cbuf, Defs[i].ispref);
 		sprintf(cbuf, "THR_%i_PREF", i);
+		ConfigCheck(cbuf, Config_idx);
 		oapiWriteItem_float(fh, cbuf, Defs[i].pref);
 		sprintf(cbuf, "THR_%i_TANK", i);
+		ConfigCheck(cbuf, Config_idx);
 		oapiWriteItem_int(fh, cbuf, Defs[i].tank);
 		sprintf(cbuf, "THR_%i_HASEXHAUST", i);
+		ConfigCheck(cbuf, Config_idx);
 		bool hasexh = Defs[i].hasexhaust;
 		oapiWriteItem_bool(fh, cbuf, hasexh);
 		if (hasexh) {
 			for (UINT j = 0; j < Defs[i].Exhausts.size(); j++) {
 				sprintf(cbuf, "THR_%i_EX_%i_ID", i, j);
+				ConfigCheck(cbuf, Config_idx);
 				oapiWriteItem_int(fh, cbuf, j);
 				sprintf(cbuf, "THR_%i_EX_%i_LSIZE", i, j);
+				ConfigCheck(cbuf, Config_idx);
 				oapiWriteItem_float(fh, cbuf, Defs[i].Exhausts[j].lsize);
 				sprintf(cbuf, "THR_%i_EX_%i_WSIZE", i, j);
+				ConfigCheck(cbuf, Config_idx);
 				oapiWriteItem_float(fh, cbuf, Defs[i].Exhausts[j].wsize);
 				sprintf(cbuf, "THR_%i_EX_%i_EXTEX", i, j);
+				ConfigCheck(cbuf, Config_idx);
 				oapiWriteItem_int(fh, cbuf, Defs[i].Exhausts[j].extex);
 				sprintf(cbuf, "THR_%i_EX_%i_CUSTOMPOSDIR", i, j);
+				ConfigCheck(cbuf, Config_idx);
 				oapiWriteItem_bool(fh, cbuf, Defs[i].Exhausts[j].customposdir);
 				if (Defs[i].Exhausts[j].customposdir) {
 					sprintf(cbuf, "THR_%i_EX_%i_POS", i, j);
+					ConfigCheck(cbuf, Config_idx);
 					oapiWriteItem_vec(fh, cbuf, Defs[i].Exhausts[j].pos);
 					sprintf(cbuf, "THR_%i_EX_%i_DIR", i, j);
+					ConfigCheck(cbuf, Config_idx);
 					oapiWriteItem_vec(fh, cbuf, Defs[i].Exhausts[j].dir);
 				}
 			}
 		}
 		sprintf(cbuf, "THR_%i_HASPARTICLES", i);
+		ConfigCheck(cbuf, Config_idx);
 		bool haspart = Defs[i].hasparticle;
 		oapiWriteItem_bool(fh, cbuf, haspart);
 		if (haspart) {
 			for (UINT j = 0; j < Defs[i].Particles.size(); j++) {
 				sprintf(cbuf, "THR_%i_PART_%i_ID", i, j);
+				ConfigCheck(cbuf, Config_idx);
 				oapiWriteItem_int(fh, cbuf, j);
 				sprintf(cbuf, "THR_%i_PART_%i_PSSIDX", i, j);
+				ConfigCheck(cbuf, Config_idx);
 				oapiWriteItem_int(fh, cbuf, Defs[i].Particles[j].pss_int);
 				sprintf(cbuf, "THR_%i_PART_%i_CUSTOMPOS", i, j);
+				ConfigCheck(cbuf, Config_idx);
 				oapiWriteItem_bool(fh, cbuf, Defs[i].Particles[j].custompos);
 				if (Defs[i].Particles[j].custompos) {
 					sprintf(cbuf, "THR_%i_PART_%i_POS", i, j);
+					ConfigCheck(cbuf, Config_idx);
 					oapiWriteItem_vec(fh, cbuf, Defs[i].Particles[j].pos);
 				}
 			}
@@ -1131,6 +1153,687 @@ void ThrusterSection::ManagerClear() {
 
 
 
+
+ThrusterGroupSection::ThrusterGroupSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg) :Section(VB1, config, cfg) {
+	vector<UINT>nonum;
+	nonum.clear();
+	Defined[THGROUP_MAIN] = false;
+	Thrusters[THGROUP_MAIN] = nonum;
+	Defined[THGROUP_RETRO] = false;
+	Thrusters[THGROUP_RETRO] = nonum;
+	Defined[THGROUP_HOVER] = false;
+	Thrusters[THGROUP_HOVER] = nonum;
+	Defined[THGROUP_ATT_PITCHUP] = false;
+	Thrusters[THGROUP_ATT_PITCHUP] = nonum;
+	Defined[THGROUP_ATT_PITCHDOWN] = false;
+	Thrusters[THGROUP_ATT_PITCHDOWN] = nonum;
+	Defined[THGROUP_ATT_YAWLEFT] = false;
+	Thrusters[THGROUP_ATT_YAWLEFT] = nonum;
+	Defined[THGROUP_ATT_YAWRIGHT] = false;
+	Thrusters[THGROUP_ATT_YAWRIGHT] = nonum;
+	Defined[THGROUP_ATT_BANKLEFT] = false;
+	Thrusters[THGROUP_ATT_BANKLEFT] = nonum;
+	Defined[THGROUP_ATT_BANKRIGHT] = false;
+	Thrusters[THGROUP_ATT_BANKRIGHT] = nonum;
+	Defined[THGROUP_ATT_RIGHT] = false;
+	Thrusters[THGROUP_ATT_RIGHT] = nonum;
+	Defined[THGROUP_ATT_LEFT] = false;
+	Thrusters[THGROUP_ATT_LEFT] = nonum;
+	Defined[THGROUP_ATT_UP] = false;
+	Thrusters[THGROUP_ATT_UP] = nonum;
+	Defined[THGROUP_ATT_DOWN] = false;
+	Thrusters[THGROUP_ATT_DOWN] = nonum;
+	Defined[THGROUP_ATT_FORWARD] = false;
+	Thrusters[THGROUP_ATT_FORWARD] = nonum;
+	Defined[THGROUP_ATT_BACK] = false;
+	Thrusters[THGROUP_ATT_BACK] = nonum;
+
+	ThrGrpMng = VB1->ThrGrpMng;
+	ParseSection(cfg);
+}
+ThrusterGroupSection::~ThrusterGroupSection() {
+	ThrGrpMng = NULL;
+}
+void ThrusterGroupSection::ParseSection(FILEHANDLE fh) {
+	bool defined;
+	char cbuf[256] = { '\0' };
+	sprintf(cbuf, "THGROUP_MAIN");
+	ConfigCheck(cbuf, Config_idx);
+	if (!oapiReadItem_bool(fh, cbuf, defined)) {
+		defined = false;
+	}
+	Defined[THGROUP_MAIN] = defined;
+	if (defined) {
+		char ccbuf[256] = { '\0' };
+		sprintf(cbuf, "THGROUP_MAIN_THRUSTERS");
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_string(fh, cbuf, ccbuf);
+		string idx_s(ccbuf);
+		vector<UINT> idx = VB1->readVectorUINT(idx_s);
+		Thrusters[THGROUP_MAIN] = idx;
+	}
+
+	sprintf(cbuf, "THGROUP_RETRO");
+	ConfigCheck(cbuf, Config_idx);
+	if (!oapiReadItem_bool(fh, cbuf, defined)) {
+		defined = false;
+	}
+	Defined[THGROUP_RETRO] = defined;
+	if (defined) {
+		char ccbuf[256] = { '\0' };
+		sprintf(cbuf, "THGROUP_RETRO_THRUSTERS");
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_string(fh, cbuf, ccbuf);
+		string idx_s(ccbuf);
+		vector<UINT> idx = VB1->readVectorUINT(idx_s);
+		Thrusters[THGROUP_RETRO] = idx;
+	}
+
+	sprintf(cbuf, "THGROUP_HOVER");
+	ConfigCheck(cbuf, Config_idx);
+	if (!oapiReadItem_bool(fh, cbuf, defined)) {
+		defined = false;
+	}
+	Defined[THGROUP_HOVER] = defined;
+	if (defined) {
+		char ccbuf[256] = { '\0' };
+		sprintf(cbuf, "THGROUP_HOVER_THRUSTERS");
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_string(fh, cbuf, ccbuf);
+		string idx_s(ccbuf);
+		vector<UINT> idx = VB1->readVectorUINT(idx_s);
+		Thrusters[THGROUP_HOVER] = idx;
+	}
+
+	sprintf(cbuf, "THGROUP_ATT_PITCHUP");
+	ConfigCheck(cbuf, Config_idx);
+	if (!oapiReadItem_bool(fh, cbuf, defined)) {
+		defined = false;
+	}
+	Defined[THGROUP_ATT_PITCHUP] = defined;
+	if (defined) {
+		char ccbuf[256] = { '\0' };
+		sprintf(cbuf, "THGROUP_ATT_PITCHUP_THRUSTERS");
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_string(fh, cbuf, ccbuf);
+		string idx_s(ccbuf);
+		vector<UINT> idx = VB1->readVectorUINT(idx_s);
+		Thrusters[THGROUP_ATT_PITCHUP] = idx;
+	}
+
+	sprintf(cbuf, "THGROUP_ATT_PITCHDOWN");
+	ConfigCheck(cbuf, Config_idx);
+	if (!oapiReadItem_bool(fh, cbuf, defined)) {
+		defined = false;
+	}
+	Defined[THGROUP_ATT_PITCHDOWN] = defined;
+	if (defined) {
+		char ccbuf[256] = { '\0' };
+		sprintf(cbuf, "THGROUP_ATT_PITCHDOWN_THRUSTERS");
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_string(fh, cbuf, ccbuf);
+		string idx_s(ccbuf);
+		vector<UINT> idx = VB1->readVectorUINT(idx_s);
+		Thrusters[THGROUP_ATT_PITCHDOWN] = idx;
+	}
+
+	sprintf(cbuf, "THGROUP_ATT_YAWLEFT");
+	ConfigCheck(cbuf, Config_idx);
+	if (!oapiReadItem_bool(fh, cbuf, defined)) {
+		defined = false;
+	}
+	Defined[THGROUP_ATT_YAWLEFT] = defined;
+	if (defined) {
+		char ccbuf[256] = { '\0' };
+		sprintf(cbuf, "THGROUP_ATT_YAWLEFT_THRUSTERS");
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_string(fh, cbuf, ccbuf);
+		string idx_s(ccbuf);
+		vector<UINT> idx = VB1->readVectorUINT(idx_s);
+		Thrusters[THGROUP_ATT_YAWLEFT] = idx;
+	}
+
+	sprintf(cbuf, "THGROUP_ATT_YAWRIGHT");
+	ConfigCheck(cbuf, Config_idx);
+	if (!oapiReadItem_bool(fh, cbuf, defined)) {
+		defined = false;
+	}
+	Defined[THGROUP_ATT_YAWRIGHT] = defined;
+	if (defined) {
+		char ccbuf[256] = { '\0' };
+		sprintf(cbuf, "THGROUP_ATT_YAWRIGHT_THRUSTERS");
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_string(fh, cbuf, ccbuf);
+		string idx_s(ccbuf);
+		vector<UINT> idx = VB1->readVectorUINT(idx_s);
+		Thrusters[THGROUP_ATT_YAWRIGHT] = idx;
+	}
+
+	sprintf(cbuf, "THGROUP_ATT_BANKLEFT");
+	ConfigCheck(cbuf, Config_idx);
+	if (!oapiReadItem_bool(fh, cbuf, defined)) {
+		defined = false;
+	}
+	Defined[THGROUP_ATT_BANKLEFT] = defined;
+	if (defined) {
+		char ccbuf[256] = { '\0' };
+		sprintf(cbuf, "THGROUP_ATT_BANKLEFT_THRUSTERS");
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_string(fh, cbuf, ccbuf);
+		string idx_s(ccbuf);
+		vector<UINT> idx = VB1->readVectorUINT(idx_s);
+		Thrusters[THGROUP_ATT_BANKLEFT] = idx;
+	}
+
+	sprintf(cbuf, "THGROUP_ATT_BANKRIGHT");
+	ConfigCheck(cbuf, Config_idx);
+	if (!oapiReadItem_bool(fh, cbuf, defined)) {
+		defined = false;
+	}
+	Defined[THGROUP_ATT_BANKRIGHT] = defined;
+	if (defined) {
+		char ccbuf[256] = { '\0' };
+		sprintf(cbuf, "THGROUP_ATT_BANKRIGHT_THRUSTERS");
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_string(fh, cbuf, ccbuf);
+		string idx_s(ccbuf);
+		vector<UINT> idx = VB1->readVectorUINT(idx_s);
+		Thrusters[THGROUP_ATT_BANKRIGHT] = idx;
+	}
+
+	sprintf(cbuf, "THGROUP_ATT_RIGHT");
+	ConfigCheck(cbuf, Config_idx);
+	if (!oapiReadItem_bool(fh, cbuf, defined)) {
+		defined = false;
+	}
+	Defined[THGROUP_ATT_RIGHT] = defined;
+	if (defined) {
+		char ccbuf[256] = { '\0' };
+		sprintf(cbuf, "THGROUP_ATT_RIGHT_THRUSTERS");
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_string(fh, cbuf, ccbuf);
+		string idx_s(ccbuf);
+		vector<UINT> idx = VB1->readVectorUINT(idx_s);
+		Thrusters[THGROUP_ATT_RIGHT] = idx;
+	}
+
+	sprintf(cbuf, "THGROUP_ATT_LEFT");
+	ConfigCheck(cbuf, Config_idx);
+	if (!oapiReadItem_bool(fh, cbuf, defined)) {
+		defined = false;
+	}
+	Defined[THGROUP_ATT_LEFT] = defined;
+	if (defined) {
+		char ccbuf[256] = { '\0' };
+		sprintf(cbuf, "THGROUP_ATT_LEFT_THRUSTERS");
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_string(fh, cbuf, ccbuf);
+		string idx_s(ccbuf);
+		vector<UINT> idx = VB1->readVectorUINT(idx_s);
+		Thrusters[THGROUP_ATT_LEFT] = idx;
+	}
+
+	sprintf(cbuf, "THGROUP_ATT_UP");
+	ConfigCheck(cbuf, Config_idx);
+	if (!oapiReadItem_bool(fh, cbuf, defined)) {
+		defined = false;
+	}
+	Defined[THGROUP_ATT_UP] = defined;
+	if (defined) {
+		char ccbuf[256] = { '\0' };
+		sprintf(cbuf, "THGROUP_ATT_UP_THRUSTERS");
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_string(fh, cbuf, ccbuf);
+		string idx_s(ccbuf);
+		vector<UINT> idx = VB1->readVectorUINT(idx_s);
+		Thrusters[THGROUP_ATT_UP] = idx;
+	}
+
+	sprintf(cbuf, "THGROUP_ATT_DOWN");
+	ConfigCheck(cbuf, Config_idx);
+	if (!oapiReadItem_bool(fh, cbuf, defined)) {
+		defined = false;
+	}
+	Defined[THGROUP_ATT_DOWN] = defined;
+	if (defined) {
+		char ccbuf[256] = { '\0' };
+		sprintf(cbuf, "THGROUP_ATT_DOWN_THRUSTERS");
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_string(fh, cbuf, ccbuf);
+		string idx_s(ccbuf);
+		vector<UINT> idx = VB1->readVectorUINT(idx_s);
+		Thrusters[THGROUP_ATT_DOWN] = idx;
+	}
+
+	sprintf(cbuf, "THGROUP_ATT_FORWARD");
+	ConfigCheck(cbuf, Config_idx);
+	if (!oapiReadItem_bool(fh, cbuf, defined)) {
+		defined = false;
+	}
+	Defined[THGROUP_ATT_FORWARD] = defined;
+	if (defined) {
+		char ccbuf[256] = { '\0' };
+		sprintf(cbuf, "THGROUP_ATT_FORWARD_THRUSTERS");
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_string(fh, cbuf, ccbuf);
+		string idx_s(ccbuf);
+		vector<UINT> idx = VB1->readVectorUINT(idx_s);
+		Thrusters[THGROUP_ATT_FORWARD] = idx;
+	}
+
+	sprintf(cbuf, "THGROUP_ATT_BACK");
+	ConfigCheck(cbuf, Config_idx);
+	if (!oapiReadItem_bool(fh, cbuf, defined)) {
+		defined = false;
+	}
+	Defined[THGROUP_ATT_BACK] = defined;
+	if (defined) {
+		char ccbuf[256] = { '\0' };
+		sprintf(cbuf, "THGROUP_ATT_BACK_THRUSTERS");
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_string(fh, cbuf, ccbuf);
+		string idx_s(ccbuf);
+		vector<UINT> idx = VB1->readVectorUINT(idx_s);
+		Thrusters[THGROUP_ATT_BACK] = idx;
+	}
+
+}
+void ThrusterGroupSection::WriteSection(FILEHANDLE fh) {
+	oapiWriteLine(fh, ";<-------------------------THRUSTER GROUPS DEFINITIONS------------------------->");
+	oapiWriteLine(fh, " ");
+	char ccbuf[256] = { '\0' };
+	string thr_s;
+	thr_s.clear();
+	char cbuf[256] = { '\0' };
+
+	if (Defined[THGROUP_MAIN]) {
+		sprintf(cbuf, "THGROUP_MAIN");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_bool(fh, cbuf, Defined[THGROUP_MAIN]);
+		thr_s = VB1->WriteVectorUINT(Thrusters[THGROUP_MAIN]);
+		sprintf(ccbuf, "%s", thr_s.c_str());
+		sprintf(cbuf, "THGROUP_MAIN_THRUSTERS");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_string(fh, cbuf, ccbuf);
+		thr_s.clear();
+	}
+
+	if (Defined[THGROUP_RETRO]) {
+		sprintf(cbuf, "THGROUP_RETRO");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_bool(fh, cbuf, Defined[THGROUP_RETRO]);
+		thr_s = VB1->WriteVectorUINT(Thrusters[THGROUP_RETRO]);
+		sprintf(ccbuf, "%s", thr_s.c_str());
+		sprintf(cbuf, "THGROUP_RETRO_THRUSTERS");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_string(fh, cbuf, ccbuf);
+		thr_s.clear();
+	}
+
+	if (Defined[THGROUP_HOVER]) {
+		sprintf(cbuf, "THGROUP_HOVER");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_bool(fh, cbuf, Defined[THGROUP_HOVER]);
+		thr_s = VB1->WriteVectorUINT(Thrusters[THGROUP_HOVER]);
+		sprintf(ccbuf, "%s", thr_s.c_str());
+		sprintf(cbuf, "THGROUP_HOVER_THRUSTERS");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_string(fh, cbuf, ccbuf);
+		thr_s.clear();
+	}
+
+	if (Defined[THGROUP_ATT_PITCHUP]) {
+		sprintf(cbuf, "THGROUP_ATT_PITCHUP");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_bool(fh, cbuf, Defined[THGROUP_ATT_PITCHUP]);
+		thr_s = VB1->WriteVectorUINT(Thrusters[THGROUP_ATT_PITCHUP]);
+		sprintf(ccbuf, "%s", thr_s.c_str());
+		sprintf(cbuf, "THGROUP_ATT_PITCHUP_THRUSTERS");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_string(fh, cbuf, ccbuf);
+		thr_s.clear();
+	}
+
+	if (Defined[THGROUP_ATT_PITCHDOWN]) {
+		sprintf(cbuf, "THGROUP_ATT_PITCHDOWN");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_bool(fh, cbuf, Defined[THGROUP_ATT_PITCHDOWN]);
+		thr_s = VB1->WriteVectorUINT(Thrusters[THGROUP_ATT_PITCHDOWN]);
+		sprintf(ccbuf, "%s", thr_s.c_str());
+		sprintf(cbuf, "THGROUP_ATT_PITCHDOWN_THRUSTERS");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_string(fh, cbuf, ccbuf);
+		thr_s.clear();
+	}
+
+	if (Defined[THGROUP_ATT_YAWLEFT]) {
+		sprintf(cbuf, "THGROUP_ATT_YAWLEFT");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_bool(fh, cbuf, Defined[THGROUP_ATT_YAWLEFT]);
+		thr_s = VB1->WriteVectorUINT(Thrusters[THGROUP_ATT_YAWLEFT]);
+		sprintf(ccbuf, "%s", thr_s.c_str());
+		sprintf(cbuf, "THGROUP_ATT_YAWLEFT_THRUSTERS");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_string(fh, cbuf, ccbuf);
+		thr_s.clear();
+	}
+
+	if (Defined[THGROUP_ATT_YAWRIGHT]) {
+		sprintf(cbuf, "THGROUP_ATT_YAWRIGHT");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_bool(fh, cbuf, Defined[THGROUP_ATT_YAWRIGHT]);
+		thr_s = VB1->WriteVectorUINT(Thrusters[THGROUP_ATT_YAWRIGHT]);
+		sprintf(ccbuf, "%s", thr_s.c_str());
+		sprintf(cbuf, "THGROUP_ATT_YAWRIGHT_THRUSTERS");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_string(fh, cbuf, ccbuf);
+		thr_s.clear();
+	}
+
+	if (Defined[THGROUP_ATT_BANKLEFT]) {
+		sprintf(cbuf, "THGROUP_ATT_BANKLEFT");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_bool(fh, cbuf, Defined[THGROUP_ATT_BANKLEFT]);
+		thr_s = VB1->WriteVectorUINT(Thrusters[THGROUP_ATT_BANKLEFT]);
+		sprintf(ccbuf, "%s", thr_s.c_str());
+		sprintf(cbuf, "THGROUP_ATT_BANKLEFT_THRUSTERS");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_string(fh, cbuf, ccbuf);
+		thr_s.clear();
+	}
+
+	if (Defined[THGROUP_ATT_BANKRIGHT]) {
+		sprintf(cbuf, "THGROUP_ATT_BANKRIGHT");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_bool(fh, cbuf, Defined[THGROUP_ATT_BANKRIGHT]);
+		thr_s = VB1->WriteVectorUINT(Thrusters[THGROUP_ATT_BANKRIGHT]);
+		sprintf(ccbuf, "%s", thr_s.c_str());
+		sprintf(cbuf, "THGROUP_ATT_BANKRIGHT_THRUSTERS");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_string(fh, cbuf, ccbuf);
+		thr_s.clear();
+	}
+
+	if (Defined[THGROUP_ATT_RIGHT]) {
+		sprintf(cbuf, "THGROUP_ATT_RIGHT");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_bool(fh, cbuf, Defined[THGROUP_ATT_RIGHT]);
+		thr_s = VB1->WriteVectorUINT(Thrusters[THGROUP_ATT_RIGHT]);
+		sprintf(ccbuf, "%s", thr_s.c_str());
+		sprintf(cbuf, "THGROUP_ATT_RIGHT_THRUSTERS");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_string(fh, cbuf, ccbuf);
+		thr_s.clear();
+	}
+
+	if (Defined[THGROUP_ATT_LEFT]) {
+		sprintf(cbuf, "THGROUP_ATT_LEFT");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_bool(fh, cbuf, Defined[THGROUP_ATT_LEFT]);
+		thr_s = VB1->WriteVectorUINT(Thrusters[THGROUP_ATT_LEFT]);
+		sprintf(ccbuf, "%s", thr_s.c_str());
+		sprintf(cbuf, "THGROUP_ATT_LEFT_THRUSTERS");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_string(fh, cbuf, ccbuf);
+		thr_s.clear();
+	}
+
+	if (Defined[THGROUP_ATT_UP]) {
+		sprintf(cbuf, "THGROUP_ATT_UP");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_bool(fh, cbuf, Defined[THGROUP_ATT_UP]);
+		thr_s = VB1->WriteVectorUINT(Thrusters[THGROUP_ATT_UP]);
+		sprintf(ccbuf, "%s", thr_s.c_str());
+		sprintf(cbuf, "THGROUP_ATT_UP_THRUSTERS");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_string(fh, cbuf, ccbuf);
+		thr_s.clear();
+	}
+
+	if (Defined[THGROUP_ATT_DOWN]) {
+		sprintf(cbuf, "THGROUP_ATT_DOWN");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_bool(fh, cbuf, Defined[THGROUP_ATT_DOWN]);
+		thr_s = VB1->WriteVectorUINT(Thrusters[THGROUP_ATT_DOWN]);
+		sprintf(ccbuf, "%s", thr_s.c_str());
+		sprintf(cbuf, "THGROUP_ATT_DOWN_THRUSTERS");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_string(fh, cbuf, ccbuf);
+		thr_s.clear();
+	}
+
+	if (Defined[THGROUP_ATT_FORWARD]) {
+		sprintf(cbuf, "THGROUP_ATT_FORWARD");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_bool(fh, cbuf, Defined[THGROUP_ATT_FORWARD]);
+		thr_s = VB1->WriteVectorUINT(Thrusters[THGROUP_ATT_FORWARD]);
+		sprintf(ccbuf, "%s", thr_s.c_str());
+		sprintf(cbuf, "THGROUP_ATT_FORWARD_THRUSTERS");
+		oapiWriteItem_string(fh, cbuf, ccbuf);
+		ConfigCheck(cbuf, Config_idx);
+		thr_s.clear();
+	}
+
+	if (Defined[THGROUP_ATT_BACK]) {
+		sprintf(cbuf, "THGROUP_ATT_BACK");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_bool(fh, cbuf, Defined[THGROUP_ATT_BACK]);
+		thr_s = VB1->WriteVectorUINT(Thrusters[THGROUP_ATT_BACK]);
+		sprintf(ccbuf, "%s", thr_s.c_str());
+		sprintf(cbuf, "THGROUP_ATT_BACK_THRUSTERS");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_string(fh, cbuf, ccbuf);
+		thr_s.clear();
+	}
+}
+void ThrusterGroupSection::ApplySection() {
+	map<THGROUP_TYPE, bool>::iterator it;
+	//UINT counter = 0;
+	for (it = Defined.begin(); it != Defined.end(); it++) {
+		//LogV("Counter:%i", counter);
+		if (it->second) {
+			//LogV("true:%i",counter);
+			vector<THRUSTER_HANDLE>thv = ThrGrpMng->GetThrustersfromIdx(Thrusters[it->first]);
+			ThrGrpMng->DefineGroup(it->first, thv);
+		}
+		//counter++;
+	}
+	return;
+}
+void ThrusterGroupSection::UpdateSection() {
+	Defined = ThrGrpMng->Defined;
+	map<THGROUP_TYPE, bool>::iterator it;
+	vector<UINT>indexes;
+	indexes.clear();
+	for (it = Defined.begin(); it != Defined.end(); it++) {
+		if (it->second) {
+			indexes.clear();
+			vector<THRUSTER_HANDLE>thrusters;
+			thrusters = ThrGrpMng->GetThrusters(it->first);
+			for (UINT i = 0; i < thrusters.size(); i++) {
+				UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
+				if (idx != (UINT)-1) {
+					indexes.push_back(idx);
+				}
+			}
+			
+		}
+		else {
+			indexes.clear();
+		}
+		Thrusters[it->first] = indexes;
+	}
+
+}
+void ThrusterGroupSection::ManagerClear() {
+	ThrGrpMng->ResetDefine();
+}
+
+TouchDownPointSection::TouchDownPointSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg) :Section(VB1, config, cfg) {
+	Set1.clear();
+	Set2.clear();
+	SecondSetEnabled = false;
+	changeoveranim = -1;
+	TdpMng = VB1->TdpMng;
+	ParseSection(cfg);
+	return;
+}
+TouchDownPointSection::~TouchDownPointSection() { TdpMng = NULL; }
+
+void TouchDownPointSection::ParseSection(FILEHANDLE fh) {
+	for (UINT set = 1; set < 3; set++) {
+		char cbuf[256] = { '\0' };
+		UINT point_counter = 0;
+		VECTOR3 pos;
+		sprintf(cbuf, "TDP_%i_%i_POS", set, point_counter);
+		ConfigCheck(cbuf, Config_idx);
+		while (oapiReadItem_vec(fh, cbuf, pos)) {
+			double damping, stiffness, mu, mu_lng;
+			sprintf(cbuf, "TDP_%i_%i_STIFFNESS", set, point_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_float(fh, cbuf, stiffness);
+			sprintf(cbuf, "TDP_%i_%i_DAMPING", set, point_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_float(fh, cbuf, damping);
+			sprintf(cbuf, "TDP_%i_%i_MU", set, point_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_float(fh, cbuf, mu);
+			sprintf(cbuf, "TDP_%i_%i_MULNG", set, point_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_float(fh, cbuf, mu_lng);
+			Definitions d = Definitions();
+			d.pos = pos;
+			d.stiffness = stiffness;
+			d.damping = damping;
+			d.mu = mu;
+			d.mu_lng = mu_lng;
+			if (set == 1) {
+				Set1.push_back(d);
+			}
+			else if (set == 2) {
+				Set2.push_back(d);
+			}
+
+			point_counter++;
+			sprintf(cbuf, "TDP_%i_%i_POS", set, point_counter);
+			ConfigCheck(cbuf, Config_idx);
+		}
+
+	}
+	//bool SecondSetEnabled;
+	//int changeoveranim;
+	char cbuf[256] = { '\0' };
+	sprintf(cbuf, "TDP_SECONDSET_ENABLED");
+	ConfigCheck(cbuf, Config_idx);
+	if (!oapiReadItem_bool(fh, cbuf, SecondSetEnabled)) { SecondSetEnabled = false; }
+	if (SecondSetEnabled) {
+		sprintf(cbuf, "TDP_CHANGEOVER_ANIM");
+		ConfigCheck(cbuf, Config_idx);
+		if (!oapiReadItem_int(fh, cbuf, changeoveranim)) { changeoveranim = -1; };
+	}
+	else {
+		changeoveranim = -1;
+	}
+
+	
+}
+void TouchDownPointSection::WriteSection(FILEHANDLE fh) {
+	oapiWriteLine(fh, " ");
+	oapiWriteLine(fh, ";<-------------------------TOUCHDOWNPOINTS DEFINITIONS------------------------->");
+	oapiWriteLine(fh, " ");
+	for (UINT set = 1; set < 3; set++) {
+		if (set == 2) {
+			char cbuf[256] = { '\0' };
+			//bool set2Enabled = IsSecondSetEnabled();
+			if (SecondSetEnabled) {
+				sprintf(cbuf, "TDP_SECONDSET_ENABLED");
+				ConfigCheck(cbuf, Config_idx);
+				oapiWriteItem_bool(fh, cbuf, SecondSetEnabled);
+				sprintf(cbuf, "TDP_CHANGEOVER_ANIM");
+				ConfigCheck(cbuf, Config_idx);
+				oapiWriteItem_int(fh, cbuf, changeoveranim);
+			}
+
+		}
+		UINT npoints = set == 1 ? Set1.size() : Set2.size();
+		for (UINT i = 0; i < npoints; i++) {
+			char cbuf[256] = { '\0' };
+			sprintf(cbuf, "TDP_%i_%i_POS", set, i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_vec(fh, cbuf, set == 1 ? Set1[i].pos : Set2[i].pos);
+			sprintf(cbuf, "TDP_%i_%i_STIFFNESS", set, i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_float(fh, cbuf, set == 1 ? Set1[i].stiffness : Set2[i].stiffness);
+			sprintf(cbuf, "TDP_%i_%i_DAMPING", set, i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_float(fh, cbuf, set == 1 ? Set1[i].damping : Set2[i].damping);
+			sprintf(cbuf, "TDP_%i_%i_MU", set, i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_float(fh, cbuf, set == 1 ? Set1[i].mu : Set2[i].mu);
+			sprintf(cbuf, "TDP_%i_%i_MULNG", set, i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_float(fh, cbuf, set == 1 ? Set1[i].mu_lng : Set2[i].mu_lng);
+			oapiWriteLine(fh, " ");
+		}
+
+
+	}
+}
+void TouchDownPointSection::ApplySection() {
+	
+	for (UINT i = 0; i < Set1.size(); i++) {
+		TOUCHDOWNVTX tdvtx;
+		tdvtx.pos = Set1[i].pos;
+		tdvtx.stiffness = Set1[i].stiffness;
+		tdvtx.damping = Set1[i].damping;
+		tdvtx.mu = Set1[i].mu;
+		tdvtx.mu_lng = Set1[i].mu_lng;
+		TdpMng->AddPoint(1, tdvtx);
+	}
+	for (UINT i = 0; i < Set2.size(); i++) {
+		TOUCHDOWNVTX tdvtx;
+		tdvtx.pos = Set2[i].pos;
+		tdvtx.stiffness = Set2[i].stiffness;
+		tdvtx.damping = Set2[i].damping;
+		tdvtx.mu = Set2[i].mu;
+		tdvtx.mu_lng = Set2[i].mu_lng;
+		TdpMng->AddPoint(2, tdvtx);
+	}
+
+	if (Set1.size() > 3) {
+		TdpMng->SetCurrentSet(1);
+	}
+	TdpMng->EnableSecondSet(SecondSetEnabled);
+	if (changeoveranim > 0) {
+		TdpMng->SetChangeOverAnimation(changeoveranim);
+	}
+	return;
+}
+void TouchDownPointSection::UpdateSection() {
+	Set1.clear();
+	Set2.clear();
+	changeoveranim = TdpMng->GetChangeOverAnimation();
+	SecondSetEnabled = TdpMng->IsSecondSetEnabled();
+	for (UINT set = 1; set < 3; set++) {
+		for (UINT i = 0; i < TdpMng->GetPointsCount(set); i++) {
+			Definitions d = Definitions();
+			d.pos = TdpMng->GetPointPos(set, i);
+			d.stiffness = TdpMng->GetPointStiffnes(set, i);
+			d.damping = TdpMng->GetPointDamping(set, i);
+			d.mu = TdpMng->GetPointMu(set, i);
+			d.mu_lng = TdpMng->GetPointMuLng(set, i);
+			set == 1 ? Set1.push_back(d) : Set2.push_back(d);
+		}
+		
+	}
+}
+void TouchDownPointSection::ManagerClear() {
+	TdpMng->Clear();
+}
+
+
+
+
 Configuration::Configuration(VesselBuilder1 *_VB1, map<ItemType, bool> _Sections, UINT _config, FILEHANDLE _cfg) {
 	VB1 = _VB1;
 	Configuration_Sections = _Sections;
@@ -1158,6 +1861,14 @@ Configuration::Configuration(VesselBuilder1 *_VB1, map<ItemType, bool> _Sections
 	if (Configuration_Sections[THRUSTERS]) {
 		LogV("Thrusters Section included");
 		Sections.push_back(new ThrusterSection(_VB1, _config, _cfg));
+	}
+	if (Configuration_Sections[THRUSTERGROUPS]) {
+		LogV("ThrusterGroup Section included");
+		Sections.push_back(new ThrusterGroupSection(_VB1, _config, _cfg));
+	}
+	if (Configuration_Sections[TOUCHDOWNPOINTS]) {
+		LogV("Touchdown Points Section included");
+		Sections.push_back(new TouchDownPointSection(_VB1, _config, _cfg));
 	}
 	Config_idx = _config;
 	return;

@@ -62,27 +62,27 @@ public:
 	vector<ANIM_DEF>anim_defs;
 	UINT AddAnimDef();
 	UINT AddAnimDef(string name, double duration, AnimCycleType Cycle, DWORD Key,double defstate);
-	void DeleteAnimDef(anim_idx a_idx);
-	bool IsAnimValid(anim_idx a_idx);
-	void SetAnimDefState(anim_idx a_idx, double newdefstate);
-	double GetAnimDefState(anim_idx a_idx);
-	void SetAnimName(anim_idx a_idx, string newname);
-	string GetAnimName(anim_idx a_idx);
-	void SetAnimCycle(anim_idx a_idx, AnimCycleType Cycle);
-	AnimCycleType GetAnimCycle(anim_idx a_idx);
-	void SetAnimDuration(anim_idx a_idx, double newduration);
-	double GetAnimDuration(anim_idx a_idx);
-	double GetAnimSpeed(anim_idx a_idx);
-	void SetAnimKey(anim_idx a_idx, DWORD newKey);
-	DWORD GetAnimKey(anim_idx a_idx);
-	void SetAnimParams(anim_idx a_idx, double duration, AnimCycleType Cycle, DWORD Key);
-	void GetAnimParams(anim_idx a_idx, double &duration, AnimCycleType &Cycle, DWORD &Key);
-	void SetAnimationState(anim_idx a_idx, double newstate);
-	double GetAnimationState(anim_idx a_idx);
+	void DeleteAnimDef(def_idx d_idx);
+	bool IsAnimValid(def_idx d_idx);
+	void SetAnimDefState(def_idx d_idx, double newdefstate);
+	double GetAnimDefState(def_idx d_idx);
+	void SetAnimName(def_idx d_idx, string newname);
+	string GetAnimName(def_idx d_idx);
+	void SetAnimCycle(def_idx d_idx, AnimCycleType Cycle);
+	AnimCycleType GetAnimCycle(def_idx d_idx);
+	void SetAnimDuration(def_idx d_idx, double newduration);
+	double GetAnimDuration(def_idx d_idx);
+	double GetAnimSpeed(def_idx d_idx);
+	void SetAnimKey(def_idx d_idx, DWORD newKey);
+	DWORD GetAnimKey(def_idx d_idx);
+	void SetAnimParams(def_idx d_idx, double duration, AnimCycleType Cycle, DWORD Key);
+	void GetAnimParams(def_idx d_idx, double &duration, AnimCycleType &Cycle, DWORD &Key);
+	void SetAnimationState(def_idx d_idx, double newstate);
+	double GetAnimationState(def_idx d_idx);
 
 	vector<ANIMCOMP_DEF>animcomp_defs;
-	UINT AddAnimCompDef(anim_idx a_idx, MGROUP_TRANSFORM::TYPE type);
-	UINT AddAnimCompDef(anim_idx a_idx, string name, double state0, double state1, int mesh, int ngrps, vector<UINT>grps, int parent, int type, VECTOR3 ref, VECTOR3 axis, VECTOR3 scale, VECTOR3 shift, double angle);
+	UINT AddAnimCompDef(def_idx d_idx, MGROUP_TRANSFORM::TYPE type);
+	UINT AddAnimCompDef(def_idx d_idx, string name, double state0, double state1, int mesh, int ngrps, vector<UINT>grps, int parent, int type, VECTOR3 ref, VECTOR3 axis, VECTOR3 scale, VECTOR3 shift, double angle);
 	void DeleteAnimCompDef(def_idx d_idx);
 	bool IsAnimCompDefValid(def_idx d_idx);
 	void SetAnimCompDefName(def_idx d_idx, string newname);
@@ -114,22 +114,22 @@ public:
 	ANIMATIONCOMPONENT_HANDLE GetAnimCompDefACH(int d_idx);
 	UINT GetAnimCompDefIdx(ANIMATIONCOMPONENT_HANDLE ach);
 	void ResetAnimCompDefGroups(def_idx d_idx);
-	UINT GetAnimNComps(anim_idx a_idx);
-	ANIMATIONCOMPONENT_HANDLE GetAnimComp(anim_idx a_idx, UINT comp_idx);
+	UINT GetAnimNComps(def_idx d_idx);
+	ANIMATIONCOMPONENT_HANDLE GetAnimComp(def_idx d_idx, UINT comp_idx);
 	MGROUP_TRANSFORM::TYPE GetAnimCompDefType(def_idx d_idx);
 	UINT GetAnimCompDefSeqIdx(def_idx d_idx);
 	int GetParentCompDefIdx(ANIMATIONCOMPONENT_HANDLE parent_ach);
 	void InvalidateComponent(def_idx d_idx);
 
 
-	bool IsAnimRunning(anim_idx a_idx);
-	bool IsAnimBackward(anim_idx a_idx);
-	void StartAnimation(anim_idx a_idx);
-	void StartAnimationForward(anim_idx a_idx);
-	void StartAnimationBackward(anim_idx a_idx);
-	void StopAnimation(anim_idx a_idx);
-	void SetAnimationBackward(anim_idx a_idx, bool backward);
-	void ResetAnimation(anim_idx a_idx);
+	bool IsAnimRunning(def_idx d_idx);
+	bool IsAnimBackward(def_idx d_idx);
+	void StartAnimation(def_idx d_idx);
+	void StartAnimationForward(def_idx d_idx);
+	void StartAnimationBackward(def_idx d_idx);
+	void StopAnimation(def_idx d_idx);
+	void SetAnimationBackward(def_idx d_idx, bool backward);
+	void ResetAnimation(def_idx d_idx);
 
 	bool ManualArmMoving;
 	void StartManualArm();
@@ -150,9 +150,11 @@ public:
 
 	void ParseCfgFile(FILEHANDLE fh);
 	void WriteCfg(FILEHANDLE fh);
-	int AnimationRunStatus(anim_idx a_idx);
+	int AnimationRunStatus(def_idx d_idx);
 
-	double* GetAnimStatePtr(anim_idx a_idx);
+	double* GetAnimStatePtr(def_idx d_idx);
+
+	anim_idx GetAnimIdx(def_idx d_idx);
 
 	void Clear();
 };

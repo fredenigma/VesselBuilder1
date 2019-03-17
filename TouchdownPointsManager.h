@@ -19,7 +19,7 @@ public:
 	void AddPoint(UINT set, TOUCHDOWNVTX tdvtx);
 	void RemovePoint(UINT set, UINT idx);
 	void EnableSecondSet(bool enable);
-	void SetChangeOverAnimation(anim_idx a_idx);
+	void SetChangeOverAnimation(def_idx animd_idx);
 	UINT GetChangeOverAnimation();
 	void ApplySet(UINT set);
 	bool IsSecondSetEnabled();

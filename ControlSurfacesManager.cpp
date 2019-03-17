@@ -1,6 +1,7 @@
 #include "VesselBuilder1.h"
 #include "DialogControl.h"
 #include "ControlSurfacesManager.h"
+#include "AnimationManager.h"
 
 #define LogV(x,...) VB1->Log->Log(x,##__VA_ARGS__)
 
@@ -46,7 +47,8 @@ void ControlSurfacesManager::SetCtrlSurfDefParams(def_idx d_idx, AIRCTRL_TYPE ty
 }
 void ControlSurfacesManager::DefineCtrlSurface(def_idx d_idx) {
 	LogV("Defining CtrlSurface:%i", d_idx);
-	ctrlsurf_defs[d_idx].csfh = VB1->CreateControlSurface3(ctrlsurf_defs[d_idx].type, ctrlsurf_defs[d_idx].area, ctrlsurf_defs[d_idx].dCl, ctrlsurf_defs[d_idx].ref, ctrlsurf_defs[d_idx].axis, ctrlsurf_defs[d_idx].delay, ctrlsurf_defs[d_idx].anim);
+	anim_idx a_idx = VB1->AnimMng->GetAnimIdx(ctrlsurf_defs[d_idx].anim);
+	ctrlsurf_defs[d_idx].csfh = VB1->CreateControlSurface3(ctrlsurf_defs[d_idx].type, ctrlsurf_defs[d_idx].area, ctrlsurf_defs[d_idx].dCl, ctrlsurf_defs[d_idx].ref, ctrlsurf_defs[d_idx].axis, ctrlsurf_defs[d_idx].delay, a_idx);// ctrlsurf_defs[d_idx].anim);
 	ctrlsurf_defs[d_idx].defined = true;
 	return;
 }
