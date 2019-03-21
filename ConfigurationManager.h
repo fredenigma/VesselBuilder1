@@ -9,9 +9,49 @@ public:
 	virtual void ApplySection();
 	virtual void UpdateSection();
 	virtual void ManagerClear();
+	bool IsActive() { return Active; }
+	bool IsValid() { return Valid; }
+	void SetValid(bool set) { Valid = set; }
+	void SetActive(bool set) { Active = set; }
+	bool Valid;
+	bool Active;
 	void ConfigCheck(char* cbuf, UINT config);
 	UINT Config_idx;
 	VesselBuilder1* VB1;
+};
+
+class SettingSection : public Section {
+public:
+	SettingSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg);
+	~SettingSection();
+	void WriteSection(FILEHANDLE fh);
+	void ParseSection(FILEHANDLE fh);
+	void ApplySection();
+	void UpdateSection();
+	void ManagerClear();
+	struct Definitions {
+		double EmptyMass;
+		double Size;
+		VECTOR3 PMI;
+		VECTOR3 CrossSections;
+		double GravityGradientDamping;
+		VECTOR3 RotDrag;
+		Definitions() {
+			EmptyMass = 100;
+			Size = 10;
+			PMI = _V(1, 1, 1);
+			CrossSections = _V(10, 10, 10);
+			GravityGradientDamping = 20;
+			RotDrag = _V(1, 1, 1);
+		}
+	}Def;
+	/*double GetEmptyMass();
+	double GetSize();
+	VECTOR3 GetPMI();
+	VECTOR3 GetCrossSections();
+	double GetGravityGradientDamping();
+	VECTOR3 GetRotDrag();*/
+	GeneralSettingsManager* SetMng;
 };
 
 class MeshSection :public Section {
@@ -38,6 +78,12 @@ public:
 	};
 	vector<Definitions> Defs;
 	MeshManager* MshMng;
+/*	int GetMeshDefCount();
+	string GetMeshName(UINT idx);
+	VECTOR3 GetMeshPos(UINT idx);
+	VECTOR3 GetMeshDir(UINT idx);
+	VECTOR3 GetMeshRot(UINT idx);
+	WORD GetMeshVisibility(UINT idx);*/
 };
 
 class DockSection : public Section {
@@ -65,6 +111,10 @@ public:
 	};
 	vector<Definitions> Defs;
 	DockManager *DckMng;
+/*	UINT GetDockCount();
+	string GetDockName(UINT idx);
+	void GetDockParams(UINT idx, VECTOR3 &pos, VECTOR3 &dir, VECTOR3 &rot);
+	bool IsDockJettisonable(UINT idx);*/
 };
 
 class AttachmentSection : public Section {
@@ -97,6 +147,13 @@ public:
 	};
 	vector<Definitions> Defs;
 	AttachmentManager *AttMng;
+/*	UINT GetAttCount();
+	bool GetIdCheck(UINT idx);
+	string GetIdCheckString(UINT idx);
+	string GetAttID(UINT idx);
+	bool AttToParent(UINT idx);
+	void GetAttPosDirRot(UINT idx, VECTOR3 &pos, VECTOR3 &dir, VECTOR3 &rot);
+	double GetAttRange(UINT idx);*/
 };
 
 class AnimationSection: public Section {
@@ -160,6 +217,14 @@ public:
 	vector<AnimDefinitions>AnimDefs;
 	vector<AnimCompDefinitions>AnimCompDefs;
 	AnimationManager *AnimMng;
+
+/*	UINT GetAnimCount();
+	double GetAnimDefState(UINT idx);
+	string GetAnimName(UINT idx);
+	UINT GetAnimNComps(UINT idx);
+	DWORD GetAnimKey(UINT idx);
+	double GetAnimDuration(UINT idx);
+	AnimCycleType GetAnimCycle(UINT idx);*/
 };
 
 class PropellantSection : public Section {
@@ -384,6 +449,150 @@ public:
 	CameraManager *CamMng;
 };
 
+class VCSection : public Section {
+public:
+	VCSection(VesselBuilder1 *VB1, UINT config, FILEHANDLE cfg);
+	~VCSection();
+	void ParseSection(FILEHANDLE fh);
+	void WriteSection(FILEHANDLE fh);
+	void ApplySection();
+	void UpdateSection();
+	void ManagerClear();
+	struct PosDefinitions {
+		string name;
+		VECTOR3 pos;
+		VECTOR3 dir;
+		PosDefinitions() {
+			name.clear();
+			pos = _V(0, 0, 0);
+			dir = _V(0, 0, 1);
+		}
+	};
+	struct MFDDefinitions{
+		int mesh;
+		int group;
+		bool wpwr;
+		VECTOR3 pwr0;
+		VECTOR3 pwr2;
+		bool wcol;
+		VECTOR3 coltl;
+		VECTOR3 colbl;
+		VECTOR3 coltr;
+		VECTOR3 colbr;
+		MFDDefinitions() {
+			mesh = 0;
+			group = 0;
+			wpwr = false;
+			pwr0 = _V(0, 0, 0);
+			pwr2 = _V(0, 0, 0);
+			wcol = false;
+			coltl = colbl = coltr = colbr = _V(0, 0, 0);
+		}
+	};
+	struct HUDDefinition {
+		bool wHud;
+		int mesh;
+		int group;
+		VECTOR3 hudcnt;
+		double size;
+		HUDDefinition() {
+			wHud = false;
+			mesh = 0;
+			group = 0;
+			hudcnt = _V(0, 0, 0);
+			size = 0;
+		}
+	}HUDDef;
+
+	vector<PosDefinitions> PosDefs;
+	vector<MFDDefinitions> MFDDefs;
+	VCManager *VCMng;
+};
+
+class LightSection : public Section {
+public:
+	LightSection(VesselBuilder1 *VB1, UINT config, FILEHANDLE cfg);
+	~LightSection();
+	void ParseSection(FILEHANDLE fh);
+	void WriteSection(FILEHANDLE fh);
+	void ApplySection();
+	void UpdateSection();
+	void ManagerClear();
+	struct BcnDefinitions {
+		string name;
+		int shape;
+		VECTOR3 pos;
+		VECTOR3 col;
+		double size;
+		double falloff;
+		double period;
+		double duration;
+		double tofs;
+		BcnDefinitions() {
+			name.clear();
+			shape = 0;
+			pos = _V(0, 0, 0);
+			col = _V(0, 0, 0);
+			size = falloff = period = duration = tofs = 0;
+		}
+	};
+	struct LightDefinitions {
+		string name;
+		int type;
+		VECTOR3 dcol, acol, scol;
+		VECTOR3 pos;
+		double range;
+		int visibility;
+		VECTOR3 attenuation;
+		VECTOR3 dir;
+		VECTOR3 aperture;
+		bool hasattachment;
+		int attachment;
+		LightDefinitions() {
+			name.clear();
+			type = 0;
+			dcol = acol = scol = _V(0, 0, 0);
+			pos = _V(0, 0, 0);
+			range = 100;
+			visibility = 0;
+			attenuation = _V(0, 0, 0);
+			dir = _V(0, 0, 1);
+			aperture = _V(0, 45 * RAD, 90 * RAD);
+			hasattachment = false;
+			attachment = 0;
+		}
+	};
+	vector<BcnDefinitions> BcnDefs;
+	vector<LightDefinitions> LgtDefs;
+	LightsManager *LightsMng;
+};
+
+class VardSection :public Section {
+public:
+	VardSection(VesselBuilder1 *VB1, UINT config, FILEHANDLE cfg);
+	~VardSection();
+	void ParseSection(FILEHANDLE fh);
+	void WriteSection(FILEHANDLE fh);
+	void ApplySection();
+	void UpdateSection();
+	void ManagerClear();
+	struct Definitions {
+		string name;
+		double factor;
+		VECTOR3 ref;
+		int anim;
+		Definitions() {
+			name.clear();
+			factor = 0;
+			ref = _V(0, 0, 0);
+			anim = 0;
+		}
+	};
+	vector<Definitions> Defs;
+	VariableDragManager *VardMng;
+};
+
+
 class Configuration {
 public:
 	Configuration(VesselBuilder1 *_VB1, map<ItemType,bool> _Sections, UINT config, FILEHANDLE _cfg);
@@ -394,11 +603,15 @@ public:
 	map<ItemType, bool> Configuration_Sections;
 	VesselBuilder1 *VB1;
 	string filename;
-	/*MeshSection* Msh_Sect;
-	DockSection* Dck_Sect;
-	AttachmentSection *Att_Sect;*/
+	map<ItemType, bool> GetSections() { return Configuration_Sections; }
+	bool IsSectionValid(ItemType Type);
+	void SetSectionValid(ItemType Type, bool set);
+	bool IsSectionActive(ItemType Type);
+	void SetSectionActive(ItemType Type, bool set);
+	void UpdateValids();
 	vector<Section*>Sections;
 	UINT Config_idx;
+	void Delete();
 };
 
 class ConfigurationManager {
@@ -411,9 +624,63 @@ public:
 	void AddConfiguration(VesselBuilder1* VB1, map<ItemType,bool>_Sections, FILEHANDLE cfg);
 	void ApplyConfiguration(UINT config, bool firstload = false);
 	void ApplyDefaultConfiguration(bool firstload = false);
-	UINT CurrentConfiguration;
+	bool IsSectionValid(UINT config, ItemType Type);
+	void SetSectionValid(UINT config, ItemType Type, bool set);
+	bool IsSectionActive(UINT config, ItemType Type);
+	void UpdateConfiguration(UINT config);
+
 	UINT GetCurrentConfiguration();
 	UINT GetConfigurationsCount();
 	void WriteConfiguration(UINT config_idx,FILEHANDLE cfg);
+	void ParseCfgFile(FILEHANDLE fh);
+	void WriteCfg(FILEHANDLE fh);
 
+	UINT GetSectionActiveConfig(ItemType Type);
+	map<ItemType, bool> GetConfigurationSections(UINT config);
+
+	void DeleteConfiguration(UINT config);
+	/*
+	double GetEmptyMass(UINT config);
+	double GetSize(UINT config);
+	VECTOR3 GetPMI(UINT config);
+	VECTOR3 GetCrossSections(UINT config);
+	double GetGravityGradientDamping(UINT config);
+	VECTOR3 GetRotDrag(UINT config);
+
+	int GetMeshDefCount(UINT config);
+	string GetMeshName(UINT config, UINT idx);
+	VECTOR3 GetMeshPos(UINT config, UINT idx);
+	VECTOR3 GetMeshDir(UINT config, UINT idx);
+	VECTOR3 GetMeshRot(UINT config, UINT idx);
+	WORD GetMeshVisibility(UINT config, UINT idx);
+
+	UINT GetDockCount(UINT config);
+	string GetDockName(UINT config, UINT idx);
+	void GetDockParams(UINT config, UINT idx, VECTOR3 &pos, VECTOR3 &dir, VECTOR3 &rot);
+	bool IsDockJettisonable(UINT config, UINT idx);
+
+	UINT GetAttCount(UINT config);
+	bool GetIdCheck(UINT config, UINT idx);
+	string GetIdCheckString(UINT config, UINT idx);
+	string GetAttID(UINT config, UINT idx);
+	bool AttToParent(UINT config, UINT idx);
+	void GetAttPosDirRot(UINT config, UINT idx, VECTOR3 &pos, VECTOR3 &dir, VECTOR3 &rot);
+	double GetAttRange(UINT config, UINT idx);
+
+	UINT GetAnimCount(UINT config);
+	double GetAnimDefState(UINT config, UINT idx);
+	string GetAnimName(UINT config, UINT idx);
+	UINT GetAnimNComps(UINT config, UINT idx);
+	DWORD GetAnimKey(UINT config, UINT idx);
+	double GetAnimDuration(UINT config, UINT idx);
+	AnimCycleType GetAnimCycle(UINT config, UINT idx);
+	*/
+
+
+
+
+
+
+
+	UINT CurrentConfiguration;
 };

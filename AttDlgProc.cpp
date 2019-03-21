@@ -5,6 +5,10 @@
 #include "LaserManager.h"
 #pragma comment(lib, "comctl32.lib")
 
+BOOL CALLBACK EnableChilds(HWND, LPARAM);
+
+using namespace std;
+
 void DialogControl::UpdateAttDialog(HWND hWnd) {
 	UINT idx = CurrentSelection.idx;
 	if (idx >= AttMng->GetAttCount()) { return; }
@@ -23,7 +27,7 @@ void DialogControl::UpdateAttDialog(HWND hWnd) {
 		SendDlgItemMessage(hWnd, IDC_EDIT_ATTROTY, EM_SETREADONLY, false, 0);
 		SendDlgItemMessage(hWnd, IDC_EDIT_ATTROTZ, EM_SETREADONLY, false, 0);
 		SendDlgItemMessage(hWnd, IDC_EDIT_ATTRANGE, EM_SETREADONLY, false, 0);
-		SendDlgItemMessage(hWnd, IDC_EDIT_ATTIDCHECK, EM_SETREADONLY, hasidcheck?false:true, 0);
+		SendDlgItemMessage(hWnd, IDC_EDIT_ATTIDCHECK, EM_SETREADONLY, hasidcheck ? false : true, 0);
 		EnableWindow(GetDlgItem(hWnd, IDC_SPIN_ATTPITCH), true);
 		EnableWindow(GetDlgItem(hWnd, IDC_SPIN_ATTROLL), true);
 		EnableWindow(GetDlgItem(hWnd, IDC_SPIN_ATTYAW), true);
@@ -36,7 +40,7 @@ void DialogControl::UpdateAttDialog(HWND hWnd) {
 		EnableWindow(GetDlgItem(hWnd, IDC_BTN_ATTPASTEV), true);
 		EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_CRDELATTDEF), true);
 		EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_ATTRANGESET), true);
-		EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_ATTIDCHECKSET), hasidcheck?true:false);
+		EnableWindow(GetDlgItem(hWnd, IDC_BUTTON_ATTIDCHECKSET), hasidcheck ? true : false);
 		EnableWindow(GetDlgItem(hWnd, IDC_CHECK_ATTIDCHECKENABLE), true);
 		if (hasidcheck) {
 			char cbuf[256] = { '\0' };
@@ -49,7 +53,6 @@ void DialogControl::UpdateAttDialog(HWND hWnd) {
 			SendDlgItemMessage(hWnd, IDC_CHECK_ATTIDCHECKENABLE, BM_SETCHECK, BST_UNCHECKED, 0);
 		}
 		SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_CRDELATTDEF), (LPCSTR)TEXT("DELETE THIS ATTACHMENT"));
-
 	}
 	else {
 		EnableWindow(GetDlgItem(hWnd, IDC_CHECK_ATTHIGHLIGHT), false);
@@ -96,8 +99,7 @@ void DialogControl::UpdateAttDialog(HWND hWnd) {
 	SetDlgItemsTextVector3(hWnd, IDC_EDIT_ATTPOSX, IDC_EDIT_ATTPOSY, IDC_EDIT_ATTPOSZ, pos);
 	SetDlgItemsTextVector3(hWnd, IDC_EDIT_ATTDIRX, IDC_EDIT_ATTDIRY, IDC_EDIT_ATTDIRZ, dir);
 	SetDlgItemsTextVector3(hWnd, IDC_EDIT_ATTROTX, IDC_EDIT_ATTROTY, IDC_EDIT_ATTROTZ, rot);
-
-	if (AttLaserMap[idx]!=NULL) {
+	if (AttLaserMap[idx] != NULL) {
 		SendDlgItemMessage(hWnd, IDC_CHECK_ATTHIGHLIGHT, BM_SETCHECK, BST_CHECKED, 0);
 	}
 	else {
@@ -108,6 +110,8 @@ void DialogControl::UpdateAttDialog(HWND hWnd) {
 	sprintf(cbuf, "%.2f", AttMng->GetAttDefRange(idx));
 	SetDlgItemText(hWnd, IDC_EDIT_ATTRANGE, cbuf);
 
+	
+	
 	return;
 }
 

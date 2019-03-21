@@ -3,12 +3,14 @@
 #include "LaserManager.h"
 #include "DialogControl.h"
 #include "DockManager.h"
-
-
 #pragma comment(lib, "comctl32.lib")
+
+#define LogV(x,...) VB1->Log->Log(x,##__VA_ARGS__)
+
 
 void DialogControl::UpdateDockDialog(HWND hWnd) {
 	if (CurrentSelection.idx >= DckMng->GetDockCount()) { return; }
+	
 	char cbuf[256] = { '\0' };
 	sprintf(cbuf, "%s", DckMng->GetDockName(CurrentSelection.idx).c_str());
 	SetDlgItemText(hWnd, IDC_EDIT_DOCKNAME, (LPCSTR)cbuf);
@@ -156,7 +158,7 @@ BOOL DialogControl::DockDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 				VB1->Laser->DeleteLaser(DockLaserMap[CurrentSelection.idx]);
 			}
 			DckMng->DeleteDockDef(CurrentSelection.idx);
-			UpdateTree(hDlg, DOCK,hrootDocks);
+			UpdateTree(hDlg, DOCK,0);
 			break;
 		}
 		case IDC_BTN_DOCKPASTEV:

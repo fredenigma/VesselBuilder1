@@ -6,6 +6,8 @@
 #include "AnimationManager.h"
 #pragma comment(lib, "comctl32.lib")
 
+BOOL CALLBACK EnableChilds(HWND, LPARAM);
+
 void DialogControl::UpdateAnimCompGroupLists(HWND hWnd, def_idx meshdef_idx) {
 	UINT idx = CurrentSelection.idx;
 	SendDlgItemMessage(hWnd, IDC_LIST_ANIMCOMPGRPSTOPICK, LB_RESETCONTENT, 0, 0);
@@ -32,7 +34,7 @@ void DialogControl::UpdateAnimCompGroupLists(HWND hWnd, def_idx meshdef_idx) {
 }
 void DialogControl::ShowAnimCompArmTip(HWND hWnd, bool showtip) {
 	if (!showtip) {
-		EnableWindow(GetDlgItem(hWnd, IDC_COMBO_ANIMCOMPMESH), true);
+		
 		ShowWindow(GetDlgItem(hWnd, IDC_LIST_ANIMCOMPGRPSTOPICK), SW_SHOW);
 		ShowWindow(GetDlgItem(hWnd, IDC_LIST_ANIMCOMPGRPSINANIM), SW_SHOW);
 		ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ANIMCOMPBACKGRPS), SW_SHOW);
@@ -55,6 +57,8 @@ void DialogControl::ShowAnimCompArmTip(HWND hWnd, bool showtip) {
 }
 void DialogControl::UpdateAnimCompDialog(HWND hWnd) {
 	UINT idx = CurrentSelection.idx;
+
+	
 	char cbuf[256] = { '\0' };
 	SetDlgItemText(hWnd, IDC_EDIT_ANIMCOMPNAME, (LPCSTR)AnimMng->GetAnimCompDefName(idx).c_str());
 

@@ -27,6 +27,8 @@
 #define IDD_DIALOG_LIGHTS               125
 #define IDD_DIALOG_VARDRAG              126
 #define IDD_DIALOG_TEXTREADER           127
+#define IDD_DIALOG_ANIM1                128
+#define IDD_DIALOG_RECONFIGS            128
 #define IDC_TREE1                       1001
 #define IDC_SPIN_POSZ_S                 1005
 #define IDC_SPIN_POSZ_L                 1006
@@ -580,8 +582,26 @@
 #define IDC_BUTTON_TEXTOPENFILE         1513
 #define ID_TEXT_EXIT                    1514
 #define IDC_BUTTON_TEXTOPENVBLOG        1515
-#define IDC_BUTTON_TEXTOPENFILE3        1516
+#define IDC_CHECK_RCSET                 1515
 #define IDC_BUTTON_TEXTOPENORBLOG       1516
+#define IDC_CHECK_RCMSH                 1516
+#define IDC_CHECK_RCDOCK                1517
+#define IDC_CHECK_RCATT                 1518
+#define IDC_CHECK_RCANIM                1519
+#define IDC_CHECK_RCPROP                1520
+#define IDC_CHECK_RCTHR                 1521
+#define IDC_CHECK_RCTHRG                1522
+#define IDC_CHECK_RCTDP                 1523
+#define IDC_CHECK_RCAIRFOILS            1524
+#define IDC_CHECK_RCCTRLSURF            1525
+#define IDC_CHECK_RCLGT                 1526
+#define IDC_CHECK_RCCAM                 1527
+#define IDC_CHECK_RCVC                  1528
+#define IDC_CHECK_RCVARD                1529
+#define IDC_CHECK_RCEVENTS              1530
+#define IDC_BUTTON_RCACTIVATE           1531
+#define IDC_BUTTON2                     1532
+#define IDC_BUTTON_RCDELETE             1532
 
 // Next default values for new objects
 // 
@@ -589,7 +609,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1515
+#define _APS_NEXT_CONTROL_VALUE         1533
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

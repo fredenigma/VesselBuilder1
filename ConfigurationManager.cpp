@@ -1,10 +1,10 @@
 #include "VesselBuilder1.h"
 #include "DialogControl.h"
+#include "GeneralSettingsManager.h"
 #include "MeshManager.h"
 #include "DockManager.h"
 #include "AttachmentManager.h"
 #include "AnimationManager.h"
-#include "ConfigurationManager.h"
 #include "PropellantManager.h"
 #include "ExTexManager.h"
 #include "ParticleManager.h"
@@ -13,12 +13,17 @@
 #include "AirfoilsManager.h"
 #include "ControlSurfacesManager.h"
 #include "CameraManager.h"
+#include "VCManager.h"
+#include "LightsManager.h"
+#include "VariableDragManager.h"
+#include "ConfigurationManager.h"
 
 #define LogV(x,...) VB1->Log->Log(x,##__VA_ARGS__)
 
 Section::Section(VesselBuilder1* _VB1, UINT _config, FILEHANDLE cfg) {
 	VB1 = _VB1;
 	Config_idx = _config;
+	Active = false;
 	//ParseSection(cfg);
 	return;
 }
@@ -26,7 +31,9 @@ Section::Section(VesselBuilder1* _VB1, UINT _config, FILEHANDLE cfg) {
 Section::~Section() { VB1 = NULL; }
 void Section::WriteSection(FILEHANDLE fh){}
 void Section::ParseSection(FILEHANDLE fh) {}
-void Section::ApplySection() {}
+void Section::ApplySection() {
+	Active = true;
+}
 void Section::UpdateSection(){}
 void Section::ManagerClear(){}
 
@@ -38,10 +45,123 @@ void Section::ConfigCheck(char* cbuf, UINT config) {
 	}
 	return;
 }
+
+
+SettingSection::SettingSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg) : Section(VB1, config, cfg) {
+	Def = Definitions();
+	SetMng = VB1->SetMng;
+	if (cfg != NULL) {
+		ParseSection(cfg);
+	}
+	else {
+		UpdateSection();
+	}
+	
+	return;
+}
+SettingSection::~SettingSection() {
+	SetMng = NULL;
+}
+void SettingSection::ParseSection(FILEHANDLE fh) {
+	char cbuf[256] = { '\0' };
+	sprintf(cbuf, "EMPTY_MASS");
+	ConfigCheck(cbuf, Config_idx);
+	oapiReadItem_float(fh, cbuf, Def.EmptyMass);
+	sprintf(cbuf, "VSIZE");
+	ConfigCheck(cbuf, Config_idx);
+	oapiReadItem_float(fh, cbuf, Def.Size);
+	sprintf(cbuf, "PMI");
+	ConfigCheck(cbuf, Config_idx);
+	oapiReadItem_vec(fh, cbuf, Def.PMI);
+	sprintf(cbuf, "CSECTIONS");
+	ConfigCheck(cbuf, Config_idx);
+	oapiReadItem_vec(fh, cbuf, Def.CrossSections);
+	sprintf(cbuf, "GRAVITYGDAMP");
+	ConfigCheck(cbuf, Config_idx);
+	oapiReadItem_float(fh, cbuf, Def.GravityGradientDamping);
+	sprintf(cbuf, "ROTDRAG");
+	ConfigCheck(cbuf, Config_idx);
+	oapiReadItem_vec(fh, cbuf, Def.RotDrag);
+	
+}
+void SettingSection::WriteSection(FILEHANDLE fh) {
+	char cbuf[256] = { '\0' };
+	oapiWriteLine(fh, " ");
+	sprintf(cbuf, ";<-------------------------GENERAL SETTINGS - Configuration: %i------------------------->", Config_idx);
+	oapiWriteLine(fh, cbuf);
+	oapiWriteLine(fh, " ");
+	sprintf(cbuf, "EMPTY_MASS");
+	ConfigCheck(cbuf, Config_idx);
+	oapiWriteItem_float(fh, cbuf, Def.EmptyMass);	
+	sprintf(cbuf, "VSIZE");
+	ConfigCheck(cbuf, Config_idx);
+	oapiWriteItem_float(fh, cbuf, Def.Size);
+	sprintf(cbuf, "PMI");
+	ConfigCheck(cbuf, Config_idx);
+	oapiWriteItem_vec(fh, cbuf, Def.PMI);
+	sprintf(cbuf, "CSECTIONS");
+	ConfigCheck(cbuf, Config_idx);
+	oapiWriteItem_vec(fh, cbuf, Def.CrossSections);
+	sprintf(cbuf, "GRAVITYGDAMP");
+	ConfigCheck(cbuf, Config_idx);
+	oapiWriteItem_float(fh, cbuf, Def.GravityGradientDamping);
+	sprintf(cbuf, "ROTDRAG");
+	ConfigCheck(cbuf, Config_idx);
+	oapiWriteItem_vec(fh, cbuf, Def.RotDrag);
+	oapiWriteLine(fh, " ");
+	
+}
+void SettingSection::ApplySection() {
+	Section::ApplySection();
+	SetMng->SetEmptyMass(Def.EmptyMass);
+	SetMng->SetSize(Def.Size);
+	SetMng->SetPMI(Def.PMI);
+	SetMng->SetCrossSections(Def.CrossSections);
+	SetMng->SetGravityGradientDamping(Def.GravityGradientDamping);
+	SetMng->SetRotDrag(Def.RotDrag);
+}
+void SettingSection::UpdateSection() {
+	Def.EmptyMass = SetMng->GetEmptyMass();
+	Def.Size = SetMng->GetSize();
+	Def.PMI = SetMng->GetPMI();
+	Def.CrossSections = SetMng->GetCrossSections();
+	Def.GravityGradientDamping = SetMng->GetGravityGradientDamping();
+	Def.RotDrag = SetMng->GetRotDrag();
+}
+void SettingSection::ManagerClear() {
+	SetMng->Clear();
+}
+
+/*
+double SettingSection::GetEmptyMass() {
+	return Def.EmptyMass;
+}
+double SettingSection::GetSize() {
+	return Def.Size;
+}
+VECTOR3 SettingSection::GetPMI() {
+	return Def.PMI;
+}
+VECTOR3 SettingSection::GetCrossSections() {
+	return Def.CrossSections;
+}
+double SettingSection::GetGravityGradientDamping() {
+	return Def.GravityGradientDamping;
+}
+VECTOR3 SettingSection::GetRotDrag() {
+	return Def.RotDrag;
+}*/
+
+
 MeshSection::MeshSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg) :Section(VB1,config, cfg){
 	Defs.clear();
 	MshMng = VB1->MshMng;
-	ParseSection(cfg);
+	if (cfg != NULL) {
+		ParseSection(cfg);
+	}
+	else {
+		UpdateSection();
+	}
 	return;
 }
 MeshSection::~MeshSection() { MshMng = NULL; }
@@ -139,17 +259,44 @@ void MeshSection::ManagerClear() {
 	MshMng->Clear();
 }
 void MeshSection::ApplySection() {
+	Section::ApplySection();
 	for (UINT i = 0; i < Defs.size(); i++) {
 		MshMng->AddMeshDef(Defs[i].meshname, Defs[i].pos, Defs[i].dir, Defs[i].rot, Defs[i].visibility);
 	}
 	MshMng->PreLoadMeshes();
 	MshMng->AddMeshes();
 }
+/*int MeshSection::GetMeshDefCount() {
+	return Defs.size();
+}
+string MeshSection::GetMeshName(UINT idx) {
+	return Defs[idx].meshname;
+}
+VECTOR3 MeshSection::GetMeshPos(UINT idx) {
+	return Defs[idx].pos;
+}
+VECTOR3 MeshSection::GetMeshDir(UINT idx) {
+	return Defs[idx].dir;
+}
+VECTOR3 MeshSection::GetMeshRot(UINT idx) {
+	return Defs[idx].rot;
+}
+WORD MeshSection::GetMeshVisibility(UINT idx) {
+	return (WORD)Defs[idx].visibility;
+}*/
+
+
+
 
 DockSection::DockSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg) :Section(VB1, config, cfg) {
 	Defs.clear();
 	DckMng = VB1->DckMng;
-	ParseSection(cfg);
+	if (cfg != NULL) {
+		ParseSection(cfg);
+	}
+	else {
+		UpdateSection();
+	}
 	return;
 }
 DockSection::~DockSection() { DckMng = NULL; }
@@ -243,15 +390,40 @@ void DockSection::ManagerClear() {
 	DckMng->Clear();
 }
 void DockSection::ApplySection() {
+	Section::ApplySection();
 	for (UINT i = 0; i < Defs.size(); i++) {
 		DckMng->AddDockDef(Defs[i].name, Defs[i].pos, Defs[i].dir, Defs[i].rot, Defs[i].jettisonable);
 	}
 }
 
+/*UINT DockSection::GetDockCount() {
+	return Defs.size();
+}
+string DockSection::GetDockName(UINT idx) {
+	return Defs[idx].name;
+}
+void DockSection::GetDockParams(UINT idx, VECTOR3 &pos, VECTOR3 &dir, VECTOR3 &rot) {
+	pos = Defs[idx].pos;
+	dir = Defs[idx].dir;
+	rot = Defs[idx].rot;
+	return;
+}
+bool DockSection::IsDockJettisonable(UINT idx) {
+	return Defs[idx].jettisonable;
+}
+*/
+
+
+
 AttachmentSection::AttachmentSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg) :Section(VB1, config, cfg) {
 	Defs.clear();
 	AttMng = VB1->AttMng;
-	ParseSection(cfg);
+	if (cfg != NULL) {
+		ParseSection(cfg);
+	}
+	else {
+		UpdateSection();
+	}
 }
 AttachmentSection::~AttachmentSection() { AttMng = NULL; }
 void AttachmentSection::ParseSection(FILEHANDLE fh) {
@@ -365,6 +537,7 @@ void AttachmentSection::ManagerClear() {
 	AttMng->Clear();
 }
 void AttachmentSection::ApplySection() {
+	Section::ApplySection();
 	for (UINT i = 0; i < Defs.size(); i++) {
 		AttMng->CreateAttDef(Defs[i].toparent, Defs[i].pos, Defs[i].dir, Defs[i].rot, Defs[i].id, Defs[i].range, false, Defs[i].idcheck, Defs[i].idcheck_string);
 	}
@@ -386,11 +559,43 @@ void AttachmentSection::UpdateSection() {
 	}
 }
 
+/*UINT AttachmentSection::GetAttCount() {
+	return Defs.size();
+}
+bool AttachmentSection::GetIdCheck(UINT idx) {
+	return Defs[idx].idcheck;
+}
+string AttachmentSection::GetIdCheckString(UINT idx) {
+	return Defs[idx].idcheck_string;
+}
+string AttachmentSection::GetAttID(UINT idx) {
+	return Defs[idx].id;
+}
+bool AttachmentSection::AttToParent(UINT idx) {
+	return Defs[idx].toparent;
+}
+void AttachmentSection::GetAttPosDirRot(UINT idx, VECTOR3 &pos, VECTOR3 &dir, VECTOR3 &rot) {
+	pos = Defs[idx].pos;
+	dir = Defs[idx].dir;
+	rot = Defs[idx].rot;
+	return;
+}
+double AttachmentSection::GetAttRange(UINT idx) {
+	return Defs[idx].range;
+}*/
+
+
+
 AnimationSection::AnimationSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg) :Section(VB1, config, cfg) {
 	AnimDefs.clear();
 	AnimCompDefs.clear();
 	AnimMng = VB1->AnimMng;
-	ParseSection(cfg);
+	if (cfg != NULL) {
+		ParseSection(cfg);
+	}
+	else {
+		UpdateSection();
+	}
 	return;
 }
 AnimationSection::~AnimationSection() { AnimMng = NULL; }
@@ -671,6 +876,7 @@ void AnimationSection::ManagerClear() {
 	AnimMng->Clear();
 }
 void AnimationSection::ApplySection() {
+	Section::ApplySection();
 	for (UINT i = 0; i < AnimDefs.size(); i++) {
 		AnimMng->AddAnimDef(AnimDefs[i].anim_name, AnimDefs[i].anim_duration, AnimDefs[i].Cycle, AnimDefs[i].anim_key, AnimDefs[i].anim_defstate);
 	}
@@ -726,15 +932,45 @@ void AnimationSection::UpdateSection() {
 		acd.animcomp_ngrps = AnimMng->GetAnimCompDefNGroups(i);
 		acd.animcomp_grps = AnimMng->GetAnimCompDefGroups(i);
 		acd.parent_idx = AnimMng->GetParentCompDefIdx(AnimMng->GetAnimCompDefParent(i));
+		AnimCompDefs.push_back(acd);
 	}
 	return;
 }
+
+/*UINT AnimationSection::GetAnimCount() {
+	return AnimDefs.size();
+}
+double AnimationSection::GetAnimDefState(UINT idx) {
+	return AnimDefs[idx].anim_defstate;
+}
+string AnimationSection::GetAnimName(UINT idx) {
+	return AnimDefs[idx].anim_name;
+}
+UINT AnimationSection::GetAnimNComps(UINT idx) {
+	return 0;
+}
+DWORD AnimationSection::GetAnimKey(UINT idx) {
+	return AnimDefs[idx].anim_key;
+}
+double AnimationSection::GetAnimDuration(UINT idx) {
+	return AnimDefs[idx].anim_duration;
+}
+AnimCycleType AnimationSection::GetAnimCycle(UINT idx) {
+	return AnimDefs[idx].Cycle;
+}*/
+
+
 
 
 PropellantSection::PropellantSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg) :Section(VB1, config, cfg) {
 	Defs.clear();
 	PrpMng = VB1->PrpMng;
-	ParseSection(cfg);
+	if (cfg != NULL) {
+		ParseSection(cfg);
+	}
+	else {
+		UpdateSection();
+	}
 	return;
 }
 PropellantSection::~PropellantSection() { PrpMng = NULL; }
@@ -828,6 +1064,7 @@ void PropellantSection::ManagerClear() {
 	PrpMng->Clear();
 }
 void PropellantSection::ApplySection() {
+	Section::ApplySection();
 		
 	for (UINT i = 0; i < Defs.size(); i++) {
 		PrpMng->AddTankDef(Defs[i].name, Defs[i].maxmass, Defs[i].efficiency,Defs[i].currentmass);
@@ -856,7 +1093,12 @@ void PropellantSection::UpdateSection() {
 ThrusterSection::ThrusterSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg) :Section(VB1, config, cfg) {
 	Defs.clear();
 	ThrMng = VB1->ThrMng;
-	ParseSection(cfg);
+	if (cfg != NULL) {
+		ParseSection(cfg);
+	}
+	else {
+		UpdateSection();
+	}
 	return;
 }
 ThrusterSection::~ThrusterSection() { ThrMng = NULL; }
@@ -1102,6 +1344,7 @@ void ThrusterSection::WriteSection(FILEHANDLE fh) {
 
 }
 void ThrusterSection::ApplySection() {
+	Section::ApplySection();
 	for (UINT i = 0; i < Defs.size(); i++) {
 		PROPELLANT_HANDLE ph = NULL;
 		if (Defs[i].tank != -1) {
@@ -1135,6 +1378,7 @@ void ThrusterSection::UpdateSection() {
 				SURFHANDLE tex;
 				Definitions::ExhaustDefs ed;
 				ThrMng->GetThrExParams(i, j, ed.lsize, ed.wsize, tex, ed.customposdir, ed.pos, ed.dir);
+				ed.extex = VB1->ExTMng->GetExTexIdx(tex);
 				d.Exhausts.push_back(ed);
 			}	
 		}
@@ -1142,8 +1386,9 @@ void ThrusterSection::UpdateSection() {
 		if (d.hasparticle) {
 			for (UINT j = 0; j < ThrMng->GetThrParticlesCount(i); j++) {
 				Definitions::ParticleDefs pd;
-				UINT pss_idx = (UINT)pd.pss_int;
+				UINT pss_idx;// = (UINT)pd.pss_int;
 				ThrMng->GetThrParticleParams(i, j, pss_idx, pd.custompos, pd.pos);
+				pd.pss_int = (int)pss_idx;
 				d.Particles.push_back(pd);
 			}
 		}
@@ -1192,7 +1437,12 @@ ThrusterGroupSection::ThrusterGroupSection(VesselBuilder1* VB1, UINT config, FIL
 	Thrusters[THGROUP_ATT_BACK] = nonum;
 
 	ThrGrpMng = VB1->ThrGrpMng;
-	ParseSection(cfg);
+	if (cfg != NULL) {
+		ParseSection(cfg);
+	}
+	else {
+		UpdateSection();
+	}
 }
 ThrusterGroupSection::~ThrusterGroupSection() {
 	ThrGrpMng = NULL;
@@ -1630,6 +1880,7 @@ void ThrusterGroupSection::WriteSection(FILEHANDLE fh) {
 	}
 }
 void ThrusterGroupSection::ApplySection() {
+	Section::ApplySection();
 	map<THGROUP_TYPE, bool>::iterator it;
 	//UINT counter = 0;
 	for (it = Defined.begin(); it != Defined.end(); it++) {
@@ -1678,7 +1929,12 @@ TouchDownPointSection::TouchDownPointSection(VesselBuilder1* VB1, UINT config, F
 	SecondSetEnabled = false;
 	changeoveranim = -1;
 	TdpMng = VB1->TdpMng;
-	ParseSection(cfg);
+	if (cfg != NULL) {
+		ParseSection(cfg);
+	}
+	else {
+		UpdateSection();
+	}
 	return;
 }
 TouchDownPointSection::~TouchDownPointSection() { TdpMng = NULL; }
@@ -1783,6 +2039,7 @@ void TouchDownPointSection::WriteSection(FILEHANDLE fh) {
 	}
 }
 void TouchDownPointSection::ApplySection() {
+	Section::ApplySection();
 	
 	for (UINT i = 0; i < Set1.size(); i++) {
 		TOUCHDOWNVTX tdvtx;
@@ -1837,7 +2094,12 @@ void TouchDownPointSection::ManagerClear() {
 AirfoilSection::AirfoilSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg) : Section(VB1, config, cfg) {
 	Defs.clear();
 	AirfoilMng = VB1->AirfoilMng;
-	ParseSection(cfg);
+	if (cfg != NULL) {
+		ParseSection(cfg);
+	}
+	else {
+		UpdateSection();
+	}
 	return;
 }
 AirfoilSection::~AirfoilSection() { AirfoilMng = NULL; }
@@ -1960,6 +2222,7 @@ void AirfoilSection::WriteSection(FILEHANDLE fh) {
 
 }
 void AirfoilSection::ApplySection() {
+	Section::ApplySection();
 	for (UINT i = 0; i < Defs.size(); i++) {
 		AIRFOIL_ORIENTATION align = (AIRFOIL_ORIENTATION)Defs[i].align;
 		UINT index = AirfoilMng->CreateAirfoilDef(Defs[i].name, align, Defs[i].ref, Defs[i].c, Defs[i].S, Defs[i].A);
@@ -2000,7 +2263,12 @@ void AirfoilSection::ManagerClear() {
 CtrlSurfaceSection::CtrlSurfaceSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg) : Section(VB1,config,cfg) {
 	Defs.clear();
 	CtrSurfMng = VB1->CtrSurfMng;
-	ParseSection(cfg);
+	if (cfg != NULL) {
+		ParseSection(cfg);
+	}
+	else {
+		UpdateSection();
+	}
 	return;
 }
 CtrlSurfaceSection::~CtrlSurfaceSection() { CtrSurfMng = NULL; }
@@ -2108,6 +2376,7 @@ void CtrlSurfaceSection::WriteSection(FILEHANDLE fh) {
 	return;
 }
 void CtrlSurfaceSection::ApplySection() {
+	Section::ApplySection();
 	for (UINT i = 0; i < Defs.size(); i++) {
 		AIRCTRL_TYPE tp = (AIRCTRL_TYPE)Defs[i].type;
 		UINT index = CtrSurfMng->CreateUndefinedCtrlSurfDef(Defs[i].name, tp, Defs[i].area, Defs[i].dcl, Defs[i].ref, Defs[i].axis, Defs[i].delay, Defs[i].anim);
@@ -2146,7 +2415,12 @@ void CtrlSurfaceSection::ManagerClear() {
 CameraSection::CameraSection(VesselBuilder1 *VB1, UINT config, FILEHANDLE cfg) : Section(VB1, config, cfg) {
 	Defs.clear();
 	CamMng = VB1->CamMng;
-	ParseSection(cfg);
+	if (cfg != NULL) {
+		ParseSection(cfg);
+	}
+	else {
+		UpdateSection();
+	}
 	return;
 }
 CameraSection::~CameraSection() { CamMng = NULL; }
@@ -2193,21 +2467,27 @@ void CameraSection::WriteSection(FILEHANDLE fh){
 	for (UINT i = 0; i < Defs.size(); i++) {
 		char cbuf[256] = { '\0' };
 		sprintf(cbuf, "CAM_%i_ID", i);
+		ConfigCheck(cbuf, Config_idx);
 		oapiWriteItem_int(fh, cbuf, i);
 		sprintf(cbuf, "CAM_%i_NAME", i);
+		ConfigCheck(cbuf, Config_idx);
 		char namebuf[256] = { '\0' };
 		sprintf(namebuf, "%s", Defs[i].name.c_str());
 		oapiWriteItem_string(fh, cbuf, namebuf);
 		sprintf(cbuf, "CAM_%i_POS", i);
+		ConfigCheck(cbuf, Config_idx);
 		oapiWriteItem_vec(fh, cbuf, Defs[i].pos);
 		sprintf(cbuf, "CAM_%i_DIR", i);
+		ConfigCheck(cbuf, Config_idx);
 		oapiWriteItem_vec(fh, cbuf, Defs[i].dir);
 		sprintf(cbuf, "CAM_%i_TILT", i);
+		ConfigCheck(cbuf, Config_idx);
 		oapiWriteItem_float(fh, cbuf, Defs[i].tilt*DEG);
 		oapiWriteLine(fh, " ");
 	}
 }
 void CameraSection::ApplySection() {
+	Section::ApplySection();
 	for (UINT i = 0; i < Defs.size(); i++) {
 		CamMng->AddCamDef(Defs[i].name, Defs[i].pos, Defs[i].dir, Defs[i].tilt);
 	}
@@ -2228,54 +2508,792 @@ void CameraSection::ManagerClear() {
 }
 
 
+VCSection::VCSection(VesselBuilder1 *VB1, UINT config, FILEHANDLE cfg) :Section(VB1, config, cfg) {
+	PosDefs.clear();
+	MFDDefs.clear();
+	HUDDef = HUDDefinition();
+	VCMng = VB1->VCMng;
+	if (cfg != NULL) {
+		ParseSection(cfg);
+	}
+	else {
+		UpdateSection();
+	}
+	return;
+}
+VCSection::~VCSection() { VCMng = NULL; }
+void VCSection::ParseSection(FILEHANDLE fh){
+	UINT position_counter = 0;
+	char cbuf[256] = { '\0' };
+	int id;
+	sprintf(cbuf, "VC_POS_%i_ID", position_counter);
+	ConfigCheck(cbuf, Config_idx);
+	while (oapiReadItem_int(fh, cbuf, id)) {
+		sprintf(cbuf, "VC_POS_%i_NAME", position_counter);
+		ConfigCheck(cbuf, Config_idx);
+		char namebuf[256] = { '\0' };
+		oapiReadItem_string(fh, cbuf, namebuf);
+		string name(namebuf);
+		VECTOR3 ofs, dir;
+		sprintf(cbuf, "VC_POS_%i_OFS", position_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_vec(fh, cbuf, ofs);
+		sprintf(cbuf, "VC_POS_%i_DIR", position_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_vec(fh, cbuf, dir);
+		PosDefinitions pd = PosDefinitions();
+		pd.name = name;
+		pd.pos = ofs;
+		pd.dir = dir;
+		PosDefs.push_back(pd);
+	//	AddPosition(name, ofs, dir);
+		position_counter++;
+		sprintf(cbuf, "VC_POS_%i_ID", position_counter);
+		ConfigCheck(cbuf, Config_idx);
+	}
+	UINT MFD_counter = 0;
+	int mfd_id;
+	sprintf(cbuf, "VC_MFD_%i_ID", MFD_counter);
+	ConfigCheck(cbuf, Config_idx);
+	while (oapiReadItem_int(fh, cbuf, mfd_id)) {
+		int mesh, group;
+		bool wPwrBtns, wColsBtns;
+		VECTOR3 pwr_btn, mnu_btn, TopLeftBtn, BottomLeftBtn, TopRightBtn, BottomRightBtn;
+
+		sprintf(cbuf, "VC_MFD_%i_MESH", MFD_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_int(fh, cbuf, mesh);
+		sprintf(cbuf, "VC_MFD_%i_GROUP", MFD_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_int(fh, cbuf, group);
+		sprintf(cbuf, "VC_MFD_%i_WPWR", MFD_counter);
+		ConfigCheck(cbuf, Config_idx);
+		if (!oapiReadItem_bool(fh, cbuf, wPwrBtns)) { wPwrBtns = false; }
+		if (wPwrBtns) {
+			sprintf(cbuf, "VC_MFD_%i_PWR0", MFD_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_vec(fh, cbuf, pwr_btn);
+			sprintf(cbuf, "VC_MFD_%i_PWR2", MFD_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_vec(fh, cbuf, mnu_btn);
+		}
+		sprintf(cbuf, "VC_MFD_%i_WCOL", MFD_counter);
+		ConfigCheck(cbuf, Config_idx);
+		if (!oapiReadItem_bool(fh, cbuf, wColsBtns)) { wColsBtns = false; }
+		if (wColsBtns) {
+			sprintf(cbuf, "VC_MFD_%i_COLTL", MFD_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_vec(fh, cbuf, TopLeftBtn);
+			sprintf(cbuf, "VC_MFD_%i_COLBL", MFD_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_vec(fh, cbuf, BottomLeftBtn);
+			sprintf(cbuf, "VC_MFD_%i_COLTR", MFD_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_vec(fh, cbuf, TopRightBtn);
+			sprintf(cbuf, "VC_MFD_%i_COLBR", MFD_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_vec(fh, cbuf, BottomRightBtn);
+
+		}
+	//	UINT index = AddMFD(mesh, group, wPwrBtns, pwr_btn, mnu_btn, wColsBtns, TopLeftBtn, BottomLeftBtn, TopRightBtn, BottomRightBtn);
+		MFDDefinitions md = MFDDefinitions();
+		md.mesh = mesh;
+		md.group = group;
+		md.wpwr = wPwrBtns;
+		md.pwr0 = pwr_btn;
+		md.pwr2 = mnu_btn;
+		md.wcol = wColsBtns;
+		md.coltl = TopLeftBtn;
+		md.colbl = BottomLeftBtn;
+		md.coltr = TopRightBtn;
+		md.colbr = BottomRightBtn;
+		MFDDefs.push_back(md);
+		MFD_counter++;
+		sprintf(cbuf, "VC_MFD_%i_ID", MFD_counter);
+		ConfigCheck(cbuf, Config_idx);
+	}
+	bool Hud;
+	int mesh, group;
+	VECTOR3 hudcnt;
+	double size;
+	sprintf(cbuf, "VC_HUD");
+	ConfigCheck(cbuf, Config_idx);
+	if (!oapiReadItem_bool(fh,cbuf , Hud)) { Hud = false; }
+	HUDDef.wHud = Hud;
+	if (Hud) {
+		//EnableHUD(true);
+		sprintf(cbuf, "VC_HUD_MESH");
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_int(fh, cbuf, mesh);
+		sprintf(cbuf, "VC_HUD_GROUP");
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_int(fh, cbuf, group);
+		sprintf(cbuf, "VC_HUD_CNT");
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_vec(fh, cbuf, hudcnt);
+		sprintf(cbuf, "VC_HUD_SIZE");
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_float(fh, cbuf, size);
+		//SetHUDParams(mesh, group, hudcnt, size);
+		HUDDef.mesh = mesh;
+		HUDDef.group = group;
+		HUDDef.hudcnt = hudcnt;
+		HUDDef.size = size;
+	}
+	return;
+}
+void VCSection::WriteSection(FILEHANDLE fh){
+	oapiWriteLine(fh, " ");
+	oapiWriteLine(fh, ";<-------------------------VIRTUAL COCKPIT DEFINITIONS------------------------->");
+	oapiWriteLine(fh, " ");
+	for (UINT i = 0; i < PosDefs.size(); i++) {
+		char cbuf[256] = { '\0' };
+		sprintf(cbuf, "VC_POS_%i_ID", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_int(fh, cbuf, i);
+		sprintf(cbuf, "VC_POS_%i_NAME", i);
+		ConfigCheck(cbuf, Config_idx);
+		char namebuf[256] = { '\0' };
+		sprintf(namebuf, "%s", PosDefs[i].name.c_str());
+		oapiWriteItem_string(fh, cbuf, namebuf);
+		sprintf(cbuf, "VC_POS_%i_OFS", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_vec(fh, cbuf, PosDefs[i].pos);
+		sprintf(cbuf, "VC_POS_%i_DIR", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_vec(fh, cbuf, PosDefs[i].dir);
+		oapiWriteLine(fh, " ");
+	}
+	for (UINT i = 0; i < MFDDefs.size(); i++) {
+		char cbuf[256] = { '\0' };
+		sprintf(cbuf, "VC_MFD_%i_ID", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_int(fh, cbuf, i);
+		sprintf(cbuf, "VC_MFD_%i_MESH", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_int(fh, cbuf, MFDDefs[i].mesh);
+		sprintf(cbuf, "VC_MFD_%i_GROUP", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_int(fh, cbuf, MFDDefs[i].group);
+		sprintf(cbuf, "VC_MFD_%i_WPWR", i);
+		ConfigCheck(cbuf, Config_idx);
+		bool trans = MFDDefs[i].wpwr;
+		oapiWriteItem_bool(fh, cbuf, MFDDefs[i].wpwr);
+		if (trans) {
+			VECTOR3 pwr0, pwr2;
+			pwr0 = MFDDefs[i].pwr0;
+			pwr2 = MFDDefs[i].pwr2;
+			sprintf(cbuf, "VC_MFD_%i_PWR0", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_vec(fh, cbuf, pwr0);
+			sprintf(cbuf, "VC_MFD_%i_PWR2", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_vec(fh, cbuf, pwr2);
+		}
+		trans = MFDDefs[i].wcol;
+		sprintf(cbuf, "VC_MFD_%i_WCOL", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_bool(fh, cbuf, trans);
+		if (trans) {
+			VECTOR3 TopLeft, BottomLeft, TopRight, BottomRight;
+			TopLeft = MFDDefs[i].coltl;
+			BottomLeft = MFDDefs[i].colbl;
+			TopRight = MFDDefs[i].coltr;
+			BottomRight = MFDDefs[i].colbr;
+			sprintf(cbuf, "VC_MFD_%i_COLTL", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_vec(fh, cbuf, TopLeft);
+			sprintf(cbuf, "VC_MFD_%i_COLBL", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_vec(fh, cbuf, BottomLeft);
+			sprintf(cbuf, "VC_MFD_%i_COLTR", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_vec(fh, cbuf, TopRight);
+			sprintf(cbuf, "VC_MFD_%i_COLBR", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_vec(fh, cbuf, BottomRight);
+		}
+		oapiWriteLine(fh, " ");
+	}
+	bool wHud = HUDDef.wHud;
+	if (wHud) {
+		char cbuf[256] = { '\0' };
+		sprintf(cbuf, "VC_HUD");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_bool(fh, cbuf, wHud);
+		int mesh, group;
+		VECTOR3 hudcnt;
+		double size;
+		mesh = HUDDef.mesh;
+		group = HUDDef.group;
+		hudcnt = HUDDef.hudcnt;
+		size = HUDDef.size;
+		//GetHUDParams(mesh, group, hudcnt, size);
+		sprintf(cbuf, "VC_HUD_MESH");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_int(fh, cbuf, mesh);
+		sprintf(cbuf, "VC_HUD_GROUP");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_int(fh, cbuf, group);
+		sprintf(cbuf, "VC_HUD_CNT");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_vec(fh, cbuf, hudcnt);
+		sprintf(cbuf, "VC_HUD_SIZE");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_float(fh, cbuf, size);
+		oapiWriteLine(fh, " ");
+	}
+	return;
+
+}
+void VCSection::ApplySection(){
+	Section::ApplySection();
+	for (UINT i = 0; i < PosDefs.size(); i++) {
+		VCMng->AddPosition(PosDefs[i].name, PosDefs[i].pos, PosDefs[i].dir);
+	}
+	for (UINT i = 0; i < MFDDefs.size(); i++) {
+		VCMng->AddMFD(MFDDefs[i].mesh, MFDDefs[i].group, MFDDefs[i].wpwr, MFDDefs[i].pwr0, MFDDefs[i].pwr2, MFDDefs[i].wcol, MFDDefs[i].coltl, MFDDefs[i].colbl, MFDDefs[i].coltr, MFDDefs[i].colbr);
+	}
+	VCMng->EnableHUD(HUDDef.wHud);
+	if (HUDDef.wHud) {
+		VCMng->SetHUDParams(HUDDef.mesh, HUDDef.group, HUDDef.hudcnt, HUDDef.size);
+	}
+	return;
+}
+void VCSection::UpdateSection(){
+	PosDefs.clear();
+	MFDDefs.clear();
+	HUDDef = HUDDefinition();
+	for (UINT i = 0; i < VCMng->GetPositionCount(); i++) {
+		PosDefinitions pd = PosDefinitions();
+		pd.name = VCMng->GetPositionName(i);
+		pd.pos = VCMng->GetPositionPos(i);
+		pd.dir = VCMng->GetPositionDir(i);
+		PosDefs.push_back(pd);
+	}
+	for (UINT i = 0; i < VCMng->GetMFDCount(); i++) {
+		MFDDefinitions md = MFDDefinitions();
+		md.mesh = VCMng->GetMFDMesh(i);
+		md.group = VCMng->GetMFDGroup(i);
+		md.wpwr = VCMng->GetMFDHasPwrBtns(i);
+		if (md.wpwr) {
+			VCMng->GetMFDPwrVectors(i, md.pwr0, md.pwr2);
+		}
+		md.wcol = VCMng->GetMFDHasColBtns(i);
+		if (md.wcol) {
+			VCMng->GetMFDColVectors(i, md.coltl, md.colbl, md.coltr, md.colbr);
+		}
+		MFDDefs.push_back(md);
+	}
+	HUDDef.wHud = VCMng->IsHUDEnabled();
+	if (HUDDef.wHud) {
+		DWORD mesh, group;
+		VCMng->GetHUDParams(mesh, group, HUDDef.hudcnt, HUDDef.size);
+		HUDDef.mesh = (int)mesh;
+		HUDDef.group = (int)group;
+	}
+}
+void VCSection::ManagerClear() {
+	VCMng->Clear();
+}
+
+LightSection::LightSection(VesselBuilder1 *VB1, UINT config, FILEHANDLE cfg):Section(VB1,config,cfg) {
+	BcnDefs.clear();
+	LgtDefs.clear();
+	LightsMng = VB1->LightsMng;
+	if (cfg != NULL) {
+		ParseSection(cfg);
+	}
+	else {
+		UpdateSection();
+	}
+}
+LightSection::~LightSection() {
+	LightsMng = NULL;
+}
+void LightSection::ParseSection(FILEHANDLE fh) {
+	char cbuf[256] = { '\0' };
+	UINT beacon_counter = 0;
+	int id;
+	sprintf(cbuf, "BCN_%i_ID", beacon_counter);
+	ConfigCheck(cbuf, Config_idx);
+	while (oapiReadItem_int(fh, cbuf, id)) {
+		char namebuf[256] = { '\0' };
+		sprintf(cbuf, "BCN_%i_NAME", beacon_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_string(fh, cbuf, namebuf);
+		string name(namebuf);
+		DWORD shape;
+		VECTOR3 pos, col;
+		double size, falloff, period, duration, tofs;
+		sprintf(cbuf, "BCN_%i_SHAPE", beacon_counter);
+		ConfigCheck(cbuf, Config_idx);
+		int sh;
+		oapiReadItem_int(fh, cbuf, sh);
+		shape = (DWORD)sh;
+		sprintf(cbuf, "BCN_%i_POS", beacon_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_vec(fh, cbuf, pos);
+		sprintf(cbuf, "BCN_%i_COL", beacon_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_vec(fh, cbuf, col);
+		sprintf(cbuf, "BCN_%i_SIZE", beacon_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_float(fh, cbuf, size);
+		sprintf(cbuf, "BCN_%i_FALLOFF", beacon_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_float(fh, cbuf, falloff);
+		sprintf(cbuf, "BCN_%i_PERIOD", beacon_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_float(fh, cbuf, period);
+		sprintf(cbuf, "BCN_%i_DURATION", beacon_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_float(fh, cbuf, duration);
+		sprintf(cbuf, "BCN_%i_TOFS", beacon_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_float(fh, cbuf, tofs);
+		BcnDefinitions bd = BcnDefinitions();
+		bd.name = name;
+		bd.shape = sh;
+		bd.pos = pos;
+		bd.col = col;
+		bd.size = size;
+		bd.falloff = falloff;
+		bd.period = period;
+		bd.duration = duration;
+		bd.tofs = tofs;
+		BcnDefs.push_back(bd);
+		//AddBeaconDef(name, shape, pos, col, size, falloff, period, duration, tofs);
+		beacon_counter++;
+		sprintf(cbuf, "BCN_%i_ID", beacon_counter);
+		ConfigCheck(cbuf, Config_idx);
+	}
+
+	UINT lights_counter = 0;
+	for (UINT i = 0; i < 256; i++) { cbuf[i] = '\0'; }
+	sprintf(cbuf, "LIGHT_%i_ID", lights_counter);
+	ConfigCheck(cbuf, Config_idx);
+	while (oapiReadItem_int(fh, cbuf, id)) {
+		sprintf(cbuf, "LIGHT_%i_NAME", lights_counter);
+		ConfigCheck(cbuf, Config_idx);
+		char namebuf[256] = { '\0' };
+		oapiReadItem_string(fh, cbuf, namebuf);
+		string name(namebuf);
+		int type_int;
+		LightEmitter::TYPE type;
+		VECTOR3 col_d, col_a, col_s, pos;
+		COLOUR4 diff, amb, spec;
+		double range;
+		int vis_int;
+		LightEmitter::VISIBILITY vis;
+		VECTOR3 attenuation;
+		bool hasatt;
+		int attachment=-1;
+		VECTOR3 direction = _V(0, 0, 0);
+		VECTOR3 aperture = _V(0, 0, 0);
+		sprintf(cbuf, "LIGHT_%i_TYPE", lights_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_int(fh, cbuf, type_int);
+		type = (LightEmitter::TYPE)type_int;
+		sprintf(cbuf, "LIGHT_%i_DCOL", lights_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_vec(fh, cbuf, col_d);
+		diff.r = col_d.x;
+		diff.g = col_d.y;
+		diff.b = col_d.z;
+		diff.a = 0;
+		sprintf(cbuf, "LIGHT_%i_ACOL", lights_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_vec(fh, cbuf, col_a);
+		amb.r = col_a.x;
+		amb.g = col_a.y;
+		amb.b = col_a.z;
+		amb.a = 0;
+		sprintf(cbuf, "LIGHT_%i_SCOL", lights_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_vec(fh, cbuf, col_s);
+		spec.r = col_s.x;
+		spec.g = col_s.y;
+		spec.b = col_s.z;
+		spec.a = 0;
+		sprintf(cbuf, "LIGHT_%i_POSITION", lights_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_vec(fh, cbuf, pos);
+		sprintf(cbuf, "LIGHT_%i_RANGE", lights_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_float(fh, cbuf, range);
+		sprintf(cbuf, "LIGHT_%i_VISIBILITY", lights_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_int(fh, cbuf, vis_int);
+		vis = (LightEmitter::VISIBILITY)vis_int;
+		sprintf(cbuf, "LIGHT_%i_ATTENUATION", lights_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_vec(fh, cbuf, attenuation);
+		if (type == LightEmitter::TYPE::LT_SPOT) {
+			sprintf(cbuf, "LIGHT_%i_DIRECTION", lights_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_vec(fh, cbuf, direction);
+			sprintf(cbuf, "LIGHT_%i_APERTURE", lights_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_vec(fh, cbuf, aperture);
+			aperture *= RAD;
+
+		}
+		sprintf(cbuf, "LIGHT_%i_HASATTACHMENT", lights_counter);
+		ConfigCheck(cbuf, Config_idx);
+		if (!oapiReadItem_bool(fh, cbuf, hasatt)) {
+			hasatt = false;
+		}
+		if (hasatt) {
+			sprintf(cbuf, "LIGHT_%i_ATTACHMENT", lights_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_int(fh, cbuf, attachment);
+		}
+		LightDefinitions ld = LightDefinitions();
+		ld.type = type_int;
+		ld.name = name;
+		ld.pos = pos;
+		ld.visibility = vis_int;
+		ld.dir = direction;
+		ld.attenuation = attenuation;
+		ld.range = range;
+		ld.aperture = aperture;
+		ld.dcol = col_d;
+		ld.scol = col_s;
+		ld.acol = col_a;
+		ld.hasattachment = hasatt;
+		ld.attachment = attachment;
+		LgtDefs.push_back(ld);
+		//UINT index = AddLightDef(type, name, pos, vis, direction, attenuation, range, aperture.x, aperture.y, diff, spec, amb);
+		//if (hasatt) {
+		//	SetLightToAttachment(index, true, attachment);
+		//}
+		lights_counter++;
+		sprintf(cbuf, "LIGHT_%i_ID", lights_counter);
+		ConfigCheck(cbuf, Config_idx);
+	}
+}
+void LightSection::WriteSection(FILEHANDLE fh) {
+	oapiWriteLine(fh, " ");
+	oapiWriteLine(fh, ";<-------------------------LIGHTS: BEACONS DEFINITIONS------------------------->");
+	oapiWriteLine(fh, " ");
+	for (UINT i = 0; i < BcnDefs.size(); i++) {
+		char cbuf[256] = { '\0' };
+		sprintf(cbuf, "BCN_%i_ID", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_int(fh, cbuf, i);
+		sprintf(cbuf, "BCN_%i_NAME", i);
+		ConfigCheck(cbuf, Config_idx);
+		char namebuf[256] = { '\0' };
+		sprintf(namebuf, "%s", BcnDefs[i].name.c_str());
+		oapiWriteItem_string(fh, cbuf, namebuf);
+		sprintf(cbuf, "BCN_%i_SHAPE", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_int(fh, cbuf, BcnDefs[i].shape);
+		sprintf(cbuf, "BCN_%i_POS", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_vec(fh, cbuf, BcnDefs[i].pos);
+		sprintf(cbuf, "BCN_%i_COL", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_vec(fh, cbuf, BcnDefs[i].col);
+		sprintf(cbuf, "BCN_%i_SIZE", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_float(fh, cbuf, BcnDefs[i].size);
+		sprintf(cbuf, "BCN_%i_FALLOFF", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_float(fh, cbuf, BcnDefs[i].falloff);
+		sprintf(cbuf, "BCN_%i_PERIOD", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_float(fh, cbuf, BcnDefs[i].period);
+		sprintf(cbuf, "BCN_%i_DURATION", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_float(fh, cbuf, BcnDefs[i].duration);
+		sprintf(cbuf, "BCN_%i_TOFS", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_float(fh, cbuf, BcnDefs[i].tofs);
+		oapiWriteLine(fh, " ");
+	}
+
+	oapiWriteLine(fh, " ");
+	oapiWriteLine(fh, ";<-------------------------LIGHTS: LIGHT EMITTERS DEFINITIONS------------------------->");
+	oapiWriteLine(fh, " ");
+	for (UINT i = 0; i < LgtDefs.size(); i++) {
+		char cbuf[256] = { '\0' };
+		sprintf(cbuf, "LIGHT_%i_ID", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_int(fh, cbuf, i);
+		sprintf(cbuf, "LIGHT_%i_NAME", i);
+		ConfigCheck(cbuf, Config_idx);
+		char namebuf[256] = { '\0' };
+		sprintf(namebuf, "%s", LgtDefs[i].name.c_str());
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_string(fh, cbuf, namebuf);
+		sprintf(cbuf, "LIGHT_%i_TYPE", i);
+		ConfigCheck(cbuf, Config_idx);
+		//int type = (int)GetLightType(i);
+		oapiWriteItem_int(fh, cbuf, LgtDefs[i].type);
+		sprintf(cbuf, "LIGHT_%i_DCOL", i);
+		ConfigCheck(cbuf, Config_idx);
+		/*COLOUR4 col_d, col_a, col_s;
+		GetLightColours(i, col_d, col_a, col_s);
+		VECTOR3 col_dv, col_av, col_sv;
+		col_dv.x = col_d.r;
+		col_dv.y = col_d.g;
+		col_dv.z = col_d.b;
+		col_av.x = col_a.r;
+		col_av.y = col_a.g;
+		col_av.z = col_a.b;
+		col_sv.x = col_s.r;
+		col_sv.y = col_s.g;
+		col_sv.z = col_s.b;*/
+		oapiWriteItem_vec(fh, cbuf, LgtDefs[i].dcol);
+		sprintf(cbuf, "LIGHT_%i_ACOL", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_vec(fh, cbuf, LgtDefs[i].acol);
+		sprintf(cbuf, "LIGHT_%i_SCOL", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_vec(fh, cbuf, LgtDefs[i].scol);
+		sprintf(cbuf, "LIGHT_%i_POSITION", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_vec(fh, cbuf, LgtDefs[i].pos);
+		sprintf(cbuf, "LIGHT_%i_RANGE", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_float(fh, cbuf, LgtDefs[i].range);
+		sprintf(cbuf, "LIGHT_%i_VISIBILITY", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_int(fh, cbuf, LgtDefs[i].visibility);
+		sprintf(cbuf, "LIGHT_%i_ATTENUATION", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_vec(fh, cbuf, LgtDefs[i].attenuation);
+		sprintf(cbuf, "LIGHT_%i_HASATTACHMENT", i);
+		ConfigCheck(cbuf, Config_idx);
+		bool hasatt = LgtDefs[i].hasattachment;
+		oapiWriteItem_bool(fh, cbuf, hasatt);
+		if (hasatt) {
+			sprintf(cbuf, "LIGHT_%i_ATTACHMENT", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_int(fh, cbuf, LgtDefs[i].attachment);
+		}
+		if (LgtDefs[i].type == 2) {
+			sprintf(cbuf, "LIGHT_%i_DIRECTION", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_vec(fh, cbuf, LgtDefs[i].dir);
+			//double umbra, penumbra;
+			//GetLightAperture(i, umbra, penumbra);
+			VECTOR3 aperture = LgtDefs[i].aperture;// _V(umbra, penumbra, 0);
+			aperture *= DEG;
+			sprintf(cbuf, "LIGHT_%i_APERTURE", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_vec(fh, cbuf, aperture);
+		}
+	}
+}
+void LightSection::ApplySection() {
+	Section::ApplySection();
+	for (UINT i = 0; i < BcnDefs.size(); i++) {
+		DWORD shape = (DWORD)BcnDefs[i].shape;
+		LightsMng->AddBeaconDef(BcnDefs[i].name, shape, BcnDefs[i].pos, BcnDefs[i].col, BcnDefs[i].size, BcnDefs[i].falloff, BcnDefs[i].period, BcnDefs[i].duration, BcnDefs[i].tofs);
+	}
+	for (UINT i = 0; i < LgtDefs.size(); i++) {
+		LightEmitter::TYPE ltype;
+		COLOUR4 diff, amb, spec;
+		LightEmitter::VISIBILITY vis;
+		ltype = (LightEmitter::TYPE)LgtDefs[i].type;
+		vis = (LightEmitter::VISIBILITY)LgtDefs[i].visibility;
+		diff.r = LgtDefs[i].dcol.x;
+		diff.g = LgtDefs[i].dcol.y;
+		diff.b = LgtDefs[i].dcol.z;
+		diff.a = 0;
+		amb.r = LgtDefs[i].acol.x;
+		amb.g = LgtDefs[i].acol.y;
+		amb.b = LgtDefs[i].acol.z;
+		amb.a = 0;
+		spec.r = LgtDefs[i].scol.x;
+		spec.g = LgtDefs[i].scol.y;
+		spec.b = LgtDefs[i].scol.z;
+		spec.a = 0;
+		UINT index = LightsMng->AddLightDef(ltype, LgtDefs[i].name, LgtDefs[i].pos, vis, LgtDefs[i].dir, LgtDefs[i].attenuation, LgtDefs[i].range, LgtDefs[i].aperture.x, LgtDefs[i].aperture.y, diff, spec, amb);
+		if (LgtDefs[i].hasattachment) {
+			LightsMng->SetLightToAttachment(index, true, LgtDefs[i].attachment);
+		}
+	}
+}
+void LightSection::UpdateSection() {
+	BcnDefs.clear();
+	LgtDefs.clear();
+	for (UINT i = 0; i < LightsMng->GetBeaconCount(); i++) {
+		BcnDefinitions bd = BcnDefinitions();
+		bd.name = LightsMng->GetBeaconName(i);
+		bd.shape = (int)LightsMng->GetBeaconShape(i);
+		bd.pos = LightsMng->GetBeaconPos(i);
+		bd.col = LightsMng->GetBeaconCol(i);
+		bd.size = LightsMng->GetBeaconSize(i);
+		bd.falloff = LightsMng->GetBeaconFalloff(i);
+		bd.period = LightsMng->GetBeaconPeriod(i);
+		bd.duration = LightsMng->GetBeaconDuration(i);
+		bd.tofs = LightsMng->GetBeaconTofs(i);
+		BcnDefs.push_back(bd);
+	}
+	for (UINT i = 0; i < LightsMng->GetLightsCount(); i++) {
+		LightDefinitions ld = LightDefinitions();
+		ld.name = LightsMng->GetLightName(i);
+		ld.type = (int)LightsMng->GetLightType(i);
+		COLOUR4 col_d, col_a, col_s;
+		LightsMng->GetLightColours(i, col_d, col_a, col_s);
+		ld.dcol.x = col_d.r;
+		ld.dcol.y = col_d.g;
+		ld.dcol.z = col_d.b;
+		ld.acol.x = col_a.r;
+		ld.acol.y = col_a.g;
+		ld.acol.z = col_a.b;
+		ld.scol.x = col_s.r;
+		ld.scol.y = col_s.g;
+		ld.scol.z = col_s.b;
+		ld.pos = LightsMng->GetLightPosition(i);
+		ld.range = LightsMng->GetLightRange(i);
+		ld.visibility = (int)LightsMng->GetLightVisibility(i);
+		ld.attenuation = LightsMng->GetLightAttenuation(i);
+		ld.hasattachment = LightsMng->IsLightAttachedToAttachment(i);
+		if (ld.hasattachment) {
+			ld.attachment = LightsMng->GetLigthAttachment(i);
+		}
+		if (ld.type == 2) {
+			ld.dir = LightsMng->GetLightDirection(i);
+			double umbra, penumbra;
+			LightsMng->GetLightAperture(i, umbra, penumbra);
+			VECTOR3 aperture = _V(umbra, penumbra, 0);
+			ld.aperture = aperture;
+		}
+	}
+}
+void LightSection::ManagerClear() {
+	LightsMng->Clear();
+}
+
+VardSection::VardSection(VesselBuilder1 *VB1, UINT config, FILEHANDLE cfg) :Section(VB1, config, cfg) {
+	Defs.clear();
+	VardMng = VB1->VardMng;
+	if (cfg != NULL) {
+		ParseSection(cfg);
+	}
+	else {
+		UpdateSection();
+	}
+	return;
+}
+VardSection::~VardSection() {
+	VardMng = NULL;
+}
+void VardSection::ParseSection(FILEHANDLE fh) {
+	UINT vard_counter = 0;
+	char cbuf[256] = { '\0' };
+	int id;
+	sprintf(cbuf, "VARIABLEDRAG_%i_ID", vard_counter);
+	ConfigCheck(cbuf, Config_idx);
+	while (oapiReadItem_int(fh, cbuf, id)) {
+		char namebuf[256] = { '\0' };
+		sprintf(cbuf, "VARIABLEDRAG_%i_NAME", vard_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_string(fh, cbuf, namebuf);
+		string name(namebuf);
+		double factor;
+		int anim_idx;
+		VECTOR3 ref;
+		sprintf(cbuf, "VARIABLEDRAG_%i_FACTOR", vard_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_float(fh, cbuf, factor);
+		sprintf(cbuf, "VARIABLEDRAG_%i_REF", vard_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_vec(fh, cbuf, ref);
+		sprintf(cbuf, "VARIABLEDRAG_%i_ANIM", vard_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_int(fh, cbuf, anim_idx);
+		Definitions d = Definitions();
+		d.name = name;
+		d.factor = factor;
+		d.anim = anim_idx;
+		d.ref = ref;
+		Defs.push_back(d);
+	//	AddVardDef(name, anim_idx, factor, ref);
+		vard_counter++;
+		sprintf(cbuf, "VARIABLEDRAG_%i_ID", vard_counter);
+		ConfigCheck(cbuf, Config_idx);
+	}
+}
+void VardSection::WriteSection(FILEHANDLE fh) {
+	oapiWriteLine(fh, " ");
+	oapiWriteLine(fh, ";<-------------------------VARIABLE DRAG ITEMS DEFINITIONS------------------------->");
+	oapiWriteLine(fh, " ");
+	for (UINT i = 0; i < Defs.size(); i++) {
+		//if (!IsVardDefDefined(i)) { continue; }
+		char cbuf[256] = { '\0' };
+		sprintf(cbuf, "VARIABLEDRAG_%i_ID", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_int(fh, cbuf, i);
+		sprintf(cbuf, "VARIABLEDRAG_%i_NAME", i);
+		ConfigCheck(cbuf, Config_idx);
+		char namebuf[256] = { '\0' };
+		sprintf(namebuf, "%s", Defs[i].name.c_str());
+		oapiWriteItem_string(fh, cbuf, namebuf);
+		sprintf(cbuf, "VARIABLEDRAG_%i_FACTOR", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_float(fh, cbuf, Defs[i].factor);
+		sprintf(cbuf, "VARIABLEDRAG_%i_REF", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_vec(fh, cbuf, Defs[i].ref);
+		sprintf(cbuf, "VARIABLEDRAG_%i_ANIM", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_int(fh, cbuf, Defs[i].anim);
+		oapiWriteLine(fh, " ");
+	}
+
+}
+void VardSection::ApplySection() {
+	Section::ApplySection();
+	for (UINT i = 0; i < Defs.size(); i++) {
+		VardMng->AddVardDef(Defs[i].name, Defs[i].anim, Defs[i].factor, Defs[i].ref);
+	}
+}
+void VardSection::UpdateSection() {
+	Defs.clear();
+	for (UINT i = 0; i < VardMng->GetVardDefCount(); i++) {
+		if (!VardMng->IsVardDefDefined(i)) { continue; }
+		Definitions d = Definitions();
+		d.name = VardMng->GetVardName(i);
+		UINT anim;
+		VardMng->GetVardParams(i, d.factor, d.ref, anim);
+		d.anim = (int)anim;
+		Defs.push_back(d);
+	}
+}
+void VardSection::ManagerClear() {
+	VardMng->Clear();
+}
+
 Configuration::Configuration(VesselBuilder1 *_VB1, map<ItemType, bool> _Sections, UINT _config, FILEHANDLE _cfg) {
 	VB1 = _VB1;
 	Configuration_Sections = _Sections;
 	LogV("Adding Configuration n:%i", _config);
-	if (Configuration_Sections[MESH]) {
-		LogV("Mesh Section included");
-		Sections.push_back(new MeshSection(_VB1, _config, _cfg));
-	}
-	if (Configuration_Sections[DOCK]) {
-		LogV("Dock Section included");
-		Sections.push_back(new DockSection(_VB1, _config, _cfg));
-	}
-	if (Configuration_Sections[ATTACHMENT]) {
-		LogV("Attachments Section included");
-		Sections.push_back(new AttachmentSection(_VB1, _config, _cfg));
-	}
-	if (Configuration_Sections[ANIMATIONS]) {
-		LogV("Animations Section included");
-		Sections.push_back(new AnimationSection(_VB1, _config, _cfg));
-	}
-	if (Configuration_Sections[PROPELLANT]) {
-		LogV("Propellants Section included");
-		Sections.push_back(new PropellantSection(_VB1, _config, _cfg));
-	}
-	if (Configuration_Sections[THRUSTERS]) {
-		LogV("Thrusters Section included");
-		Sections.push_back(new ThrusterSection(_VB1, _config, _cfg));
-	}
-	if (Configuration_Sections[THRUSTERGROUPS]) {
-		LogV("ThrusterGroup Section included");
-		Sections.push_back(new ThrusterGroupSection(_VB1, _config, _cfg));
-	}
-	if (Configuration_Sections[TOUCHDOWNPOINTS]) {
-		LogV("Touchdown Points Section included");
-		Sections.push_back(new TouchDownPointSection(_VB1, _config, _cfg));
-	}
-	if (Configuration_Sections[AIRFOILS]) {
-		LogV("Airfoils Section included");
-		Sections.push_back(new AirfoilSection(_VB1, _config, _cfg));
-	}
-	if (Configuration_Sections[CTRLSURFACES]) {
-		LogV("Control Surfaces Section included");
-		Sections.push_back(new CtrlSurfaceSection(_VB1, _config, _cfg));
-	}
-	if (Configuration_Sections[CAMERA]) {
-		LogV("Camera Section included");
-		Sections.push_back(new CameraSection(_VB1, _config, _cfg));
-	}
+
+	Sections.push_back(new SettingSection(_VB1, _config, _cfg)); //0
+	Sections.push_back(new MeshSection(_VB1, _config, _cfg)); //1
+	Sections.push_back(new DockSection(_VB1, _config, _cfg)); //2
+	Sections.push_back(new AttachmentSection(_VB1, _config, _cfg)); //3
+	Sections.push_back(new AnimationSection(_VB1, _config, _cfg)); //4
+	Sections.push_back(new PropellantSection(_VB1, _config, _cfg)); //5
+	Sections.push_back(new ThrusterSection(_VB1, _config, _cfg)); //6
+	Sections.push_back(new ThrusterGroupSection(_VB1, _config, _cfg)); //7
+	Sections.push_back(new TouchDownPointSection(_VB1, _config, _cfg)); //8
+	Sections.push_back(new AirfoilSection(_VB1, _config, _cfg)); //9
+	Sections.push_back(new CtrlSurfaceSection(_VB1, _config, _cfg));  //10
+	Sections.push_back(new CameraSection(_VB1, _config, _cfg));  //11
+	Sections.push_back(new VCSection(_VB1, _config, _cfg)); //12
+	Sections.push_back(new LightSection(_VB1, _config, _cfg)); //13
+	Sections.push_back(new VardSection(_VB1, _config, _cfg)); //14
+	
+	UpdateValids();
+
+	
 	Config_idx = _config;
 	return;
 	
@@ -2283,36 +3301,315 @@ Configuration::Configuration(VesselBuilder1 *_VB1, map<ItemType, bool> _Sections
 
 
 
+
+
 Configuration::~Configuration(){
 	for (UINT i = 0; i < Sections.size(); i++) {
-		delete Sections[i];
+		if (Sections[i]) {
+			delete Sections[i];
+		}
 	}
 	Sections.clear();
 	
 }
+void Configuration::Delete() {
+	for (UINT i = 0; i < Sections.size(); i++) {
+		if (Sections[i]) {
+			delete Sections[i];
+		}
+	}
+	Sections.clear();
+
+}
 void Configuration::Apply(){
 	for (UINT i = 0; i < Sections.size(); i++) {
 		UINT p = Sections.size() -1- i;
-		Sections[p]->ManagerClear();
+		if (Sections[p]->IsValid()) {
+			Sections[p]->ManagerClear();
+		}
 	}
 	for (UINT i = 0; i < Sections.size(); i++) {
-		Sections[i]->ApplySection();
+		if (Sections[i]->IsValid()) {
+			Sections[i]->ApplySection();
+		}
 	}
-
 }
 void Configuration::Write(FILEHANDLE cfg) {
 	for (UINT i = 0; i < Sections.size(); i++) {
-		Sections[i]->WriteSection(cfg);
+		if (Sections[i]->IsValid()) {
+			Sections[i]->WriteSection(cfg);
+		}
 	}
 	
 
 }
 void Configuration::Update() {
 	for (UINT i = 0; i < Sections.size(); i++) {
-		Sections[i]->UpdateSection();
+		if (Sections[i]->IsValid()) {
+			Sections[i]->UpdateSection();
+		}
 	}
+}
+bool Configuration::IsSectionValid(ItemType Type) {
+	if (Configuration_Sections[Type]) {
+		return true;
+	}
+	else {
+		return false;
+	}
+
+}
+void Configuration::SetSectionValid(ItemType Type, bool set) {
+	Configuration_Sections[Type] = set;
+	UpdateValids();
+}
+
+bool Configuration::IsSectionActive(ItemType Type) {
+	int sect = -1;
+	switch (Type) {
+	case SETTINGS:
+	{
+		sect = SETTINGS_SECTION;
+		break;
+	}
+	case MESH:
+	{
+		sect = MESH_SECTION;
+		break;
+	}
+	case DOCK:
+	{
+		sect = DOCK_SECTION;
+		break;
+	}
+	case ATTACHMENT:
+	{
+		sect = ATT_SECTION;
+		break;
+	}
+	case ANIMATIONS:
+	{
+		sect = ANIM_SECTION;
+		break;
+	}
+	case PROPELLANT:
+	{
+		sect = PROP_SECTION;
+		break;
+	}
+	case THRUSTERS:
+	{
+		sect = THRUST_SECTION;
+		break;
+	}
+	case THRUSTERGROUPS:
+	{
+		sect = THGROUP_SECTION;
+		break;
+	}
+	case TOUCHDOWNPOINTS:
+	{
+		sect = TDP_SECTION;
+		break;
+	}
+	case AIRFOILS:
+	{
+		sect = AIRFOIL_SECTION;
+		break;
+	}
+	case CTRLSURFACES:
+	{
+		sect = CTRLSURF_SECTION;
+		break;
+	}
+	case CAMERA:
+	{
+		sect = CAMERAS_SECTION;
+		break;
+	}
+	case VC:
+	{
+		sect = VC_SECTION;
+		break;
+	}
+	case LIGHTS:
+	{
+		sect = LIGHTS_SECTION;
+		break;
+	}
+	case VARIABLEDRAG:
+	{
+		sect = VARDRAG_SECTION;
+		break;
+	}
+	//case EVENTS
+	}
+
+	if (sect == -1) {
+		return false;
+	}
+	return Sections[sect]->IsActive();
 	
 }
+void Configuration::SetSectionActive(ItemType Type, bool set) {
+	int sect = -1;
+	switch (Type) {
+	case SETTINGS:
+	{
+		sect = SETTINGS_SECTION;
+		break;
+	}
+	case MESH:
+	{
+		sect = MESH_SECTION;
+		break;
+	}
+	case DOCK:
+	{
+		sect = DOCK_SECTION;
+		break;
+	}
+	case ATTACHMENT:
+	{
+		sect = ATT_SECTION;
+		break;
+	}
+	case ANIMATIONS:
+	{
+		sect = ANIM_SECTION;
+		break;
+	}
+	case PROPELLANT:
+	{
+		sect = PROP_SECTION;
+		break;
+	}
+	case THRUSTERS:
+	{
+		sect = THRUST_SECTION;
+		break;
+	}
+	case THRUSTERGROUPS:
+	{
+		sect = THGROUP_SECTION;
+		break;
+	}
+	case TOUCHDOWNPOINTS:
+	{
+		sect = TDP_SECTION;
+		break;
+	}
+	case AIRFOILS:
+	{
+		sect = AIRFOIL_SECTION;
+		break;
+	}
+	case CTRLSURFACES:
+	{
+		sect = CTRLSURF_SECTION;
+		break;
+	}
+	case CAMERA:
+	{
+		sect = CAMERAS_SECTION;
+		break;
+	}
+	case VC:
+	{
+		sect = VC_SECTION;
+		break;
+	}
+	case LIGHTS:
+	{
+		sect = LIGHTS_SECTION;
+		break;
+	}
+	case VARIABLEDRAG:
+	{
+		sect = VARDRAG_SECTION;
+		break;
+	}
+	//case EVENTS
+	}
+
+	if (sect == -1) {
+		return;
+	}
+	Sections[sect]->SetActive(set);
+
+	return;
+}
+
+void Configuration::UpdateValids() {
+
+	for (UINT i = 0; i < 15; i++) {
+		Sections[i]->SetValid(false);
+	}
+
+	if (Configuration_Sections[SETTINGS]) {
+		LogV("General Settings Section included");
+		Sections[0]->SetValid(true);
+	}
+
+	if (Configuration_Sections[MESH]) {
+		LogV("Mesh Section included");
+		Sections[1]->SetValid(true);
+	}
+	if (Configuration_Sections[DOCK]) {
+		LogV("Dock Section included");
+		Sections[2]->SetValid(true);
+	}
+	if (Configuration_Sections[ATTACHMENT]) {
+		LogV("Attachments Section included");
+		Sections[3]->SetValid(true);
+	}
+	if (Configuration_Sections[ANIMATIONS]) {
+		LogV("Animations Section included");
+		Sections[4]->SetValid(true);
+	}
+	if (Configuration_Sections[PROPELLANT]) {
+		LogV("Propellants Section included");
+		Sections[5]->SetValid(true);
+	}
+	if (Configuration_Sections[THRUSTERS]) {
+		LogV("Thrusters Section included");
+		Sections[6]->SetValid(true);
+	}
+	if (Configuration_Sections[THRUSTERGROUPS]) {
+		LogV("ThrusterGroup Section included");
+		Sections[7]->SetValid(true);
+	}
+	if (Configuration_Sections[TOUCHDOWNPOINTS]) {
+		LogV("Touchdown Points Section included");
+		Sections[8]->SetValid(true);
+	}
+	if (Configuration_Sections[AIRFOILS]) {
+		LogV("Airfoils Section included");
+		Sections[9]->SetValid(true);
+	}
+	if (Configuration_Sections[CTRLSURFACES]) {
+		LogV("Control Surfaces Section included");
+		Sections[10]->SetValid(true);
+	}
+	if (Configuration_Sections[CAMERA]) {
+		LogV("Camera Section included");
+		Sections[11]->SetValid(true);
+	}
+	if (Configuration_Sections[VC]) {
+		LogV("Virtual Cockpit Section included");
+		Sections[12]->SetValid(true);
+	}
+	if (Configuration_Sections[LIGHTS]) {
+		LogV("Lights Section included");
+		Sections[13]->SetValid(true);
+	}
+	if (Configuration_Sections[VARIABLEDRAG]) {
+		LogV("Variable Drag Section included");
+		Sections[14]->SetValid(true);
+	}
+}
+
+
 ConfigurationManager::ConfigurationManager(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;
 	Configurations.clear();
@@ -2343,9 +3640,16 @@ void ConfigurationManager::ApplyConfiguration(UINT config, bool firstload) {
 	if (config >= Configurations.size()) {
 		return;
 	}
-	if (!firstload) {
+	if ((!firstload)&&(VB1->DlgOpened)) { // Update non va fatto anche se non apro la dialog
 		UINT old_config = CurrentConfiguration;
 		Configurations[old_config]->Update();
+		map<ItemType, bool>newSects = Configurations[config]->GetSections();
+		map<ItemType, bool>::iterator it;
+		for (it = newSects.begin(); it != newSects.end(); it++) {
+			if (it->second == true) {
+				Configurations[old_config]->SetSectionActive(it->first, false);
+			}
+		}
 	}
 	Configurations[config]->Apply();
 	CurrentConfiguration = config;
@@ -2353,13 +3657,15 @@ void ConfigurationManager::ApplyConfiguration(UINT config, bool firstload) {
 }
 void ConfigurationManager::ApplyDefaultConfiguration(bool firstload) {
 	if (Configurations.size() > 0) {
-		if (!firstload) {
+		ApplyConfiguration(0, firstload);
+	}
+		/*if (!firstload) {
 			UINT old_config = CurrentConfiguration;
 			Configurations[old_config]->Update();
 		}
 		Configurations[0]->Apply();
 	}
-	CurrentConfiguration = 0;
+	CurrentConfiguration = 0;*/
 	return;
 }
 
@@ -2372,3 +3678,225 @@ UINT ConfigurationManager::GetConfigurationsCount() {
 void ConfigurationManager::WriteConfiguration(UINT config_idx, FILEHANDLE cfg) {
 	Configurations[config_idx]->Write(cfg);
 }
+bool ConfigurationManager::IsSectionValid(UINT config, ItemType Type) {
+	return Configurations[config]->IsSectionValid(Type);
+}
+bool ConfigurationManager::IsSectionActive(UINT config, ItemType Type) {
+	return Configurations[config]->IsSectionActive(Type);
+}
+
+void ConfigurationManager::ParseCfgFile(FILEHANDLE fh) {
+	int Configs;
+	if (!oapiReadItem_int(fh, "CONFIGURATIONS", Configs)) { Configs = 1; }
+
+	map<ItemType, bool>Sects;
+	Sects[SETTINGS] = true;
+	Sects[MESH] = true;
+	Sects[DOCK] = true;
+	Sects[ATTACHMENT] = true;
+	Sects[ANIMATIONS] = true;
+	Sects[PROPELLANT] = true;
+	Sects[THRUSTERS] = true;
+	Sects[THRUSTERGROUPS] = true;
+	Sects[TOUCHDOWNPOINTS] = true;
+	Sects[AIRFOILS] = true;
+	Sects[CTRLSURFACES] = true;
+	Sects[CAMERA] = true;
+	Sects[VC] = true;
+	Sects[LIGHTS] = true;
+	Sects[VARIABLEDRAG] = true;
+	for (UINT i = 0; i < Configs; i++) {
+		if (i > 0) {
+			char cbuf[256] = { '\0' };
+			char Sections_c[256] = { '\0' };
+			sprintf(cbuf, "CONFIGURATION_%i_SECTIONS", i);
+			oapiReadItem_string(fh, cbuf, Sections_c);
+			string Sections_s(Sections_c);
+			vector<UINT>Sections_n = VB1->readVectorUINT(Sections_s);
+			VB1->IsUintInVector(SETTINGS_SECTION, Sections_n) ? Sects[SETTINGS] = true : Sects[SETTINGS] = false;
+			VB1->IsUintInVector(MESH_SECTION, Sections_n) ? Sects[MESH] = true : Sects[MESH] = false;
+			VB1->IsUintInVector(DOCK_SECTION, Sections_n) ? Sects[DOCK] = true : Sects[DOCK] = false;
+			VB1->IsUintInVector(ATT_SECTION, Sections_n) ? Sects[ATTACHMENT] = true : Sects[ATTACHMENT] = false;
+			VB1->IsUintInVector(ANIM_SECTION, Sections_n) ? Sects[ANIMATIONS] = true : Sects[ANIMATIONS] = false;
+			VB1->IsUintInVector(PROP_SECTION, Sections_n) ? Sects[PROPELLANT] = true : Sects[PROPELLANT] = false;
+			VB1->IsUintInVector(THRUST_SECTION, Sections_n) ? Sects[THRUSTERS] = true : Sects[THRUSTERS] = false;
+			VB1->IsUintInVector(THGROUP_SECTION, Sections_n) ? Sects[THRUSTERGROUPS] = true : Sects[THRUSTERGROUPS] = false;
+			VB1->IsUintInVector(TDP_SECTION, Sections_n) ? Sects[TOUCHDOWNPOINTS] = true : Sects[TOUCHDOWNPOINTS] = false;
+			VB1->IsUintInVector(AIRFOIL_SECTION, Sections_n) ? Sects[AIRFOILS] = true : Sects[AIRFOILS] = false;
+			VB1->IsUintInVector(CTRLSURF_SECTION, Sections_n) ? Sects[CTRLSURFACES] = true : Sects[CTRLSURFACES] = false;
+			VB1->IsUintInVector(CAMERAS_SECTION, Sections_n) ? Sects[CAMERA] = true : Sects[CAMERA] = false;
+			VB1->IsUintInVector(VC_SECTION, Sections_n) ? Sects[VC] = true : Sects[VC] = false;
+			VB1->IsUintInVector(LIGHTS_SECTION, Sections_n) ? Sects[LIGHTS] = true : Sects[LIGHTS] = false;
+			VB1->IsUintInVector(VARDRAG_SECTION, Sections_n) ? Sects[VARIABLEDRAG] = true : Sects[VARIABLEDRAG] = false;
+			
+		}
+		AddConfiguration(VB1, Sects,fh);
+	}
+	ApplyDefaultConfiguration(true);
+}
+
+void ConfigurationManager::WriteCfg(FILEHANDLE fh) {
+	oapiWriteItem_int(fh, "CONFIGURATIONS", GetConfigurationsCount());
+	for (UINT i = 0; i < GetConfigurationsCount(); i++) {
+		if (i > 0) {
+			char cbuf[256] = { '\0' };
+			char Sections_c[256] = { '\0' };
+			sprintf(cbuf, "CONFIGURATION_%i_SECTIONS", i);
+			vector<UINT> Sections_n;
+			Sections_n.clear();
+			if (IsSectionValid(i, SETTINGS)) { Sections_n.push_back(SETTINGS_SECTION); }
+			if (IsSectionValid(i, MESH)) { Sections_n.push_back(MESH_SECTION); }
+			if (IsSectionValid(i, DOCK)) { Sections_n.push_back(DOCK_SECTION); }
+			if (IsSectionValid(i, ATTACHMENT)) { Sections_n.push_back(ATT_SECTION); }
+			if (IsSectionValid(i, ANIMATIONS)) { Sections_n.push_back(ANIM_SECTION); }
+			if (IsSectionValid(i, PROPELLANT)) { Sections_n.push_back(PROP_SECTION); }
+			if (IsSectionValid(i, THRUSTERS)) { Sections_n.push_back(THRUST_SECTION); }
+			if (IsSectionValid(i, THRUSTERGROUPS)) { Sections_n.push_back(THGROUP_SECTION); }
+			if (IsSectionValid(i, TOUCHDOWNPOINTS)) { Sections_n.push_back(TDP_SECTION); }
+			if (IsSectionValid(i, AIRFOILS)) { Sections_n.push_back(AIRFOIL_SECTION); }
+			if (IsSectionValid(i, CTRLSURFACES)) { Sections_n.push_back(CTRLSURF_SECTION); }
+			if (IsSectionValid(i, CAMERA)) { Sections_n.push_back(CAMERAS_SECTION); }
+			if (IsSectionValid(i, VC)) { Sections_n.push_back(VC_SECTION); }
+			if (IsSectionValid(i, LIGHTS)) { Sections_n.push_back(LIGHTS_SECTION); }
+			if (IsSectionValid(i, VARIABLEDRAG)) { Sections_n.push_back(VARDRAG_SECTION); }
+			string Section_s = VB1->WriteVectorUINT(Sections_n, false);
+			sprintf(Sections_c, "%s", Section_s.c_str());
+			oapiWriteItem_string(fh, cbuf, Sections_c);
+		}
+		WriteConfiguration(i, fh);
+		if (i == 0) {
+			VB1->ExTMng->WriteCfg(fh);
+			VB1->PartMng->WriteCfg(fh);
+		}
+	}
+	return;
+}
+
+void ConfigurationManager::UpdateConfiguration(UINT config) {
+	Configurations[config]->Update();
+	return;
+}
+
+UINT ConfigurationManager::GetSectionActiveConfig(ItemType Type) {
+	for (UINT i = 0; i < GetConfigurationsCount(); i++) {
+		if (Configurations[i]->IsSectionActive(Type)) {
+			return i;
+		}
+	}
+	return 0;
+}
+
+map<ItemType, bool> ConfigurationManager::GetConfigurationSections(UINT config) {
+	return Configurations[config]->GetSections();
+}
+
+void ConfigurationManager::DeleteConfiguration(UINT config) {
+	Configurations[config]->Delete();
+	delete Configurations[config];
+	Configurations[config] = NULL;
+	Configurations.erase(Configurations.begin() + config);
+	return;
+}
+
+void ConfigurationManager::SetSectionValid(UINT config, ItemType Type, bool set) {
+	return Configurations[config]->SetSectionValid(Type, set);
+}
+
+/*
+double ConfigurationManager::GetEmptyMass(UINT config) {
+	if (config == GetCurrentConfiguration()) {
+		return VB1->SetMng->GetEmptyMass();
+	}
+	else {
+		return ((SettingSection*)Configurations[config]->Sections[SETTINGS_SECTION])->GetEmptyMass();
+	}	
+}
+double ConfigurationManager::GetSize(UINT config) {
+	return config == GetCurrentConfiguration() ? VB1->SetMng->GetSize() : ((SettingSection*)Configurations[config]->Sections[SETTINGS_SECTION])->GetSize();
+}
+VECTOR3 ConfigurationManager::GetPMI(UINT config) {
+	return config == GetCurrentConfiguration() ? VB1->SetMng->GetPMI() : ((SettingSection*)Configurations[config]->Sections[SETTINGS_SECTION])->GetPMI();
+}
+VECTOR3 ConfigurationManager::GetCrossSections(UINT config) {
+	return config == GetCurrentConfiguration() ? VB1->SetMng->GetCrossSections() : ((SettingSection*)Configurations[config]->Sections[SETTINGS_SECTION])->GetCrossSections();
+}
+double ConfigurationManager::GetGravityGradientDamping(UINT config) {
+	return config == GetCurrentConfiguration() ? VB1->SetMng->GetGravityGradientDamping() : ((SettingSection*)Configurations[config]->Sections[SETTINGS_SECTION])->GetGravityGradientDamping();
+}
+VECTOR3 ConfigurationManager::GetRotDrag(UINT config) {
+	return config == GetCurrentConfiguration() ? VB1->SetMng->GetRotDrag() : ((SettingSection*)Configurations[config]->Sections[SETTINGS_SECTION])->GetRotDrag();
+}
+
+int ConfigurationManager::GetMeshDefCount(UINT config) {
+	return config == GetCurrentConfiguration() ? VB1->MshMng->GetMeshCount() : ((MeshSection*)Configurations[config]->Sections[MESH_SECTION])->GetMeshDefCount();
+}
+string ConfigurationManager::GetMeshName(UINT config, UINT idx) {
+	return config == GetCurrentConfiguration() ? VB1->MshMng->GetMeshDefName(idx) : ((MeshSection*)Configurations[config]->Sections[MESH_SECTION])->GetMeshName(idx);
+}
+VECTOR3 ConfigurationManager::GetMeshPos(UINT config, UINT idx) {
+	return config == GetCurrentConfiguration() ? VB1->MshMng->GetMeshDefPos(idx) : ((MeshSection*)Configurations[config]->Sections[MESH_SECTION])->GetMeshPos(idx);
+}
+VECTOR3 ConfigurationManager::GetMeshDir(UINT config, UINT idx) {
+	return config == GetCurrentConfiguration() ? VB1->MshMng->GetMeshDefDir(idx) : ((MeshSection*)Configurations[config]->Sections[MESH_SECTION])->GetMeshDir(idx);
+}
+VECTOR3 ConfigurationManager::GetMeshRot(UINT config, UINT idx) {
+	return config == GetCurrentConfiguration() ? VB1->MshMng->GetMEshDefRot(idx) : ((MeshSection*)Configurations[config]->Sections[MESH_SECTION])->GetMeshRot(idx);
+}
+WORD ConfigurationManager::GetMeshVisibility(UINT config, UINT idx) {
+	return config == GetCurrentConfiguration() ? VB1->MshMng->GetMeshVisibility(idx) : ((MeshSection*)Configurations[config]->Sections[MESH_SECTION])->GetMeshVisibility(idx);
+}
+UINT ConfigurationManager::GetDockCount(UINT config) {
+	return config == GetCurrentConfiguration() ? VB1->DckMng->GetDockCount() : ((DockSection*)Configurations[config]->Sections[DOCK_SECTION])->GetDockCount();
+}
+string ConfigurationManager::GetDockName(UINT config, UINT idx) {
+	return config == GetCurrentConfiguration() ? VB1->DckMng->GetDockName(idx) : ((DockSection*)Configurations[config]->Sections[DOCK_SECTION])->GetDockName(idx);
+}
+void ConfigurationManager::GetDockParams(UINT config, UINT idx, VECTOR3 &pos, VECTOR3 &dir, VECTOR3 &rot) {
+	return config == GetCurrentConfiguration() ?  VB1->DckMng->GetDockParams(idx, pos, dir, rot) : ((DockSection*)Configurations[config]->Sections[DOCK_SECTION])->GetDockParams(idx, pos, dir, rot);
+}
+bool ConfigurationManager::IsDockJettisonable(UINT config, UINT idx) {
+	return config == GetCurrentConfiguration() ? VB1->DckMng->IsDockJettisonable(idx) : ((DockSection*)Configurations[config]->Sections[DOCK_SECTION])->IsDockJettisonable(idx);
+}
+UINT ConfigurationManager::GetAttCount(UINT config) {
+	return config == GetCurrentConfiguration() ? VB1->AttMng->GetAttCount() : ((AttachmentSection*)Configurations[config]->Sections[ATT_SECTION])->GetAttCount();
+}
+bool ConfigurationManager::GetIdCheck(UINT config, UINT idx) {
+	return config == GetCurrentConfiguration() ? VB1->AttMng->AttToParent(idx) : ((AttachmentSection*)Configurations[config]->Sections[ATT_SECTION])->AttToParent(idx);
+}
+string ConfigurationManager::GetIdCheckString(UINT config, UINT idx) {
+	return config == GetCurrentConfiguration() ? VB1->AttMng->GetIdCheckString(idx) : ((AttachmentSection*)Configurations[config]->Sections[ATT_SECTION])->GetIdCheckString(idx);
+}
+string ConfigurationManager::GetAttID(UINT config, UINT idx) {
+	return config == GetCurrentConfiguration() ? VB1->AttMng->GetAttDefId(idx) : ((AttachmentSection*)Configurations[config]->Sections[ATT_SECTION])->GetAttID(idx);
+}
+bool ConfigurationManager::AttToParent(UINT config, UINT idx) {
+	return config == GetCurrentConfiguration() ? VB1->AttMng->AttToParent(idx) : ((AttachmentSection*)Configurations[config]->Sections[ATT_SECTION])->AttToParent(idx);
+}
+void ConfigurationManager::GetAttPosDirRot(UINT config, UINT idx, VECTOR3 &pos, VECTOR3 &dir, VECTOR3 &rot) {
+	return config == GetCurrentConfiguration() ? VB1->AttMng->GetAttDefPosDirRot(idx, pos, dir, rot) : ((AttachmentSection*)Configurations[config]->Sections[ATT_SECTION])->GetAttPosDirRot(idx, pos, dir, rot);
+}
+double ConfigurationManager::GetAttRange(UINT config, UINT idx) {
+	return config == GetCurrentConfiguration() ? VB1->AttMng->GetAttDefRange(idx) : ((AttachmentSection*)Configurations[config]->Sections[ATT_SECTION])->GetAttRange(idx);
+}
+
+UINT ConfigurationManager::GetAnimCount(UINT config) {
+	return config == GetCurrentConfiguration() ? VB1->AnimMng->GetAnimDefsCount() : ((AnimationSection*)Configurations[config]->Sections[ANIM_SECTION])->GetAnimCount();
+}
+double ConfigurationManager::GetAnimDefState(UINT config, UINT idx) {
+	return config == GetCurrentConfiguration() ? VB1->AnimMng->GetAnimDefState(idx) : ((AnimationSection*)Configurations[config]->Sections[ANIM_SECTION])->GetAnimDefState(idx);
+}
+string ConfigurationManager::GetAnimName(UINT config, UINT idx) {
+	return config == GetCurrentConfiguration() ? VB1->AnimMng->GetAnimName(idx) : ((AnimationSection*)Configurations[config]->Sections[ANIM_SECTION])->GetAnimName(idx);
+}
+UINT ConfigurationManager::GetAnimNComps(UINT config, UINT idx) {
+	return config == GetCurrentConfiguration() ? VB1->AnimMng->GetAnimNComps(idx) : ((AnimationSection*)Configurations[config]->Sections[ANIM_SECTION])->GetAnimNComps(idx);
+}
+DWORD ConfigurationManager::GetAnimKey(UINT config, UINT idx) {
+	return config == GetCurrentConfiguration() ? VB1->AnimMng->GetAnimKey(idx) : ((AnimationSection*)Configurations[config]->Sections[ANIM_SECTION])->GetAnimKey(idx);
+}
+double ConfigurationManager::GetAnimDuration(UINT config, UINT idx) {
+	return config == GetCurrentConfiguration() ? VB1->AnimMng->GetAnimDuration(idx) : ((AnimationSection*)Configurations[config]->Sections[ANIM_SECTION])->GetAnimDuration(idx);
+}
+AnimCycleType ConfigurationManager::GetAnimCycle(UINT config, UINT idx) {
+	return config == GetCurrentConfiguration() ? VB1->AnimMng->GetAnimCycle(idx) : ((AnimationSection*)Configurations[config]->Sections[ANIM_SECTION])->GetAnimCycle(idx);
+}*/

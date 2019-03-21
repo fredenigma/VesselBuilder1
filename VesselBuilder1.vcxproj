@@ -144,6 +144,7 @@
     <ClInclude Include="EventManager.h" />
     <ClInclude Include="ExTexManager.h" />
     <ClInclude Include="FollowMeDlg.h" />
+    <ClInclude Include="GeneralSettingsManager.h" />
     <ClInclude Include="LaserManager.h" />
     <ClInclude Include="LightsManager.h" />
     <ClInclude Include="Log.h" />
@@ -180,6 +181,7 @@
     <ClCompile Include="ExTexDlgProc.cpp" />
     <ClCompile Include="ExTexManager.cpp" />
     <ClCompile Include="FollowMeDlg.cpp" />
+    <ClCompile Include="GeneralSettingsManager.cpp" />
     <ClCompile Include="LaserManager.cpp" />
     <ClCompile Include="LightCreationDlgProc.cpp" />
     <ClCompile Include="LightsDlgProc.cpp" />
@@ -192,6 +194,7 @@
     <ClCompile Include="ParticlesDlgProc.cpp" />
     <ClCompile Include="PropellantManager.cpp" />
     <ClCompile Include="PrpDlgProc.cpp" />
+    <ClCompile Include="ReconfigDlgProc.cpp" />
     <ClCompile Include="SettingsDlgProc.cpp" />
     <ClCompile Include="TextReaderDlg.cpp" />
     <ClCompile Include="VariableDragDlgProc.cpp" />

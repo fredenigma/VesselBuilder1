@@ -129,7 +129,7 @@ void VariableDragManager::WriteCfg(FILEHANDLE fh) {
 		if (!IsVardDefDefined(i)) { continue; }
 		char cbuf[256] = { '\0' };
 		sprintf(cbuf, "VARIABLEDRAG_%i_ID", vard_counter);
-		oapiWriteItem_int(fh, cbuf, i);
+		oapiWriteItem_int(fh, cbuf, vard_counter);
 		sprintf(cbuf, "VARIABLEDRAG_%i_NAME", vard_counter);
 		char namebuf[256] = { '\0' };
 		sprintf(namebuf, "%s", GetVardName(i).c_str());

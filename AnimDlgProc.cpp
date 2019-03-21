@@ -2,8 +2,6 @@
 #include "resource.h"
 #include "DialogControl.h"
 #include "AnimationManager.h"
-
-
 #pragma comment(lib, "comctl32.lib")
 
 
@@ -11,6 +9,8 @@
 void DialogControl::UpdateAnimDialog(HWND hWnd) {
 	UINT idx = CurrentSelection.idx;
 	if (idx >= AnimMng->GetAnimDefsCount()) { return; }
+	
+
 	char cbuf[256] = { '\0' };
 	sprintf(cbuf, "%.2f", AnimMng->GetAnimDefState(idx));
 	SetDlgItemText(hWnd, IDC_EDIT_ANIMDEFSTATE, (LPCSTR)cbuf);
@@ -18,6 +18,8 @@ void DialogControl::UpdateAnimDialog(HWND hWnd) {
 	
 	sprintf(cbuf, "%i", AnimMng->GetAnimNComps(idx));
 	SetDlgItemText(hWnd, IDC_EDIT_ANIMNCOMPS, (LPCSTR)cbuf);
+	
+	
 
 	int index = ComboFindItemData(GetDlgItem(hWnd, IDC_COMBO_ANIMKEY), AnimMng->GetAnimKey(idx));
 	
@@ -105,20 +107,20 @@ BOOL DialogControl::AnimDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 		case IDC_BUTTON_ANIMADDCOMPROT:
 		{
 			AnimMng->AddAnimCompDef(CurrentSelection.idx, MGROUP_TRANSFORM::ROTATE);
-			UpdateTree(hDlg, ANIMATIONS,FindHtreeItem(ANIMATIONS,idx));
+			UpdateTree(hDlg, ANIMATIONS,0);
 			break;
 		}
 		case IDC_BUTTON_ANIMADDCOMPTR:
 		{
 			AnimMng->AddAnimCompDef(CurrentSelection.idx, MGROUP_TRANSFORM::TRANSLATE);
-			UpdateTree(hDlg, ANIMATIONS, FindHtreeItem(ANIMATIONS, idx));
+			UpdateTree(hDlg, ANIMATIONS, 0);
 
 			break;
 		}
 		case IDC_BUTTON_ANIMADDCOMPSC:
 		{
 			AnimMng->AddAnimCompDef(CurrentSelection.idx, MGROUP_TRANSFORM::SCALE);
-			UpdateTree(hDlg, ANIMATIONS, FindHtreeItem(ANIMATIONS, idx));
+			UpdateTree(hDlg, ANIMATIONS, 0);
 
 			break;
 		}
@@ -207,7 +209,7 @@ BOOL DialogControl::AnimDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 		}
 		case IDC_BUTTON_ANIMDELETE:
 		{
-			TreeView_Select(GetDlgItem(hDlg, IDC_TREE1), hrootAnimations, 0);
+			TreeView_Select(GetDlgItem(hDlg, IDC_TREE1), Config_Items[CurrentSelection.config].hrootAnimations, 0);
 			AnimMng->DeleteAnimDef(idx);
 			
 			UpdateTree(hDlg, ANIMATIONS, 0);

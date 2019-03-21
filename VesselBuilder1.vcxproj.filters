@@ -79,6 +79,9 @@
     <ClInclude Include="ConfigurationManager.h">
       <Filter>Vessel\Managers</Filter>
     </ClInclude>
+    <ClInclude Include="GeneralSettingsManager.h">
+      <Filter>Vessel\Managers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\Orbitersdk\lib\orbiter.lib">
@@ -252,6 +255,12 @@
     </ClCompile>
     <ClCompile Include="ConfigurationManager.cpp">
       <Filter>Vessel\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneralSettingsManager.cpp">
+      <Filter>Vessel\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="ReconfigDlgProc.cpp">
+      <Filter>Dialog</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -33,4 +33,5 @@ public:
 	UINT GetPointsCount(UINT set);
 	void TouchDownPointsPreStep(double simt, double simdt, double mjd);
 	void Clear();
+	double stateforever0;
 };

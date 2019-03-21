@@ -14,6 +14,7 @@
 #include "resource.h"
 #include "DlgCtrl.h"
 #include "gcAPI.h"
+#include "GeneralSettingsManager.h"
 #include "MeshManager.h"
 #include "DockManager.h"
 #include "AttachmentManager.h"
@@ -58,7 +59,7 @@ VesselBuilder1::VesselBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
 	wD3D9 = false;
 	GetOrbiterDirs();
 	
-	
+	SetMng = new GeneralSettingsManager(this);
 	MshMng = new MeshManager(this);
 	DckMng = new DockManager(this);
 	AttMng = new AttachmentManager(this);
@@ -120,6 +121,8 @@ VesselBuilder1::~VesselBuilder1(){
 	FMDlg = NULL;
 	delete TextDlg;
 	TextDlg = NULL;
+	delete SetMng;
+	SetMng = NULL;
 	delete MshMng;
 	MshMng = NULL;
 	delete DckMng;
@@ -257,46 +260,16 @@ void VesselBuilder1::clbkSetClassCaps(FILEHANDLE cfg){
 	
 	ExTMng->ParseCfgFile(cfg);
 	PartMng->ParseCfgFile(cfg);
-
-	map<ItemType, bool>Sects;
-	Sects[MESH] = true;
-	Sects[DOCK] = true;
-	Sects[ATTACHMENT] = true;
-	Sects[ANIMATIONS] = true;
-	Sects[PROPELLANT] = true;
-	Sects[THRUSTERS] = true;
-	Sects[THRUSTERGROUPS] = true;
-	Sects[TOUCHDOWNPOINTS] = true;
-	Sects[AIRFOILS] = true;
-	Sects[CTRLSURFACES] = true;
-	Sects[CAMERA] = true;
-	ConfigMng->AddConfiguration(this, Sects,cfg);
-	ConfigMng->ApplyDefaultConfiguration(true);
 	
-	Sects[MESH] = false;
-	Sects[DOCK] = false;
-	Sects[ATTACHMENT] = false;
-	Sects[ANIMATIONS] = false;
-	Sects[PROPELLANT] = true;
-	Sects[THRUSTERS] = false;
-
-	//ConfigMng->AddConfiguration(this, Sects, cfg);
-	//string filename = "\\Vessels\\VesselBuilder1\\ISS_AtoZ_UV.cfg";
-	//ConfigMng->AddConfiguration(this, filename);
-//	SBLog("ClassName:%s", GetClassName());
+	ConfigMng->ParseCfgFile(cfg);
 	
-	//ResetVehicle();
-	ParseCfgFile(cfg);
-	//VehicleSetup();
-	
-	//if (!NoEditor) {
-	//	WriteBackupFile();
-	//}
-	
+	if (!oapiReadItem_bool(cfg, "NOEDITOR", NoEditor)) { NoEditor = false; }
+	if (NoEditor) {
+		LogV("No Editor option active");
+	}
 	
 	SetNosewheelSteering(true);
 	SetMaxWheelbrakeForce(2e5);
-	//SetCW(0.09, 0.09, 2, 1.4);
 	LogV("Set Class Caps Completed");
 	return;
 }
@@ -675,12 +648,7 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 		else { return 0; }
 	}
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == OAPI_KEY_K) {
-		if (ConfigMng->GetCurrentConfiguration() == 0) {
-			ConfigMng->ApplyConfiguration(1);
-		}
-		else {
-			ConfigMng->ApplyConfiguration(0);
-		}
+	
 	//	ConfigMng->ApplyConfiguration(1);
 		//Met->SetMJD0(oapiGetSimMJD() + 0.01);
 	/*	DWORD td_count = this->GetTouchdownPointCount();
@@ -825,7 +793,7 @@ void VesselBuilder1::clbkPostStep(double simt, double simdt, double mjd) {
 	GetRotDrag(rd);
 	sprintf(oapiDebugString(), "GGD:%.3f CS:%.3f %.3f %.3f RD:%.3f %.3f %.3f cw:%.3f %.3f %.3f %.3f", GetGravityGradientDamping(), CS.x, CS.y, CS.z, rd.x, rd.y, rd.z, cw_zp, cw_zm, cw_x, cw_y);*/
 	
-	
+	sprintf(oapiDebugString(), "Current Configuration:%i", ConfigMng->GetCurrentConfiguration());
 	
 	
 	return;
@@ -999,14 +967,11 @@ void VesselBuilder1::ParseCfgFile(FILEHANDLE fh) {
 //	AirfoilMng->ParseCfgFile(fh);
 //	CtrSurfMng->ParseCfgFile(fh);
 //	CamMng->ParseCfgFile(fh);
-	VCMng->ParseCfgFile(fh);
-	LightsMng->ParseCfgFile(fh);
-	VardMng->ParseCfgFile(fh);
+//	VCMng->ParseCfgFile(fh);
+//	LightsMng->ParseCfgFile(fh);
+//	VardMng->ParseCfgFile(fh);
 
-	if (!oapiReadItem_bool(fh, "NOEDITOR", NoEditor)) { NoEditor = false; }
-	if (NoEditor) {
-		LogV("No Editor option active");
-	}
+
 	LogV("Parsing of Cfg File Completed");
 	//SBLog("Parsing Completed");
 	return;
@@ -1023,7 +988,7 @@ void VesselBuilder1::WriteCfgFile(string filename) {
 	oapiWriteLine(fh, " ");
 	oapiWriteItem_bool(fh, "NOEDITOR", NoEditor);
 	oapiWriteLine(fh, " ");
-	oapiWriteItem_float(fh, "Mass", GetEmptyMass());
+	/*oapiWriteItem_float(fh, "Mass", GetEmptyMass());
 	oapiWriteItem_float(fh, "Size", GetSize());
 	VECTOR3 pmi;
 	GetPMI(pmi);
@@ -1036,14 +1001,12 @@ void VesselBuilder1::WriteCfgFile(string filename) {
 	GetRotDrag(rd);
 	oapiWriteItem_vec(fh, "RotResistance", rd);
 	oapiWriteLine(fh, " ");
-
+	*/
 //	MshMng->WriteCfg(fh);
-
-	for (UINT i = 0; i < ConfigMng->GetConfigurationsCount();i++) {
-		ConfigMng->WriteConfiguration(i, fh);
-	}
-	ExTMng->WriteCfg(fh);
-	PartMng->WriteCfg(fh);
+	ConfigMng->UpdateConfiguration(ConfigMng->GetCurrentConfiguration());
+	ConfigMng->WriteCfg(fh);
+	//ExTMng->WriteCfg(fh);
+	//PartMng->WriteCfg(fh);
 	//DckMng->WriteCfg(fh);
 	//AttMng->WriteCfg(fh);
 	//AnimMng->WriteCfg(fh);
@@ -1055,9 +1018,9 @@ void VesselBuilder1::WriteCfgFile(string filename) {
 //	AirfoilMng->WriteCfg(fh);
 //	CtrSurfMng->WriteCfg(fh);
 //	CamMng->WriteCfg(fh);
-	VCMng->WriteCfg(fh);
-	LightsMng->WriteCfg(fh);
-	VardMng->WriteCfg(fh);
+//	VCMng->WriteCfg(fh);
+//	LightsMng->WriteCfg(fh);
+//	VardMng->WriteCfg(fh);
 
 	oapiCloseFile(fh, FILE_OUT);
 	LogV("Writing CFG file Completed!");

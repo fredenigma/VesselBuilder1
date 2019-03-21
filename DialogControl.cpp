@@ -3,10 +3,12 @@
 #include "LaserManager.h"
 #include "DialogControl.h"
 #include "TextReaderDlg.h"
+#include "GeneralSettingsManager.h"
 #include "MeshManager.h"
 #include "DockManager.h"
 #include "AttachmentManager.h"
 #include "AnimationManager.h"
+#include "ConfigurationManager.h"
 #include "PropellantManager.h"
 #include "ParticleManager.h"
 #include "ThrusterManager.h"
@@ -18,6 +20,7 @@
 #include "VCManager.h"
 #include "LightsManager.h"
 #include "VariableDragManager.h"
+
 #pragma comment(lib, "comctl32.lib")
 
 
@@ -184,8 +187,20 @@ BOOL CALLBACK VarDragDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
 	return DlgCtrl->VarDragDlgProc(hWnd, uMsg, wParam, lParam);
 }
+BOOL CALLBACK ReconfigDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	if (uMsg == WM_INITDIALOG) {
+		SetWindowLong(hWnd, GWL_USERDATA, (LONG)lParam);
+	}
+	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
+	return DlgCtrl->ReconfigDlgProc(hWnd, uMsg, wParam, lParam);
+}
+BOOL CALLBACK EnableChilds(HWND hWnd, LPARAM lParam) {
+	EnableWindow(hWnd, lParam);
+	return true;
+}
 DialogControl::DialogControl(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;
+	SetMng = VB1->SetMng;
 	MshMng = VB1->MshMng;
 	DckMng = VB1->DckMng;
 	AnimMng = VB1->AnimMng;
@@ -202,6 +217,7 @@ DialogControl::DialogControl(VesselBuilder1 *_VB1) {
 	VCMng = VB1->VCMng;
 	LightsMng = VB1->LightsMng;
 	VardMng = VB1->VardMng;
+	ConfigMng = VB1->ConfigMng;
 
 	open = false;
 	hDlg = NULL;
@@ -216,12 +232,14 @@ DialogControl::DialogControl(VesselBuilder1 *_VB1) {
 	penblack = CreatePen(PS_SOLID,2,RGB(0,0,0));
 	pengray = CreatePen(PS_SOLID, 1, RGB(160, 160, 160));
 	penblue_l = CreatePen(PS_SOLID, 3, RGB(0, 0, 255));
+	Config_Items.clear();
 
 //	ItemToSelect = NULL;
 
 }
 DialogControl::~DialogControl() {
 	VB1 = NULL;
+	SetMng = NULL;
 	MshMng = NULL;
 	DckMng = NULL;
 	AnimMng = NULL;
@@ -238,6 +256,7 @@ DialogControl::~DialogControl() {
 	VCMng = NULL;
 	LightsMng = NULL;
 	VardMng = NULL;
+	ConfigMng = NULL;
 	hDlg = NULL;
 	DeleteObject(penblack);
 	DeleteObject(pengray);
@@ -293,6 +312,8 @@ void DialogControl::InitDialog(HWND hWnd) {
 	hWnd_LightCreation = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_LIGHTCREATION), hWnd, LightCreationDlgProcHook, (LPARAM)this);
 	hWnd_Lights= CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_LIGHTS), hWnd, LightsDlgProcHook, (LPARAM)this);
 	hWnd_VarDrag = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_VARDRAG), hWnd, VarDragDlgProcHook, (LPARAM)this);
+	hWnd_Reconfig = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_RECONFIGS), hWnd, ReconfigDlgProcHook, (LPARAM)this);
+	
 	SetWindowPos(hwnd_Mesh, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hwnd_Mesh, SW_HIDE);
 	SetWindowPos(hWnd_Dock, NULL, 255, 10, 0, 0, SWP_NOSIZE);
@@ -337,6 +358,10 @@ void DialogControl::InitDialog(HWND hWnd) {
 	ShowWindow(hWnd_Lights, SW_HIDE);
 	SetWindowPos(hWnd_VarDrag, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hWnd_VarDrag, SW_HIDE);
+	SetWindowPos(hWnd_Reconfig, NULL, 255, 10, 0, 0, SWP_NOSIZE);
+	ShowWindow(hWnd_Reconfig, SW_HIDE);
+
+
 
 	char verbuf[256] = { '\0' };
 	sprintf(verbuf, "Ver:%i", VBVERSION);
@@ -359,16 +384,17 @@ HTREEITEM DialogControl::FindHtreeItem(ItemType type, UINT idx) {
 	return NULL;
 }
 
-void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
-	TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootVessel, TVE_EXPAND);
+void DialogControl::UpdateTree(HWND hWnd, ItemType type, UINT config) {
+	//TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootVessel, TVE_EXPAND);
+	
 	switch (type) {
 	case MESH:
 	{
-		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootMeshes);
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootMeshes);
 		while (ht != NULL) {
 			TreeItem.erase(ht);
 			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
-			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootMeshes);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootMeshes);
 		}
 		TVINSERTSTRUCT insertstruct = { 0 };
 
@@ -377,7 +403,7 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
 
 		for (UINT i = 0; i < MshMng->GetMeshCount(); i++) {
-			insertstruct.hParent = hrootMeshes;
+			insertstruct.hParent = Config_Items[config].hrootMeshes;
 			if (MshMng->GetMeshName(i).size() > 0) {
 				char cbuf[256] = { '\0' };
 				sprintf(cbuf, MshMng->GetMeshName(i).c_str());
@@ -396,27 +422,28 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			TREE_ITEM_REF Tir = TREE_ITEM_REF();
 			Tir.Type = MESH;
 			Tir.idx = i;
+			Tir.config = config;
 			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 			TreeItem[Tir.hitem] = Tir;
 		}
-		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootMeshes, TVE_EXPAND);
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), Config_Items[config].hrootMeshes, TVE_EXPAND);
 		//TreeView_Select(GetDlgItem(hWnd, IDC_TREE1), hrootMeshes, 0);
 		break;
 	}
 	case DOCK:
 	{
-		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootDocks);
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootDocks);
 		while (ht != NULL) {
 			TreeItem.erase(ht);
 			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
-			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootDocks);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootDocks);
 		}
 		TVINSERTSTRUCT insertstruct = { 0 };
 
 		insertstruct.hInsertAfter = TVI_ROOT;
 		insertstruct.item.mask = TVIF_TEXT;
 		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
-		insertstruct.hParent = hrootDocks;
+		insertstruct.hParent = Config_Items[config].hrootDocks;
 		for (UINT i = 0; i < DckMng->GetDockCount(); i++) {
 			char cbuf[256] = { '\0' };
 			sprintf(cbuf, "%s", DckMng->GetDockName(i).c_str());
@@ -425,28 +452,29 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			TREE_ITEM_REF Tir = TREE_ITEM_REF();
 			Tir.Type = DOCK;
 			Tir.idx = i;
+			Tir.config = config;
 			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 			TreeItem[Tir.hitem] = Tir;
 		}
-		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootDocks, TVE_EXPAND);
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), Config_Items[config].hrootDocks, TVE_EXPAND);
 
 
 		break;
 	}
 	case ATTACHMENT:
 	{
-		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootAttachments);
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootAttachments);
 		while (ht != NULL) {
 			TreeItem.erase(ht);
 			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
-			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootAttachments);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootAttachments);
 		}
 		TVINSERTSTRUCT insertstruct = { 0 };
 
 		insertstruct.hInsertAfter = TVI_ROOT;
 		insertstruct.item.mask = TVIF_TEXT;
 		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
-		insertstruct.hParent = hrootAttachments;
+		insertstruct.hParent = Config_Items[config].hrootAttachments;
 		for (UINT i = 0; i < AttMng->GetAttCount(); i++) {
 			char cbuf[256] = { '\0' };
 			if (AttMng->AttIsCreated(i)) {
@@ -461,27 +489,28 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			TREE_ITEM_REF Tir = TREE_ITEM_REF();
 			Tir.Type = ATTACHMENT;
 			Tir.idx = i;
+			Tir.config = config;
 			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 			TreeItem[Tir.hitem] = Tir;
 		}
-		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootAttachments, TVE_EXPAND);
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), Config_Items[config].hrootAttachments, TVE_EXPAND);
 
 
 		break;
 	}
 	case ANIMATIONS:
 	{
-		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootAnimations);
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootAnimations);
 		while (ht != NULL) {
 			TreeItem.erase(ht);
 			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
-			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootAnimations);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootAnimations);
 		}
 		TVINSERTSTRUCT insertstruct = { 0 };
 		insertstruct.hInsertAfter = TVI_ROOT;
 		insertstruct.item.mask = TVIF_TEXT;
 		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
-		insertstruct.hParent = hrootAnimations;
+		insertstruct.hParent = Config_Items[config].hrootAnimations;
 		if (AnimMng->GetAnimDefsCount() <= 0) { break; }
 		for (UINT i = 0; i < AnimMng->GetAnimDefsCount(); i++) {
 			if (!AnimMng->IsAnimValid(i)) { continue; }
@@ -494,9 +523,10 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			TREE_ITEM_REF Tir = TREE_ITEM_REF();
 			Tir.Type = ANIMATIONS;
 			Tir.idx = i;
+			Tir.config = config;
 			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 			TreeItem[Tir.hitem] = Tir;
-			TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootAnimations, TVE_EXPAND);
+			TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), Config_Items[config].hrootAnimations, TVE_EXPAND);
 			TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), Tir.hitem, TVE_EXPAND);
 			HTREEITEM hparent = Tir.hitem;
 			for (UINT j = 0; j < AnimMng->GetAnimNComps(i); j++) {
@@ -512,11 +542,12 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 				TREE_ITEM_REF Tir = TREE_ITEM_REF();
 				Tir.Type = ANIM_COMP;
 				Tir.idx = cidx;
+				Tir.config = config;
 				insertstruct.hParent = hparent;
 				Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 				TreeItem[Tir.hitem] = Tir;
 				TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hparent, TVE_EXPAND);
-				insertstruct.hParent = hrootAnimations;
+				insertstruct.hParent = Config_Items[config].hrootAnimations;
 			}
 		}
 	
@@ -524,18 +555,18 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 	}
 	case PROPELLANT:
 	{
-		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootPropellant);
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootPropellant);
 		while (ht != NULL) {
 			TreeItem.erase(ht);
 			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
-			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootPropellant);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootPropellant);
 		}
 		TVINSERTSTRUCT insertstruct = { 0 };
 
 		insertstruct.hInsertAfter = TVI_ROOT;
 		insertstruct.item.mask = TVIF_TEXT;
 		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
-		insertstruct.hParent = hrootPropellant;
+		insertstruct.hParent = Config_Items[config].hrootPropellant;
 		for (UINT i = 0; i < PrpMng->GetPropCount(); i++) {
 			char cbuf[256] = { '\0' };
 			if (PrpMng->GetTankName(i).size()> 0) {
@@ -549,28 +580,29 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			TREE_ITEM_REF Tir = TREE_ITEM_REF();
 			Tir.Type = PROPELLANT;
 			Tir.idx = i;
+			Tir.config = config;
 			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 			TreeItem[Tir.hitem] = Tir;
 		}
-		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootPropellant, TVE_EXPAND);
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), Config_Items[config].hrootPropellant, TVE_EXPAND);
 
 		break;
 	}
 
 	case EXTEX:
 	{
-		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootExTex);
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootExTex);
 		while (ht != NULL) {
 			TreeItem.erase(ht);
 			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
-			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootExTex);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootExTex);
 		}
 		TVINSERTSTRUCT insertstruct = { 0 };
 
 		insertstruct.hInsertAfter = TVI_ROOT;
 		insertstruct.item.mask = TVIF_TEXT;
 		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
-		insertstruct.hParent = hrootExTex;
+		insertstruct.hParent = Config_Items[config].hrootExTex;
 		for (UINT i = 0; i < ExTMng->GetExTexCount(); i++) {
 			char cbuf[256] = { '\0' };
 			if (ExTMng->GetExTexName(i).size()> 0) {
@@ -590,28 +622,29 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			TREE_ITEM_REF Tir = TREE_ITEM_REF();
 			Tir.Type = EXTEX;
 			Tir.idx = i;
+			Tir.config = 0;
 			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 			TreeItem[Tir.hitem] = Tir;
 		}
-		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootExTex, TVE_EXPAND);
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), Config_Items[config].hrootExTex, TVE_EXPAND);
 
 		break;
 	}
 
 	case PARTICLES:
 	{
-		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootParticles);
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootParticles);
 		while (ht != NULL) {
 			TreeItem.erase(ht);
 			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
-			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootParticles);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootParticles);
 		}
 		TVINSERTSTRUCT insertstruct = { 0 };
 
 		insertstruct.hInsertAfter = TVI_ROOT;
 		insertstruct.item.mask = TVIF_TEXT;
 		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
-		insertstruct.hParent = hrootParticles;
+		insertstruct.hParent = Config_Items[config].hrootParticles;
 		for (UINT i = 0; i < PartMng->GetParticleDefCount(); i++) {
 			char cbuf[256] = { '\0' };
 			sprintf(cbuf, "%s", PartMng->GetParticleDefName(i).c_str());
@@ -620,10 +653,11 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			TREE_ITEM_REF Tir = TREE_ITEM_REF();
 			Tir.Type = PARTICLES;
 			Tir.idx = i;
+			Tir.config = 0;
 			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 			TreeItem[Tir.hitem] = Tir;
 		}
-		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootParticles, TVE_EXPAND);
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), Config_Items[config].hrootParticles, TVE_EXPAND);
 
 		break;
 	}
@@ -632,18 +666,18 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 
 	case THRUSTERS:
 	{
-		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootThrusters);
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootThrusters);
 		while (ht != NULL) {
 			TreeItem.erase(ht);
 			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
-			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootThrusters);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootThrusters);
 		}
 		TVINSERTSTRUCT insertstruct = { 0 };
 
 		insertstruct.hInsertAfter = TVI_ROOT;
 		insertstruct.item.mask = TVIF_TEXT;
 		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
-		insertstruct.hParent = hrootThrusters;
+		insertstruct.hParent = Config_Items[config].hrootThrusters;
 		for (UINT i = 0; i < ThrMng->GetThrCount(); i++) {
 			char cbuf[256] = { '\0' };
 			if (ThrMng->GetThrName(i).size()> 0) {
@@ -657,27 +691,28 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			TREE_ITEM_REF Tir = TREE_ITEM_REF();
 			Tir.Type = THRUSTERS;
 			Tir.idx = i;
+			Tir.config = config;
 			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 			TreeItem[Tir.hitem] = Tir;
 		}
-		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootThrusters, TVE_EXPAND);
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), Config_Items[config].hrootThrusters, TVE_EXPAND);
 
 		break;
 	}
 	case THRUSTERGROUPS:
 	{
-		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootThrusterGroups);
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootThrusterGroups);
 		while (ht != NULL) {
 			TreeItem.erase(ht);
 			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
-			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootThrusterGroups);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootThrusterGroups);
 		}
 		TVINSERTSTRUCT insertstruct = { 0 };
 
 		insertstruct.hInsertAfter = TVI_ROOT;
 		insertstruct.item.mask = TVIF_TEXT;
 		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
-		insertstruct.hParent = hrootThrusterGroups;
+		insertstruct.hParent = Config_Items[config].hrootThrusterGroups;
 		char cbuf[256] = { '\0' };
 		if (ThrGrpMng->Defined[THGROUP_MAIN]) {
 			sprintf(cbuf, "MAIN");
@@ -690,6 +725,7 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		TREE_ITEM_REF Tir = TREE_ITEM_REF();
 		Tir.Type = THRUSTERGROUPS;
 		Tir.idx = (int)THGROUP_MAIN;
+		Tir.config = config;
 		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 		TreeItem[Tir.hitem] = Tir;
 		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
@@ -705,6 +741,7 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		Tir = TREE_ITEM_REF();
 		Tir.Type = THRUSTERGROUPS;
 		Tir.idx = (int)THGROUP_RETRO;
+		Tir.config = config;
 		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 		TreeItem[Tir.hitem] = Tir;
 		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
@@ -720,6 +757,7 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		Tir = TREE_ITEM_REF();
 		Tir.Type = THRUSTERGROUPS;
 		Tir.idx = (int)THGROUP_HOVER;
+		Tir.config = config;
 		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 		TreeItem[Tir.hitem] = Tir;
 		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
@@ -735,6 +773,7 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		Tir = TREE_ITEM_REF();
 		Tir.Type = THRUSTERGROUPS;
 		Tir.idx = (int)THGROUP_ATT_PITCHUP;
+		Tir.config = config;
 		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 		TreeItem[Tir.hitem] = Tir;
 		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
@@ -750,6 +789,7 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		Tir = TREE_ITEM_REF();
 		Tir.Type = THRUSTERGROUPS;
 		Tir.idx = (int)THGROUP_ATT_PITCHDOWN;
+		Tir.config = config;
 		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 		TreeItem[Tir.hitem] = Tir;
 		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
@@ -765,6 +805,7 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		Tir = TREE_ITEM_REF();
 		Tir.Type = THRUSTERGROUPS;
 		Tir.idx = (int)THGROUP_ATT_YAWLEFT;
+		Tir.config = config;
 		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 		TreeItem[Tir.hitem] = Tir;
 		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
@@ -780,6 +821,7 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		Tir = TREE_ITEM_REF();
 		Tir.Type = THRUSTERGROUPS;
 		Tir.idx = (int)THGROUP_ATT_YAWRIGHT;
+		Tir.config = config;
 		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 		TreeItem[Tir.hitem] = Tir;
 		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
@@ -795,6 +837,7 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		Tir = TREE_ITEM_REF();
 		Tir.Type = THRUSTERGROUPS;
 		Tir.idx = (int)THGROUP_ATT_BANKLEFT;
+		Tir.config = config;
 		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 		TreeItem[Tir.hitem] = Tir;
 		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
@@ -810,6 +853,7 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		Tir = TREE_ITEM_REF();
 		Tir.Type = THRUSTERGROUPS;
 		Tir.idx = (int)THGROUP_ATT_BANKRIGHT;
+		Tir.config = config;
 		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 		TreeItem[Tir.hitem] = Tir;
 		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
@@ -825,6 +869,7 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		Tir = TREE_ITEM_REF();
 		Tir.Type = THRUSTERGROUPS;
 		Tir.idx = (int)THGROUP_ATT_RIGHT;
+		Tir.config = config;
 		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 		TreeItem[Tir.hitem] = Tir;
 		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
@@ -840,6 +885,7 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		Tir = TREE_ITEM_REF();
 		Tir.Type = THRUSTERGROUPS;
 		Tir.idx = (int)THGROUP_ATT_LEFT;
+		Tir.config = config;
 		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 		TreeItem[Tir.hitem] = Tir;
 		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
@@ -855,6 +901,7 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		Tir = TREE_ITEM_REF();
 		Tir.Type = THRUSTERGROUPS;
 		Tir.idx = (int)THGROUP_ATT_UP;
+		Tir.config = config;
 		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 		TreeItem[Tir.hitem] = Tir;
 		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
@@ -870,6 +917,7 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		Tir = TREE_ITEM_REF();
 		Tir.Type = THRUSTERGROUPS;
 		Tir.idx = (int)THGROUP_ATT_DOWN;
+		Tir.config = config;
 		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 		TreeItem[Tir.hitem] = Tir;
 		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
@@ -885,6 +933,7 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		Tir = TREE_ITEM_REF();
 		Tir.Type = THRUSTERGROUPS;
 		Tir.idx = (int)THGROUP_ATT_FORWARD;
+		Tir.config = config;
 		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 		TreeItem[Tir.hitem] = Tir;
 		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
@@ -900,6 +949,7 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		Tir = TREE_ITEM_REF();
 		Tir.Type = THRUSTERGROUPS;
 		Tir.idx = (int)THGROUP_ATT_BACK;
+		Tir.config = config;
 		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 		TreeItem[Tir.hitem] = Tir;
 		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
@@ -908,18 +958,18 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 	}
 	case TOUCHDOWNPOINTS:
 	{
-		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootTouchdownPoints);
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootTouchdownPoints);
 		while (ht != NULL) {
 			TreeItem.erase(ht);
 			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
-			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootTouchdownPoints);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootTouchdownPoints);
 		}
 		TVINSERTSTRUCT insertstruct = { 0 };
 
 		insertstruct.hInsertAfter = TVI_ROOT;
 		insertstruct.item.mask = TVIF_TEXT;
 		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
-		insertstruct.hParent = hrootTouchdownPoints;
+		insertstruct.hParent = Config_Items[config].hrootTouchdownPoints;
 		char cbuf[256] = { '\0' };
 		sprintf(cbuf, "SET 1");
 		insertstruct.item.pszText = (LPSTR)cbuf;
@@ -927,6 +977,7 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		TREE_ITEM_REF Tir = TREE_ITEM_REF();
 		Tir.Type = TOUCHDOWNPOINTS;
 		Tir.idx = 1;
+		Tir.config = config;
 		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 		TreeItem[Tir.hitem] = Tir;
 		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
@@ -942,27 +993,28 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 		Tir = TREE_ITEM_REF();
 		Tir.Type = TOUCHDOWNPOINTS;
 		Tir.idx = 2;
+		Tir.config = config;
 		Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 		TreeItem[Tir.hitem] = Tir;
 		for (UINT i = 0; i < 256; i++) { cbuf[i] = { '\0' }; }
-		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootTouchdownPoints, TVE_EXPAND);
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), Config_Items[config].hrootTouchdownPoints, TVE_EXPAND);
 
 		break;
 	}
 	case AIRFOILS:
 	{
-		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootAirfoils);
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootAirfoils);
 		while (ht != NULL) {
 			TreeItem.erase(ht);
 			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
-			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootAirfoils);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootAirfoils);
 		}
 		TVINSERTSTRUCT insertstruct = { 0 };
 
 		insertstruct.hInsertAfter = TVI_ROOT;
 		insertstruct.item.mask = TVIF_TEXT;
 		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
-		insertstruct.hParent = hrootAirfoils;
+		insertstruct.hParent = Config_Items[config].hrootAirfoils;
 		for (UINT i = 0; i < AirfoilMng->GetAirfoilDefCount(); i++) {
 			char cbuf[256] = { '\0' };
 			sprintf(cbuf, "%s", AirfoilMng->GetAirfoilDefName(i).c_str());
@@ -971,27 +1023,28 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			TREE_ITEM_REF Tir = TREE_ITEM_REF();
 			Tir.Type = AIRFOILS;
 			Tir.idx = i;
+			Tir.config = config;
 			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 			TreeItem[Tir.hitem] = Tir;
 		}
-		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootAirfoils, TVE_EXPAND);
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), Config_Items[config].hrootAirfoils, TVE_EXPAND);
 
 		break;
 	}
 	case CTRLSURFACES:
 	{
-		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootControlSurfaces);
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootControlSurfaces);
 		while (ht != NULL) {
 			TreeItem.erase(ht);
 			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
-			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootControlSurfaces);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootControlSurfaces);
 		}
 		TVINSERTSTRUCT insertstruct = { 0 };
 
 		insertstruct.hInsertAfter = TVI_ROOT;
 		insertstruct.item.mask = TVIF_TEXT;
 		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
-		insertstruct.hParent = hrootControlSurfaces;
+		insertstruct.hParent = Config_Items[config].hrootControlSurfaces;
 		for (UINT i = 0; i < CtrSurfMng->CtrlSurfDefCount(); i++) {
 			char cbuf[256] = { '\0' };
 			if (CtrSurfMng->IsCtrlSurfDefDefined(i)) {
@@ -1006,27 +1059,28 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			TREE_ITEM_REF Tir = TREE_ITEM_REF();
 			Tir.Type = CTRLSURFACES;
 			Tir.idx = i;
+			Tir.config = config;
 			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 			TreeItem[Tir.hitem] = Tir;
 		}
-		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootControlSurfaces, TVE_EXPAND);
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), Config_Items[config].hrootControlSurfaces, TVE_EXPAND);
 
 		break;
 	}
 	case CAMERA:
 	{
-		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootCameras);
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootCameras);
 		while (ht != NULL) {
 			TreeItem.erase(ht);
 			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
-			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootCameras);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootCameras);
 		}
 		TVINSERTSTRUCT insertstruct = { 0 };
 
 		insertstruct.hInsertAfter = TVI_ROOT;
 		insertstruct.item.mask = TVIF_TEXT;
 		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
-		insertstruct.hParent = hrootCameras;
+		insertstruct.hParent = Config_Items[config].hrootCameras;
 		for (UINT i = 0; i < CamMng->GetCamCount(); i++) {
 			char cbuf[256] = { '\0' };
 			sprintf(cbuf, "%s", CamMng->GetCamName(i).c_str());
@@ -1035,27 +1089,28 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			TREE_ITEM_REF Tir = TREE_ITEM_REF();
 			Tir.Type = CAMERA;
 			Tir.idx = i;
+			Tir.config = config;
 			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 			TreeItem[Tir.hitem] = Tir;
 		}
-		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootCameras, TVE_EXPAND);
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), Config_Items[config].hrootCameras, TVE_EXPAND);
 
 		break;
 	}
 	case VCPOS:
 	{
-		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootVCPositions);
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootVCPositions);
 		while (ht != NULL) {
 			TreeItem.erase(ht);
 			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
-			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootVCPositions);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootVCPositions);
 		}
 		TVINSERTSTRUCT insertstruct = { 0 };
 
 		insertstruct.hInsertAfter = TVI_ROOT;
 		insertstruct.item.mask = TVIF_TEXT;
 		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
-		insertstruct.hParent = hrootVCPositions;
+		insertstruct.hParent = Config_Items[config].hrootVCPositions;
 		for (UINT i = 0; i < VCMng->GetPositionCount(); i++) {
 			char cbuf[256] = { '\0' };
 			sprintf(cbuf, "%s", VCMng->GetPositionName(i).c_str());
@@ -1064,26 +1119,27 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			TREE_ITEM_REF Tir = TREE_ITEM_REF();
 			Tir.Type = VCPOS;
 			Tir.idx = i;
+			Tir.config = config;
 			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 			TreeItem[Tir.hitem] = Tir;
 		}
-		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootVCPositions, TVE_EXPAND);
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), Config_Items[config].hrootVCPositions, TVE_EXPAND);
 		break;
 	}
 	case VCMFD:
 	{
-		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootVCMFDs);
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootVCMFDs);
 		while (ht != NULL) {
 			TreeItem.erase(ht);
 			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
-			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootVCMFDs);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootVCMFDs);
 		}
 		TVINSERTSTRUCT insertstruct = { 0 };
 
 		insertstruct.hInsertAfter = TVI_ROOT;
 		insertstruct.item.mask = TVIF_TEXT;
 		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
-		insertstruct.hParent = hrootVCMFDs;
+		insertstruct.hParent = Config_Items[config].hrootVCMFDs;
 		for (UINT i = 0; i < VCMng->GetMFDCount(); i++) {
 			char cbuf[256] = { '\0' };
 			if (i == 0) {
@@ -1101,26 +1157,27 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			TREE_ITEM_REF Tir = TREE_ITEM_REF();
 			Tir.Type = VCMFD;
 			Tir.idx = i;
+			Tir.config = config;
 			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 			TreeItem[Tir.hitem] = Tir;
 		}
-		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootVCMFDs, TVE_EXPAND);
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), Config_Items[config].hrootVCMFDs, TVE_EXPAND);
 		break;
 	}
 	case BEACONS:
 	{
-		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootBeacons);
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootBeacons);
 		while (ht != NULL) {
 			TreeItem.erase(ht);
 			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
-			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootBeacons);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootBeacons);
 		}
 		TVINSERTSTRUCT insertstruct = { 0 };
 
 		insertstruct.hInsertAfter = TVI_ROOT;
 		insertstruct.item.mask = TVIF_TEXT;
 		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
-		insertstruct.hParent = hrootBeacons;
+		insertstruct.hParent = Config_Items[config].hrootBeacons;
 		for (UINT i = 0; i < LightsMng->GetBeaconCount(); i++) {
 			char cbuf[256] = { '\0' };
 			sprintf(cbuf, "%s", LightsMng->GetBeaconName(i).c_str());
@@ -1129,26 +1186,27 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			TREE_ITEM_REF Tir = TREE_ITEM_REF();
 			Tir.Type = BEACONS;
 			Tir.idx = i;
+			Tir.config = config;
 			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 			TreeItem[Tir.hitem] = Tir;
 		}
-		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootBeacons, TVE_EXPAND);
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), Config_Items[config].hrootBeacons, TVE_EXPAND);
 		break;
 	}
 	case LIGHTS:
 	{
-		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootLightEmitters);
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootLightEmitters);
 		while (ht != NULL) {
 			TreeItem.erase(ht);
 			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
-			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootLightEmitters);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootLightEmitters);
 		}
 		TVINSERTSTRUCT insertstruct = { 0 };
 
 		insertstruct.hInsertAfter = TVI_ROOT;
 		insertstruct.item.mask = TVIF_TEXT;
 		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
-		insertstruct.hParent = hrootLightEmitters;
+		insertstruct.hParent = Config_Items[config].hrootLightEmitters;
 		for (UINT i = 0; i < LightsMng->GetLightsCount(); i++) {
 			char cbuf[256] = { '\0' };
 			sprintf(cbuf, "%s", LightsMng->GetLightName(i).c_str());
@@ -1157,26 +1215,27 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			TREE_ITEM_REF Tir = TREE_ITEM_REF();
 			Tir.Type = LIGHTS;
 			Tir.idx = i;
+			Tir.config = config;
 			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 			TreeItem[Tir.hitem] = Tir;
 		}
-		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootLightEmitters, TVE_EXPAND);
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), Config_Items[config].hrootLightEmitters, TVE_EXPAND);
 		break;
 	}
 	case VARIABLEDRAG:
 	{
-		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootVariableDrag);
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootVariableDrag);
 		while (ht != NULL) {
 			TreeItem.erase(ht);
 			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
-			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hrootVariableDrag);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootVariableDrag);
 		}
 		TVINSERTSTRUCT insertstruct = { 0 };
 
 		insertstruct.hInsertAfter = TVI_ROOT;
 		insertstruct.item.mask = TVIF_TEXT;
 		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
-		insertstruct.hParent = hrootVariableDrag;
+		insertstruct.hParent = Config_Items[config].hrootVariableDrag;
 		for (UINT i = 0; i < VardMng->GetVardDefCount(); i++) {
 			char cbuf[256] = { '\0' };
 			if (VardMng->IsVardDefDefined(i)) {
@@ -1191,10 +1250,11 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 			TREE_ITEM_REF Tir = TREE_ITEM_REF();
 			Tir.Type = VARIABLEDRAG;
 			Tir.idx = i;
+			Tir.config = config;
 			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 			TreeItem[Tir.hitem] = Tir;
 		}
-		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), hrootVariableDrag, TVE_EXPAND);
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), Config_Items[config].hrootVariableDrag, TVE_EXPAND);
 		break;
 	}
 
@@ -1210,18 +1270,18 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, HTREEITEM select) {
 }
 
 void DialogControl::InitTree(HWND hWnd) {
-	
+	Config_Items.clear();
 	LONG style = GetWindowLong(GetDlgItem(hWnd, IDC_TREE1), GWL_STYLE);
 	SetWindowLong(GetDlgItem(hWnd, IDC_TREE1), GWL_STYLE, style | TVS_HASLINES | TVS_LINESATROOT | TVS_HASBUTTONS);
 	TreeView_DeleteAllItems(GetDlgItem(hWnd, IDC_TREE1));
 	TVINSERTSTRUCT insertstruct = { 0 };
-	
+	/*
 	insertstruct.hInsertAfter = TVI_ROOT;
 	insertstruct.hParent = TVI_ROOT;
 	insertstruct.item.mask = TVIF_TEXT;
 	insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
-
-	char vname[256] = { '\0' };
+	*/
+	/*char vname[256] = { '\0' };
 	sprintf(vname, "%s", VB1->GetName());
 	string sname(vname);
 	insertstruct.item.pszText = (LPSTR)sname.c_str();
@@ -1367,12 +1427,284 @@ void DialogControl::InitTree(HWND hWnd) {
 	hrootVariableDrag = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 	Tir.hitem = hrootVariableDrag;
 	TreeItem[Tir.hitem] = Tir;
-
+	*/
 	
-	UpdateTree(hWnd, MESH,0);
-	UpdateTree(hWnd, DOCK,0);
+
+	for (UINT i = 0; i < ConfigMng->GetConfigurationsCount(); i++) {
+		insertstruct.hInsertAfter = TVI_ROOT;
+		insertstruct.hParent = TVI_ROOT;
+		insertstruct.item.mask = TVIF_TEXT;
+		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
+		char vname[256] = { '\0' };
+		
+		if (i == 0) {
+			sprintf(vname, "%s", VB1->GetName());
+		}
+		else {
+			sprintf(vname, "Reconfiguration %i", i);
+		}
+		
+		string sname(vname);
+		UINT CurrentConfig = ConfigMng->GetCurrentConfiguration();
+		if (i == CurrentConfig) {
+			sname += " [ACTIVE]";
+		}
+		insertstruct.item.pszText = (LPSTR)sname.c_str();
+		insertstruct.item.cchTextMax = sname.size();
+		CONFIGITEMS ci = { 0 };
+		ci.hrootVessel = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		TREE_ITEM_REF Tir = TREE_ITEM_REF();
+		Tir.hitem = ci.hrootVessel;
+		Tir.config = i;
+		Tir.Type = ROOTS;
+		TreeItem[Tir.hitem] = Tir;
+
+		insertstruct.hParent = ci.hrootVessel;
+		
+		if (ConfigMng->IsSectionValid(i, SETTINGS)) {
+			insertstruct.hParent = ci.hrootVessel;
+			insertstruct.item.pszText = (LPSTR)TEXT("General Settings\0");
+			insertstruct.item.cchTextMax = 18;
+			ci.hrootSettings = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			Tir.hitem = ci.hrootSettings;
+			Tir.config = i;
+			TreeItem[Tir.hitem] = Tir;
+		}
+		if (ConfigMng->IsSectionValid(i, MESH)) {
+			insertstruct.hParent = ci.hrootVessel;
+			insertstruct.item.pszText = (LPSTR)TEXT("Meshes\0");
+			insertstruct.item.cchTextMax = 7;
+			ci.hrootMeshes = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			Tir.hitem = ci.hrootMeshes;
+			Tir.config = i;
+			TreeItem[Tir.hitem] = Tir;
+		}
+		if (ConfigMng->IsSectionValid(i, DOCK)) {
+			insertstruct.hParent = ci.hrootVessel;
+			insertstruct.item.pszText = (LPSTR)TEXT("Docks\0");
+			insertstruct.item.cchTextMax = 6;
+			ci.hrootDocks = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			Tir.hitem = ci.hrootDocks;
+			Tir.config = i;
+			TreeItem[Tir.hitem] = Tir;
+		}
+		if (ConfigMng->IsSectionValid(i, ATTACHMENT)) {
+			insertstruct.hParent = ci.hrootVessel;
+			insertstruct.item.pszText = (LPSTR)TEXT("Attachments\0");
+			insertstruct.item.cchTextMax = 12;
+			ci.hrootAttachments = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			Tir.hitem = ci.hrootAttachments;
+			Tir.config = i;
+			TreeItem[Tir.hitem] = Tir;
+		}
+		if (ConfigMng->IsSectionValid(i, ANIMATIONS)) {
+			insertstruct.hParent = ci.hrootVessel;
+			insertstruct.item.pszText = (LPSTR)TEXT("Animations\0");
+			insertstruct.item.cchTextMax = 11;
+			ci.hrootAnimations = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			Tir.hitem = ci.hrootAnimations;
+			Tir.config = i;
+			TreeItem[Tir.hitem] = Tir;
+		}
+		if (ConfigMng->IsSectionValid(i, PROPELLANT)) {
+			insertstruct.hParent = ci.hrootVessel;
+			insertstruct.item.pszText = (LPSTR)TEXT("Propellants\0");
+			insertstruct.item.cchTextMax = 12;
+			ci.hrootPropellant = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			Tir.hitem = ci.hrootPropellant;
+			Tir.config = i;
+			TreeItem[Tir.hitem] = Tir;
+		}
+		if (i == 0) {
+			insertstruct.hParent = ci.hrootVessel;
+			insertstruct.item.pszText = (LPSTR)TEXT("Exhaust Textures\0");
+			insertstruct.item.cchTextMax = 18;
+			ci.hrootExTex = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			Tir.hitem = ci.hrootExTex;
+			Tir.config = i;
+			TreeItem[Tir.hitem] = Tir;
+
+			insertstruct.item.pszText = (LPSTR)TEXT("Particle Streams\0");
+			insertstruct.item.cchTextMax = 18;
+			ci.hrootParticles = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			Tir.hitem = ci.hrootParticles;
+			Tir.config = i;
+			TreeItem[Tir.hitem] = Tir;
+		}
+		if (ConfigMng->IsSectionValid(i, THRUSTERS)) {
+			insertstruct.hParent = ci.hrootVessel;
+			insertstruct.item.pszText = (LPSTR)TEXT("Thrusters\0");
+			insertstruct.item.cchTextMax = 10;
+			ci.hrootThrusters = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			Tir.hitem = ci.hrootThrusters;
+			Tir.config = i;
+			TreeItem[Tir.hitem] = Tir;
+		}
+		if (ConfigMng->IsSectionValid(i, THRUSTERGROUPS)) {
+			insertstruct.hParent = ci.hrootVessel;
+			insertstruct.item.pszText = (LPSTR)TEXT("Thruster Groups\0");
+			insertstruct.item.cchTextMax = 18;
+			ci.hrootThrusterGroups = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			Tir.hitem = ci.hrootThrusterGroups;
+			Tir.config = i;
+			TreeItem[Tir.hitem] = Tir;
+		}
+		if (ConfigMng->IsSectionValid(i, TOUCHDOWNPOINTS)) {
+			insertstruct.hParent = ci.hrootVessel;
+			insertstruct.item.pszText = (LPSTR)TEXT("Touchdown Points\0");
+			insertstruct.item.cchTextMax = 18;
+			ci.hrootTouchdownPoints = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			Tir.hitem = ci.hrootTouchdownPoints;
+			Tir.config = i;
+			TreeItem[Tir.hitem] = Tir;
+		}	
+		if (ConfigMng->IsSectionValid(i, AIRFOILS)) {
+			insertstruct.hParent = ci.hrootVessel;
+			insertstruct.item.pszText = (LPSTR)TEXT("Airfoils\0");
+			insertstruct.item.cchTextMax = 10;
+			ci.hrootAirfoils = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			Tir.hitem = ci.hrootAirfoils;
+			Tir.config = i;
+			TreeItem[Tir.hitem] = Tir;
+		}
+		if (ConfigMng->IsSectionValid(i, CTRLSURFACES)) {
+			insertstruct.hParent = ci.hrootVessel;
+			insertstruct.item.pszText = (LPSTR)TEXT("Control Surfaces\0");
+			insertstruct.item.cchTextMax = 18;
+			ci.hrootControlSurfaces = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			Tir.hitem = ci.hrootControlSurfaces;
+			Tir.config = i;
+			TreeItem[Tir.hitem] = Tir;
+		}
+		if (ConfigMng->IsSectionValid(i, LIGHTS)) {
+			insertstruct.hParent = ci.hrootVessel;
+			insertstruct.item.pszText = (LPSTR)TEXT("Lights\0");
+			insertstruct.item.cchTextMax = 7;
+			ci.hrootLights = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			Tir.hitem = ci.hrootLights;
+			Tir.config = i;
+			TreeItem[Tir.hitem] = Tir;
+			insertstruct.hParent = ci.hrootLights;
+			insertstruct.item.pszText = (LPSTR)TEXT("Beacons\0");
+			insertstruct.item.cchTextMax = 10;
+			ci.hrootBeacons = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			Tir.hitem = ci.hrootBeacons;
+			Tir.config = i;
+			TreeItem[Tir.hitem] = Tir;
+			insertstruct.item.pszText = (LPSTR)TEXT("Light Emitters\0");
+			insertstruct.item.cchTextMax = 16;
+			ci.hrootLightEmitters = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			Tir.hitem = ci.hrootLightEmitters;
+			Tir.config = i;
+			TreeItem[Tir.hitem] = Tir;
+		}
+		if (ConfigMng->IsSectionValid(i, CAMERA)) {
+			insertstruct.hParent = ci.hrootVessel;
+			insertstruct.item.pszText = (LPSTR)TEXT("Cameras\0");
+			insertstruct.item.cchTextMax = 8;
+			ci.hrootCameras = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			Tir.hitem = ci.hrootCameras;
+			Tir.config = i;
+			TreeItem[Tir.hitem] = Tir;
+		}
+		if (ConfigMng->IsSectionValid(i, VC)) {
+			insertstruct.hParent = ci.hrootVessel;
+			insertstruct.item.pszText = (LPSTR)TEXT("Virtual Cockpit\0");
+			insertstruct.item.cchTextMax = 18;
+			ci.hrootVC = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			Tir.hitem = ci.hrootVC;
+			Tir.config = i;
+			TreeItem[Tir.hitem] = Tir;
+			insertstruct.hParent = ci.hrootVC;
+			insertstruct.item.pszText = (LPSTR)TEXT("Positions\0");
+			insertstruct.item.cchTextMax = 11;
+			ci.hrootVCPositions = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			Tir.hitem = ci.hrootVCPositions;
+			Tir.config = i;
+			TreeItem[Tir.hitem] = Tir;
+			insertstruct.item.pszText = (LPSTR)TEXT("MFDs\0");
+			insertstruct.item.cchTextMax = 6;
+			ci.hrootVCMFDs = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			Tir.hitem = ci.hrootVCMFDs;
+			Tir.config = i;
+			TreeItem[Tir.hitem] = Tir;
+			insertstruct.item.pszText = (LPSTR)TEXT("HUD\0");
+			insertstruct.item.cchTextMax = 5;
+			ci.hrootVCHud = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			Tir.hitem = ci.hrootVCHud;
+			Tir.config = i;
+			TreeItem[Tir.hitem] = Tir;
+		}
+		if (ConfigMng->IsSectionValid(i, VARIABLEDRAG)) {
+			insertstruct.hParent = ci.hrootVessel;
+			insertstruct.item.pszText = (LPSTR)TEXT("Variable Drag Elems\0");
+			insertstruct.item.cchTextMax = 21;
+			ci.hrootVariableDrag = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			Tir.hitem = ci.hrootVariableDrag;
+			Tir.config = i;
+			TreeItem[Tir.hitem] = Tir;
+		}
+				
+
+		Config_Items.push_back(ci);
+		
+			if (ConfigMng->IsSectionActive(i, MESH)) {
+				UpdateTree(hWnd, MESH, i);
+			}
+			if (ConfigMng->IsSectionActive(i, DOCK)) {
+				UpdateTree(hWnd, DOCK, i);
+			}
+			if (ConfigMng->IsSectionActive(i, ATTACHMENT)) {
+				UpdateTree(hWnd, ATTACHMENT, i);
+			}
+			if (ConfigMng->IsSectionActive(i, ANIMATIONS)) {
+				UpdateTree(hWnd, ANIMATIONS, i);
+			}
+			if (ConfigMng->IsSectionActive(i, PROPELLANT)) {
+				UpdateTree(hWnd, PROPELLANT, i);
+			}
+			if (i == 0) {
+				UpdateTree(hWnd, EXTEX, i);
+				UpdateTree(hWnd, PARTICLES, i);
+			}
+			if (ConfigMng->IsSectionActive(i, THRUSTERS)) {
+				UpdateTree(hWnd, THRUSTERS, i);
+			}
+			if (ConfigMng->IsSectionActive(i, THRUSTERGROUPS)) {
+				UpdateTree(hWnd, THRUSTERGROUPS, i);
+			}
+			if (ConfigMng->IsSectionActive(i, TOUCHDOWNPOINTS)) {
+				UpdateTree(hWnd, TOUCHDOWNPOINTS, i);
+			}
+			if (ConfigMng->IsSectionActive(i, AIRFOILS)) {
+				UpdateTree(hWnd, AIRFOILS, i);
+			}
+			if (ConfigMng->IsSectionActive(i, CTRLSURFACES)) {
+				UpdateTree(hWnd, CTRLSURFACES, i);
+			}
+			if (ConfigMng->IsSectionActive(i, CAMERA)) {
+				UpdateTree(hWnd, CAMERA, i);
+			}
+			if (ConfigMng->IsSectionActive(i, VC)) {
+				UpdateTree(hWnd, VCPOS, i);
+				UpdateTree(hWnd, VCMFD, i);
+			}
+			if (ConfigMng->IsSectionActive(i, LIGHTS)) {
+				UpdateTree(hWnd, BEACONS, i);
+				UpdateTree(hWnd, LIGHTS, i);
+			}
+			if (ConfigMng->IsSectionActive(i, VARIABLEDRAG)) {
+				UpdateTree(hWnd, VARIABLEDRAG, i);
+			}
+		
+	
+	}
+	
+
+	/*UpdateTree(hWnd, MESH, 0);
+	UpdateTree(hWnd, DOCK, 0);
 	UpdateTree(hWnd, ATTACHMENT, 0);
-	UpdateTree(hWnd, ANIMATIONS,0);
+	UpdateTree(hWnd, ANIMATIONS, 0);
 	UpdateTree(hWnd, PROPELLANT, 0);
 	UpdateTree(hWnd, EXTEX, 0);
 	UpdateTree(hWnd, PARTICLES, 0);
@@ -1387,6 +1719,7 @@ void DialogControl::InitTree(HWND hWnd) {
 	UpdateTree(hWnd, BEACONS, 0);
 	UpdateTree(hWnd, LIGHTS, 0);
 	UpdateTree(hWnd, VARIABLEDRAG, 0);
+	*/
 	return;
 }
 
@@ -1457,7 +1790,7 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 		ShowWindow(hWnd_VarDrag, SW_HIDE);
 	}
 
-
+	
 
 	switch (type) {
 	case MESH:
@@ -1473,13 +1806,11 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 	case ANIMATIONS:
 	{
 		ShowWindow(hWnd_Anim, SW_SHOW);
-	//	SB1->AnimEditingMode = true;
 		break;
 	}
 	case ANIM_COMP:
 	{
 		ShowWindow(hWnd_AnimComp, SW_SHOW);
-//		SB1->AnimEditingMode = true;
 		break;
 	}
 	case ATTACHMENT:
@@ -1577,78 +1908,102 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 		switch (LOWORD(wParam)) {
 		case IDC_BUTTON_ADD:
 		{
-			if (CurrentSelection.hitem == hrootMeshes) {
+			if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(MESH)].hrootMeshes) {
 				MshMng->AddMeshDef();
-				UpdateTree(hWnd, MESH,hrootMeshes);
+				UpdateTree(hWnd, MESH, ConfigMng->GetSectionActiveConfig(MESH));
 			}
-			else if (CurrentSelection.hitem == hrootDocks) {
+			else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(DOCK)].hrootDocks) {
 				DckMng->AddDockDef();
-				UpdateTree( hWnd, DOCK,hrootDocks);
+				UpdateTree( hWnd, DOCK, ConfigMng->GetSectionActiveConfig(DOCK));
 			}
-			else if (CurrentSelection.hitem == hrootAnimations) {
+			else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(ANIMATIONS)].hrootAnimations) {
 				AnimMng->AddAnimDef();
-				UpdateTree(hWnd, ANIMATIONS,hrootAnimations);
+				UpdateTree(hWnd, ANIMATIONS, ConfigMng->GetSectionActiveConfig(ANIMATIONS));
 			}
-			else if (CurrentSelection.hitem == hrootAttachments) {
+			else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(ATTACHMENT)].hrootAttachments) {
 				AttMng->AddAttDefNoCreate();
-				UpdateTree(hWnd, ATTACHMENT, 0);
+				UpdateTree(hWnd, ATTACHMENT, ConfigMng->GetSectionActiveConfig(ATTACHMENT));
 			}
-			else if (CurrentSelection.hitem == hrootPropellant) {
+			else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(PROPELLANT)].hrootPropellant) {
 				PrpMng->AddTankDef();				
-				UpdateTree(hWnd, PROPELLANT, 0);
+				UpdateTree(hWnd, PROPELLANT, ConfigMng->GetSectionActiveConfig(PROPELLANT));
 			}
-			else if (CurrentSelection.hitem == hrootExTex) {
+			else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(EXTEX)].hrootExTex) {
 				ExTMng->AddExTexDef();
 				UpdateTree(hWnd, EXTEX, 0);
 			}
-			else if (CurrentSelection.hitem == hrootParticles) {
+			else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(PARTICLES)].hrootParticles) {
 				PartMng->AddParticleDef();
 				UpdateTree(hWnd, PARTICLES, 0);
 			}
-			else if (CurrentSelection.hitem == hrootThrusters) {
+			else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(THRUSTERS)].hrootThrusters) {
 				ThrMng->AddThrDef();
-				UpdateTree(hWnd, THRUSTERS, 0);
+				UpdateTree(hWnd, THRUSTERS, ConfigMng->GetSectionActiveConfig(THRUSTERS));
 			}
-			else if (CurrentSelection.hitem == hrootAirfoils) {
+			else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(AIRFOILS)].hrootAirfoils) {
 				AirfoilMng->CreateAirfoilDef(LIFT_VERTICAL);
-				UpdateTree(hWnd, AIRFOILS, 0);
+				UpdateTree(hWnd, AIRFOILS, ConfigMng->GetSectionActiveConfig(AIRFOILS));
 				///
 			}
-			else if (CurrentSelection.hitem == hrootControlSurfaces) {
+			else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(CTRLSURFACES)].hrootControlSurfaces) {
 				CtrSurfMng->CreateUndefinedCtrlSurfDef();
-				UpdateTree(hWnd, CTRLSURFACES, 0);
+				UpdateTree(hWnd, CTRLSURFACES, ConfigMng->GetSectionActiveConfig(CTRLSURFACES));
 			}
-			else if (CurrentSelection.hitem == hrootCameras) {
+			else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(CAMERA)].hrootCameras) {
 				CamMng->AddCamDef();
-				UpdateTree(hWnd, CAMERA, 0);
+				UpdateTree(hWnd, CAMERA, ConfigMng->GetSectionActiveConfig(CAMERA));
 			}
-			else if (CurrentSelection.hitem == hrootVCPositions) {
+			else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(VC)].hrootVCPositions) {
 				VCMng->AddPosition();
-				UpdateTree(hWnd, VCPOS, 0);
+				UpdateTree(hWnd, VCPOS, ConfigMng->GetSectionActiveConfig(VC));
 			}
-			else if (CurrentSelection.hitem == hrootVCMFDs) {
+			else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(VC)].hrootVCMFDs) {
 				VCMng->AddMFD();
-				UpdateTree(hWnd, VCMFD, 0);
+				UpdateTree(hWnd, VCMFD, ConfigMng->GetSectionActiveConfig(VC));
 			}
-			else if (CurrentSelection.hitem == hrootBeacons) {
+			else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(LIGHTS)].hrootBeacons) {
 				LightsMng->AddBeaconDef();
-				UpdateTree(hWnd, BEACONS, 0);
+				UpdateTree(hWnd, BEACONS, ConfigMng->GetSectionActiveConfig(LIGHTS));
 			}
-			else if (CurrentSelection.hitem == hrootThrusterGroups) {
+			else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(THRUSTERGROUPS)].hrootThrusterGroups) {
 				VB1->AddDefaultRCS();
 			}
-			else if (CurrentSelection.hitem == hrootVariableDrag) {
+			else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(VARIABLEDRAG)].hrootVariableDrag) {
 				VardMng->AddUndefinedVardDef();
-				UpdateTree(hWnd, VARIABLEDRAG, 0);
+				UpdateTree(hWnd, VARIABLEDRAG, ConfigMng->GetSectionActiveConfig(VARIABLEDRAG));
+			}
+			else if (CurrentSelection.hitem == Config_Items[0].hrootVessel) {
+				map<ItemType, bool>Sects;
+				Sects[SETTINGS] = false;
+				Sects[MESH] = false;
+				Sects[DOCK] = false;
+				Sects[ATTACHMENT] = false;
+				Sects[ANIMATIONS] = false;
+				Sects[PROPELLANT] = false;
+				Sects[THRUSTERS] = false;
+				Sects[THRUSTERGROUPS] = false;
+				Sects[TOUCHDOWNPOINTS] = false;
+				Sects[AIRFOILS] = false;
+				Sects[CTRLSURFACES] = false;
+				Sects[CAMERA] = false;
+				Sects[VC] = false;
+				Sects[LIGHTS] = false;
+				Sects[VARIABLEDRAG] = false;
+				ConfigMng->AddConfiguration(VB1, Sects, NULL);
+				InitTree(hWnd);
 			}
 			break;
 		}
 		case IDC_BUTTON_ADD2:
 		{
-			if (CurrentSelection.hitem == hrootAirfoils) {
+			if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(AIRFOILS)].hrootAirfoils) {
 				AirfoilMng->CreateAirfoilDef(LIFT_HORIZONTAL);
-				UpdateTree(hWnd, AIRFOILS, 0);
+				UpdateTree(hWnd, AIRFOILS, ConfigMng->GetSectionActiveConfig(AIRFOILS));
 
+			}
+			else if (CurrentSelection.hitem == Config_Items[0].hrootVessel) {
+				ConfigMng->ApplyDefaultConfiguration();
+				InitTree(hWnd);
 			}
 			break;
 		}
@@ -1681,92 +2036,98 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 					HTREEITEM Selected = TreeView_GetSelection(GetDlgItem(hWnd, IDC_TREE1));
 					TREE_ITEM_REF old_Selection = CurrentSelection;
 					CurrentSelection = TreeItem[Selected];
-					
-					if (CurrentSelection.hitem == hrootMeshes) {
+					if (Config_Items.size() <= 0) { break; }
+					if (CurrentSelection.hitem == Config_Items[0].hrootVessel) {
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_SHOW);
+						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD RECONFIGURATION");
+						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD2), (LPCSTR)"APPLY DEFAULT CONFIGURATION");
+					}
+					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(MESH)].hrootMeshes) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD MESH");
-					}else if (CurrentSelection.hitem == hrootDocks) {
+					}else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(DOCK)].hrootDocks) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD DOCK");
 					}
-					else if (CurrentSelection.hitem == hrootAttachments) {
+					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(ATTACHMENT)].hrootAttachments) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD ATTACHMENT");
 					}
-					else if (CurrentSelection.hitem == hrootLights) {
+					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(LIGHTS)].hrootLights) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD LIGHT");
 					}
-					else if (CurrentSelection.hitem == hrootCameras) {
+					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(CAMERA)].hrootCameras) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD CAMERA");
 					}
-					else if (CurrentSelection.hitem == hrootSettings) {
+					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(SETTINGS)].hrootSettings) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_HIDE);
-						
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 					}
-					else if (CurrentSelection.hitem == hrootAnimations) {
+					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(ANIMATIONS)].hrootAnimations) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD ANIMATION");
 					}
-					else if (CurrentSelection.hitem == hrootPropellant) {
+					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(PROPELLANT)].hrootPropellant) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD PROPELLANT TANK");
 					}
-					else if (CurrentSelection.hitem == hrootExTex) {
+					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(EXTEX)].hrootExTex) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD EXHAUST TEXTURE");
 					}
-					else if (CurrentSelection.hitem == hrootParticles) {
+					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(PARTICLES)].hrootParticles) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD PARTICLE STREAM");
 					}
-					else if (CurrentSelection.hitem == hrootThrusters) {
+					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(THRUSTERS)].hrootThrusters) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD THRUSTER");
 					}
-					else if (CurrentSelection.hitem == hrootAirfoils) {
+					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(AIRFOILS)].hrootAirfoils) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_SHOW);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD VERTICAL AIRFOIL");
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD2), (LPCSTR)"ADD HORIZONTAL AIRFOIL");
 					}
-					else if (CurrentSelection.hitem == hrootControlSurfaces) {
+					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(CTRLSURFACES)].hrootControlSurfaces) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD CONTROL SURFACE");
 					}
-					else if (CurrentSelection.hitem == hrootVCPositions) {
+					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(VC)].hrootVCPositions) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD VIRTUAL COCKPIT POSITION");
 					}
-					else if (CurrentSelection.hitem == hrootVCMFDs) {
+					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(VC)].hrootVCMFDs) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD MFD DEFINITION");
 					}
-					else if (CurrentSelection.hitem == hrootBeacons) {
+					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(LIGHTS)].hrootBeacons) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD BEACON");
 					}
-					else if (CurrentSelection.hitem == hrootThrusterGroups) {
+					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(THRUSTERGROUPS)].hrootThrusterGroups) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD DEFAULT RCS SYSTEM");
 					}
-					else if (CurrentSelection.hitem == hrootVariableDrag) {
+					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(VARIABLEDRAG)].hrootVariableDrag) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD VARIABLE DRAG ELEMENT");
@@ -1778,9 +2139,40 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 
 
 					////NON CHILDREN
-					if (CurrentSelection.hitem == hrootSettings) {
+				//	for (UINT i = 0; i < Config_Items.size(); i++) {
+						if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(SETTINGS)].hrootSettings) {
+							ShowWindow(hWnd_Settings, SW_SHOW);
+							UpdateSettingsDialog(hWnd_Settings);
+						}
+						else {
+							ShowWindow(hWnd_Settings, SW_HIDE);
+						}
+						if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(VC)].hrootVCHud) {
+							ShowWindow(hWnd_VCHud, SW_SHOW);
+							UpdateVCHUDDialog(hWnd_VCHud);
+						}
+						else {
+							ShowWindow(hWnd_VCHud, SW_HIDE);
+						}
+						if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(LIGHTS)].hrootLightEmitters) {
+							ShowWindow(hWnd_LightCreation, SW_SHOW);
+						}
+						else {
+							ShowWindow(hWnd_LightCreation, SW_HIDE);
+						}
+					for (UINT i = 1; i < Config_Items.size(); i++) {
+						if (CurrentSelection.hitem == Config_Items[i].hrootVessel) {
+							ShowWindow(hWnd_Reconfig, SW_SHOW);
+							UpdateReconfigDialog(hWnd_Reconfig);
+							break;
+						}
+						else {
+							ShowWindow(hWnd_Reconfig, SW_HIDE);
+						}
+					}
+					/*if (CurrentSelection.hitem == hrootSettings) {
 						ShowWindow(hWnd_Settings, SW_SHOW);
-						UpdateSettingsDialog(hWnd_Settings);
+						UpdateSettingsDialog(hWnd_Settings, ConfigMng->GetCurrentConfiguration());
 					}
 					else {
 						ShowWindow(hWnd_Settings, SW_HIDE);
@@ -1797,7 +2189,7 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 					}
 					else {
 						ShowWindow(hWnd_LightCreation, SW_HIDE);
-					}
+					}*/
 					
 					
 					ShowTheRightDialog(CurrentSelection.Type);
@@ -1806,10 +2198,12 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 					switch (CurrentSelection.Type) {
 						case MESH:
 						{
-							MshMng->ResetHighlights();
-							LRESULT getcheck = SendDlgItemMessage(hwnd_Mesh, IDC_CHECK_HIGHLIGHT_MSH, BM_GETCHECK, 0, 0);
-							if (getcheck == BST_CHECKED) {
-								MshMng->HighlightMesh(MshMng->IdxDef2Msh(CurrentSelection.idx),true);
+							if (CurrentSelection.config == ConfigMng->GetCurrentConfiguration()) {
+								MshMng->ResetHighlights();
+								LRESULT getcheck = SendDlgItemMessage(hwnd_Mesh, IDC_CHECK_HIGHLIGHT_MSH, BM_GETCHECK, 0, 0);
+								if (getcheck == BST_CHECKED) {
+									MshMng->HighlightMesh(MshMng->IdxDef2Msh(CurrentSelection.idx), true);
+								}
 							}
 							UpdateMeshDialog(hwnd_Mesh);
 							break;
@@ -2112,5 +2506,10 @@ void DialogControl::ClearLasers(map<UINT, LASER_HANDLE> &m) {
 		}
 	}
 	m.clear();
+	return;
+}
+
+void DialogControl::SetCheckBox(HWND hWnd, int control_id, bool check) {
+	SendDlgItemMessage(hWnd, control_id, BM_SETCHECK, check ? BST_CHECKED : BST_UNCHECKED, 0);
 	return;
 }

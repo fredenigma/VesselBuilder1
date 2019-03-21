@@ -1,15 +1,17 @@
 #pragma once
 #include <CommCtrl.h>
 
-enum ItemType { MESH, DOCK, ATTACHMENT, LIGHTS, CAMERA, SPECIAL, SETTINGS,ROOTS,NONE,ANIMATIONS,ANIM_COMP,PROPELLANT,EXTEX,THRUSTERS,THRUSTERGROUPS,PARTICLES,TOUCHDOWNPOINTS,AIRFOILS,CTRLSURFACES,VCPOS,VCMFD,VCHUD,BEACONS,VARIABLEDRAG };
+enum ItemType { MESH, DOCK, ATTACHMENT, LIGHTS, CAMERA, SPECIAL, SETTINGS,ROOTS,NONE,ANIMATIONS,ANIM_COMP,PROPELLANT,EXTEX,THRUSTERS,THRUSTERGROUPS,PARTICLES,TOUCHDOWNPOINTS,AIRFOILS,CTRLSURFACES,VCPOS,VCMFD,VCHUD,VC,BEACONS,VARIABLEDRAG,CONFIGURATIONS };
 struct TREE_ITEM_REF {
 	ItemType Type;
 	UINT idx;
 	HTREEITEM hitem;
+	UINT config;
 	TREE_ITEM_REF() {
 		Type = NONE;
 		idx = (UINT)-1;
 		hitem = NULL;
+		config = 0;
 	}
 };
 
@@ -41,6 +43,10 @@ public:
 	BOOL LightCreationDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL LightsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL VarDragDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	//events here
+	BOOL ReconfigDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	
+	//void Enumwins(HWND hWnd);
 	
 
 	map<HTREEITEM, TREE_ITEM_REF> TreeItem;
@@ -55,7 +61,35 @@ public:
 	void MeshNotify(HWND hWnd, WPARAM wParam, LPARAM lParam);
 	void DockNotify(HWND hWnd, WPARAM wParam, LPARAM lParam);
 	
-	HTREEITEM hrootVessel;
+	struct CONFIGITEMS {
+		HTREEITEM hrootVessel;
+		HTREEITEM hrootMeshes;
+		HTREEITEM hrootDocks;
+		HTREEITEM hrootAttachments;
+		HTREEITEM hrootLights;
+		HTREEITEM hrootCameras;
+		HTREEITEM hrootAnimations;
+		HTREEITEM hrootSettings;
+		HTREEITEM hrootPropellant;
+		HTREEITEM hrootThrusters;
+		HTREEITEM hrootExTex;
+		HTREEITEM hrootThrusterGroups;
+		HTREEITEM hrootParticles;
+		HTREEITEM hrootTouchdownPoints;
+		HTREEITEM hrootAirfoils;
+		HTREEITEM hrootControlSurfaces;
+		HTREEITEM hrootVC;
+		HTREEITEM hrootVCPositions;
+		HTREEITEM hrootVCMFDs;
+		HTREEITEM hrootVCHud;
+		HTREEITEM hrootBeacons;
+		HTREEITEM hrootLightEmitters;
+		HTREEITEM hrootVariableDrag;
+
+	};
+	vector<CONFIGITEMS>Config_Items;
+
+	/*HTREEITEM hrootVessel;
 	HTREEITEM hrootMeshes;
 	HTREEITEM hrootDocks;
 	HTREEITEM hrootAttachments;
@@ -78,7 +112,7 @@ public:
 	HTREEITEM hrootBeacons;
 	HTREEITEM hrootLightEmitters;
 	HTREEITEM hrootVariableDrag;
-	
+	*/
 
 	void SetDlgItemsTextVector3(HWND hWnd, int id1, int id2, int id3, VECTOR3 v3, int precision = 3);
 	VECTOR3 GetDlgItemsVector3(HWND hWnd, int id1, int id2, int id3);
@@ -106,11 +140,11 @@ public:
 	void UpdateBeaconsDialog(HWND hWnd);
 	void UpdateLightsDialog(HWND hWnd);
 	void UpdateVarDragDialog(HWND hWnd);
-
+	void UpdateReconfigDialog(HWND hWnd);
 
 	HTREEITEM FindHtreeItem(ItemType type, UINT idx);
 	void InitAnimKeyCombo(HWND hWnd);
-	void UpdateTree(HWND hWnd,ItemType type,HTREEITEM select);
+	void UpdateTree(HWND hWnd,ItemType type,UINT config);
 	void InitOapiKeys();
 	int ComboFindItemData(HWND hWnd, DWORD Data);
 	int ComboFindItemData(HWND hWnd, void* data);
@@ -154,10 +188,12 @@ public:
 	HWND hWnd_LightCreation;
 	HWND hWnd_Lights;
 	HWND hWnd_VarDrag;
+	HWND hWnd_Reconfig;
 	
 
 	HWND GetDlg() { return hDlg; }
 	map<DWORD, string> oapi_keys;
+	GeneralSettingsManager *SetMng;
 	MeshManager *MshMng;
 	DockManager *DckMng;
 	AnimationManager *AnimMng;
@@ -174,11 +210,12 @@ public:
 	VCManager *VCMng;
 	LightsManager *LightsMng;
 	VariableDragManager *VardMng;
-	
+	ConfigurationManager *ConfigMng;
 	bool AnimTesting;
 	double GetDlgItemDouble(HWND hWnd, int control_id);
 	void SetDlgItemDouble(HWND hWnd, int control_id, double val, UINT precision);
 	bool IsCheckBoxChecked(HWND hWnd, int control_id);
+	void SetCheckBox(HWND hWnd, int control_id, bool check);
 	HPEN penblack;
 	HPEN pengray;
 	HPEN penblue_l;

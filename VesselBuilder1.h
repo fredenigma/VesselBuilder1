@@ -32,18 +32,17 @@
 #define ATT_SECTION 3
 #define ANIM_SECTION 4
 #define PROP_SECTION 5
-#define EXTEX_SECTION 6
-#define PART_SECTION 7
-#define THRUST_SECTION 8
-#define TDP_SECTION 9
-#define AIRFOIL_SECTION 10
-#define CTRLSURF_SECTION 11
-#define LIGHTS_SECTION 12
-#define CAMERAS_SECTION 13
-#define VC_SECTION 14
-#define VARDRAG_SECTION 15
-#define EVENTS_SECTION 16
-#define N_SECTIONS 17
+#define THRUST_SECTION 6
+#define THGROUP_SECTION 7
+#define TDP_SECTION 8
+#define AIRFOIL_SECTION 9
+#define CTRLSURF_SECTION 10
+#define CAMERAS_SECTION 11
+#define VC_SECTION 12
+#define LIGHTS_SECTION 13
+#define VARDRAG_SECTION 14
+#define EVENTS_SECTION 15
+#define N_SECTIONS 16
 
 #include <Orbitersdk.h>
 #include <string>
@@ -85,7 +84,8 @@ class Logger;
 class DialogControl;
 class FollowMeDlg;
 class TextReaderDlg;
-class AnimCompDef;
+
+class GeneralSettingsManager;
 class MeshManager;
 class DockManager;
 class AttachmentManager;
@@ -127,6 +127,7 @@ public:
  void clbkDockEvent(int dock, OBJHANDLE mate);
 
 
+ GeneralSettingsManager* SetMng;
  MeshManager* MshMng;
  DockManager* DckMng;
  AttachmentManager* AttMng;

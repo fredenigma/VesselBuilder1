@@ -13,6 +13,7 @@ TouchdownPointsManager::TouchdownPointsManager(VesselBuilder1 *_VB1) {
 	Set2Enabled = false;
 	CurrentSet = 0;
 	state_chk = NULL;
+	stateforever0 = 0;
 	return;
 }
 TouchdownPointsManager::~TouchdownPointsManager() {
@@ -188,8 +189,15 @@ void TouchdownPointsManager::EnableSecondSet(bool enable) {
 	if (!enable) { state_chk = NULL; }
 }
 void TouchdownPointsManager::SetChangeOverAnimation(def_idx animd_idx) {
-	change_anim_idx = animd_idx;
-	state_chk = VB1->AnimMng->anim_defs[animd_idx].state_ptr;
+	if (animd_idx < VB1->AnimMng->GetAnimDefsCount())
+	{
+		change_anim_idx = animd_idx;
+		state_chk = VB1->AnimMng->anim_defs[animd_idx].state_ptr;
+	}
+	else {
+		state_chk = &stateforever0;
+	}
+	
 	return;
 }
 UINT TouchdownPointsManager::GetChangeOverAnimation() {
