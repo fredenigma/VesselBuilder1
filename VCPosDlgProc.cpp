@@ -65,7 +65,7 @@ BOOL DialogControl::VCPosDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		case IDC_BUTTON_VCPOSDELETE:
 		{
 			VCMng->DeletePosition(idx);
-			UpdateTree(hDlg, VCPOS, 0);
+			UpdateTree(hDlg, VCPOS, CurrentSelection.config);
 			break;
 		}
 		}

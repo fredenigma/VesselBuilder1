@@ -58,6 +58,8 @@ public:
 	bool IsOpen();
 	void InitDialog(HWND hWnd);
 	void InitTree(HWND hWnd);
+	void UpdateRoots(HWND hWnd, UINT config);
+	void UpdateSubs(HWND hWnd, UINT config);
 	void MeshNotify(HWND hWnd, WPARAM wParam, LPARAM lParam);
 	void DockNotify(HWND hWnd, WPARAM wParam, LPARAM lParam);
 	

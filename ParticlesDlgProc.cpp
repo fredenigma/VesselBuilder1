@@ -158,7 +158,7 @@ BOOL DialogControl::PartDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 		case IDC_BUTTON_DELETEPART:
 		{
 			PartMng->DeleteParticleDef(idx);
-			UpdateTree(hDlg, PARTICLES, 0);
+			UpdateTree(hDlg, PARTICLES, CurrentSelection.config);
 			break;
 		}
 		case IDC_BUTTON_PARTSTORE:

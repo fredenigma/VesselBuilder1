@@ -398,7 +398,7 @@ BOOL DialogControl::MeshDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 		case IDC_BUTTON_DELETEMESHDEF:
 		{
 			bool test = MshMng->DeleteMeshDef(CurrentSelection.idx);
-			UpdateTree(hDlg, MESH,0);
+			UpdateTree(hDlg, MESH, CurrentSelection.config);
 			break;
 		}
 		case IDC_BUTTON_LOADMESH:

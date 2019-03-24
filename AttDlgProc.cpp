@@ -140,7 +140,7 @@ BOOL DialogControl::AttDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 					VB1->Laser->DeleteLaser(AttLaserMap[idx]);
 				}
 				AttMng->DeleteAttDef(idx);
-				UpdateTree(hDlg, ATTACHMENT,0);
+				UpdateTree(hDlg, ATTACHMENT,CurrentSelection.config);
 			}
 			else {
 				char cbuf[256] = { '\0' };

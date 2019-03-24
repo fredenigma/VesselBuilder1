@@ -228,7 +228,7 @@ BOOL DialogControl::LightsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 		case IDC_BUTTON_LGTDEL:
 		{
 			LightsMng->DeleteLight(idx);
-			UpdateTree(hDlg, LIGHTS, 0);
+			UpdateTree(hDlg, LIGHTS, CurrentSelection.config);
 			break;
 		}
 		case IDC_BUTTON_LGTPASTEV:

@@ -279,7 +279,12 @@ void VesselBuilder1::clbkLoadStateEx(FILEHANDLE scn,void *vs)
 //	SBLog("Loading State...");
 	char *line;
 	while (oapiReadScenario_nextline(scn, line)) {
-		if (!_strnicmp(line, "ANIM_", 5)) {
+		if (!_strnicmp(line, "CONFIGURATION", 13)) {
+			UINT config;
+			sscanf(line + 13, "%i", &config);
+			ConfigMng->ApplyConfiguration(config);
+		}
+		else if (!_strnicmp(line, "ANIM_", 5)) {
 			UINT seq = 0;
 			sscanf(line + 5, "%i", &seq);
 			if (seq >= AnimMng->GetAnimDefsCount()) { continue; }
@@ -356,6 +361,11 @@ void VesselBuilder1::clbkSaveState(FILEHANDLE scn)
 	
 	
 	SaveDefaultState(scn);
+
+	if (ConfigMng->GetCurrentConfiguration() != 0) {
+		char cbuf[256] = { '\0' };
+		oapiWriteScenario_int(scn, "CONFIGURATION", ConfigMng->GetCurrentConfiguration());
+	}
 
 	for (UINT i = 0; i < AnimMng->GetAnimDefsCount(); i++) {
 		if (!AnimMng->IsAnimValid(i)) { continue; }
@@ -684,12 +694,18 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 		return 1;
 	}
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && KEYMOD_CONTROL(kstate) && key == OAPI_KEY_K) {
-		/*Event::TRIGGER Trig = Event::TRIGGER();
+		Event::TRIGGER Trig = Event::TRIGGER();
 		Trig.Type = Event::TRIGGER::TIME;
-		Trig.time_mode = Event::TRIGGER::TIME_MODE::MET;
-		Trig.TriggerValue = 10;*/
-		//Trig.Type = Event::TRIGGER::TRIGGERTYPE::KEYPRESS;
-		//Trig.Key = OAPI_KEY_M;
+		//Trig.time_mode = Event::TRIGGER::TIME_MODE::MET;
+		//Trig.TriggerValue = 10;
+		Trig.Type = Event::TRIGGER::TRIGGERTYPE::KEYPRESS;
+		Trig.Key = OAPI_KEY_M;
+		Trig.repeat_mode = Event::TRIGGER::ONCE;
+		EvMng->CreateTextureSwapEvent("test texture swap", Trig, 0, 1, "\\DG\\Skins\\Blue\\dgmk4_4.dds");
+		EvMng->CreateTextureSwapEvent("test1 texture swap", Trig, 0, 2, "\\DG\\Skins\\Blue\\dgmk4_1.dds");
+		EvMng->CreateTextureSwapEvent("test2 texture swap", Trig, 0, 3, "\\DG\\Skins\\Blue\\dgmk4_2_ns.dds");
+		EvMng->CreateTextureSwapEvent("test3 texture swap", Trig, 0, 4, "\\DG\\Skins\\Blue\\dgmk4_3.dds");
+		EvMng->CreateTextureSwapEvent("test4 texture swap", Trig, 0, 5, "\\DG\\Skins\\Blue\\idpanel1.dds");
 		//Trig.KeyMods.Alt = true;
 		//Trig.repeat_mode = Event::TRIGGER::REPEAT_MODE::ALWAYS;
 		//EvMng->CreateChildSpawnEvent("TestSpawn", Trig, "SLS\\core", "stage");
@@ -1286,8 +1302,8 @@ void VesselBuilder1::AddDefaultRCS() {
 	
 	
 	if (Dlg->IsOpen()) {
-		Dlg->UpdateTree(Dlg->hDlg, THRUSTERS, 0);
-		Dlg->UpdateTree(Dlg->hDlg, THRUSTERGROUPS, 0);
+		Dlg->UpdateTree(Dlg->hDlg, THRUSTERS, ConfigMng->GetCurrentConfiguration());
+		Dlg->UpdateTree(Dlg->hDlg, THRUSTERGROUPS, ConfigMng->GetCurrentConfiguration());
 	}
 	LogV("Default RCS System Added");
 	return;

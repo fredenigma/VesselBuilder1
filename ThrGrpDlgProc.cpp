@@ -127,7 +127,7 @@ BOOL DialogControl::ThrGrpDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 		{
 			if (ThrGrpMng->IsGroupDefined(thgt)) {
 				ThrGrpMng->UndefineGroup(thgt);
-				UpdateTree(hDlg, THRUSTERGROUPS, 0);
+				UpdateTree(hDlg, THRUSTERGROUPS, CurrentSelection.config);
 			}
 			else {
 				int nsel = SendDlgItemMessage(hWnd, IDC_LIST_THGRP, LB_GETSELCOUNT, 0, 0);
@@ -142,7 +142,7 @@ BOOL DialogControl::ThrGrpDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 				ThrGrpMng->DefineGroup(thgt, thrusters);
 				delete[] sellist;
 			}
-			UpdateTree(hDlg, THRUSTERGROUPS, 0);
+			UpdateTree(hDlg, THRUSTERGROUPS, CurrentSelection.config);
 			break;
 		}
 		/*case IDC_CHECK_THGRPSHOW:

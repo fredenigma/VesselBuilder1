@@ -4,6 +4,7 @@
 #include "EventManager.h"
 #include "AnimationManager.h"
 #include "MET.h"
+#include "ConfigurationManager.h"
 
 Event::Event(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;
@@ -42,58 +43,69 @@ void Event::Trig() {
 	return;
 }
 void Event::EventPreStep(double simt, double simdt, double mjd) {
-	if (Trigger.Type == TRIGGER::ALTITUDE) {
+	switch (Trigger.Type)
+	{
+	case TRIGGER::ALTITUDE:
+	{
 		double altitude = VB1->GetAltitude();
-		if (Trigger.from == TRIGGER::ABOVE) {
-			if (altitude < Trigger.TriggerValue) {
-				Trig();
-			}
-		}
-		else if (Trigger.from == TRIGGER::BELOW) {
+		if (Trigger.condition == TRIGGER::ABOVE) {
 			if (altitude > Trigger.TriggerValue) {
 				Trig();
 			}
 		}
+		else if (Trigger.condition == TRIGGER::BELOW) {
+			if (altitude < Trigger.TriggerValue) {
+				Trig();
+			}
+		}
+		break;
 	}
-	else if (Trigger.Type == TRIGGER::VELOCITY) {
+	case TRIGGER::VELOCITY:
+	{
 		double ref_speed;
 		if (Trigger.vel_mode == TRIGGER::MS) {
 			ref_speed = VB1->GetGroundspeed();
 		}
-		else if(Trigger.vel_mode == TRIGGER::MACH) {
+		else if (Trigger.vel_mode == TRIGGER::MACH) {
 			ref_speed = VB1->GetMachNumber();
 		}
-		if (Trigger.from == TRIGGER::ABOVE) {
-			if (ref_speed < Trigger.TriggerValue) {
-				Trig();
-			}
-		}
-		else if (Trigger.from == TRIGGER::BELOW) {
+		if (Trigger.condition == TRIGGER::ABOVE) {
 			if (ref_speed > Trigger.TriggerValue) {
 				Trig();
 			}
 		}
+		else if (Trigger.condition == TRIGGER::BELOW) {
+			if (ref_speed < Trigger.TriggerValue) {
+				Trig();
+			}
+		}
+		break;
 	}
-	else if (Trigger.Type == TRIGGER::MAINFUELTANK_LEVEL) {
+	case TRIGGER::MAINFUELTANK_LEVEL:
+	{
 		double tank_level = (VB1->GetPropellantMass(VB1->GetDefaultPropellantResource())) / (VB1->GetPropellantMaxMass(VB1->GetDefaultPropellantResource()));
 		if (tank_level <= Trigger.TriggerValue) {
 			Trig();
 		}
+		break;
 	}
-	else if (Trigger.Type == TRIGGER::DYNPRESSURE) {
+	case TRIGGER::DYNPRESSURE:
+	{
 		double ref_p = VB1->GetDynPressure();
-		if (Trigger.from == TRIGGER::ABOVE) {
-			if (ref_p < Trigger.TriggerValue) {
-				Trig();
-			}
-		}
-		else if (Trigger.from == TRIGGER::BELOW) {
+		if (Trigger.condition == TRIGGER::ABOVE) {
 			if (ref_p > Trigger.TriggerValue) {
 				Trig();
 			}
 		}
+		else if (Trigger.condition == TRIGGER::BELOW) {
+			if (ref_p < Trigger.TriggerValue) {
+				Trig();
+			}
+		}
+		break;
 	}
-	else if (Trigger.Type == TRIGGER::TIME) {
+	case TRIGGER::TIME:
+	{
 		double ref_time;
 		if (Trigger.time_mode == TRIGGER::MJD) {
 			ref_time = oapiGetSimMJD();
@@ -104,12 +116,26 @@ void Event::EventPreStep(double simt, double simdt, double mjd) {
 		if (ref_time >= Trigger.TriggerValue) {
 			Trig();
 		}
+		break;
 	}
-	else if (Trigger.Type == TRIGGER::SIMSTART) {
+	case TRIGGER::SIMSTART:
+	{
 		if (oapiGetSimTime() >= 0) {
 			Trig();
 		}
+		break;
 	}
+	case TRIGGER::OTHER_EVENT:
+	{
+		if (Trigger.Other_event_h) {
+			if (Trigger.Other_event_h->IsEventConsumed()) {
+				Trig();
+			}
+		}
+		break;
+	}
+	}
+	
 	return;
 }
 void Event::ConsumeBufferedKey(DWORD key, bool down, char *kstate) {
@@ -150,19 +176,25 @@ Child_Spawn::Child_Spawn(VesselBuilder1 *VB1,string v_name,string v_class,VECTOR
 Child_Spawn::~Child_Spawn(){}
 
 void Child_Spawn::ConsumeEvent() {
-	VECTOR3 rofs;
-	VESSELSTATUS2 vs;
-	memset(&vs, 0, sizeof(vs));
-	vs.version = 2;
-	VB1->GetStatusEx(&vs);
-	VB1->Local2Rel(ofs, vs.rpos);
-	VB1->GlobalRot(vel, rofs);
-	vs.rvel += rofs;
-	vs.vrot += rot_vel;
-	spawend_vessel_h = oapiCreateVesselEx(spawned_vessel_name.c_str(), spawned_vessel_class.c_str(), &vs);
-	if (mesh_to_del >= 0) {
-		VB1->DelMesh(mesh_to_del);
+	char buf[256] = { '\0' };
+	sprintf(buf, "%s", spawned_vessel_name.c_str());
+	OBJHANDLE h_ves = oapiGetVesselByName(buf);
+	if (!oapiIsVessel(h_ves)) {
+		VECTOR3 rofs;
+		VESSELSTATUS2 vs;
+		memset(&vs, 0, sizeof(vs));
+		vs.version = 2;
+		VB1->GetStatusEx(&vs);
+		VB1->Local2Rel(ofs, vs.rpos);
+		VB1->GlobalRot(vel, rofs);
+		vs.rvel += rofs;
+		vs.vrot += rot_vel;
+		spawend_vessel_h = oapiCreateVesselEx(spawned_vessel_name.c_str(), spawned_vessel_class.c_str(), &vs);
+		if (mesh_to_del >= 0) {
+			VB1->DelMesh(mesh_to_del);
+		}
 	}
+	return;
 }
 void Child_Spawn::SetSpawnedVesselName(string newName) {
 	spawned_vessel_name = newName;
@@ -336,38 +368,73 @@ double Reset_Met::GetNewMJD0() {
 	return newmjd0;
 }
 
-Reconfiguration::Reconfiguration(VesselBuilder1* VB1, bitset<N_SECTIONS>_Sections, string _newfilename) :Event(VB1) {
-	Sections = _Sections;
-	newfilename = _newfilename;
+Reconfiguration::Reconfiguration(VesselBuilder1* VB1, UINT _newconfig) :Event(VB1) {
+	newconfig = _newconfig;
 	return;
 }
 Reconfiguration::~Reconfiguration(){}
+void Reconfiguration::SetNewConfig(UINT _newconfig) {
+	newconfig = _newconfig;
+	return;
+}
+UINT Reconfiguration::GetNewConfig() {
+	return newconfig;
+}
 void Reconfiguration::ConsumeEvent() {
-	if (Sections.all()) {
-		VB1->ResetVehicle();
-		FILEHANDLE fh = oapiOpenFile(newfilename.c_str(), FILE_IN_ZEROONFAIL, CONFIG);
-		if (fh != NULL) {
-			VB1->ParseCfgFile(fh);
-		}
-	}
-	else {
+	VB1->ConfigMng->ApplyConfiguration(newconfig);
+	return;
+}
 
-	}
+ShiftCG::ShiftCG(VesselBuilder1* VB1, VECTOR3 _shift) : Event(VB1) {
+	shift = _shift;
 	return;
 }
-void Reconfiguration::SetSections(bitset<N_SECTIONS>newSections) {
-	Sections = newSections;
+ShiftCG::~ShiftCG(){}
+void ShiftCG::ConsumeEvent() {
+	VB1->ShiftCG(shift);
 	return;
 }
-bitset<N_SECTIONS> Reconfiguration::GetSections() {
-	return Sections;
-}
-void Reconfiguration::SetNewFileName(string _newfilename) {
-	newfilename = _newfilename;
+void ShiftCG::SetShift(VECTOR3 _shift) {
+	shift = _shift;
 	return;
 }
-string Reconfiguration::GetNewFileName() {
-	return newfilename;
+VECTOR3 ShiftCG::GetShift() {
+	return shift;
+}
+TextureSwap::TextureSwap(VesselBuilder1* VB1, UINT _mesh, DWORD _texidx, string texture):Event(VB1) {
+	mesh = _mesh;
+	texidx = _texidx;
+	texture_name = texture;
+	return;
+}
+TextureSwap::~TextureSwap(){}
+
+void TextureSwap::ConsumeEvent() {
+	SURFHANDLE tex = oapiLoadTexture(texture_name.c_str());
+	DEVMESHHANDLE devmesh = VB1->GetDevMesh(VB1->visual, mesh);
+	oapiSetTexture(devmesh, texidx, tex);
+	return;
+}
+void TextureSwap::SetMesh(UINT _mesh) {
+	mesh = _mesh;
+	return;
+}
+UINT TextureSwap::GetMesh() {
+	return mesh;
+}
+void TextureSwap::SetTexIdx(DWORD _texidx) {
+	texidx = _texidx;
+	return;
+}
+DWORD TextureSwap::GetTexIdx() {
+	return texidx;
+}
+void TextureSwap::SetTextureName(string _texture) {
+	texture_name = _texture;
+	return;
+}
+string TextureSwap::GetTextureName() {
+	return texture_name;
 }
 
 
@@ -402,16 +469,19 @@ Event* EventManager::CreateGeneralVBEvent(string name, Event::TYPE type, Event::
 		ev = new Reset_Met(VB1);
 	}
 	else if (type == Event::RECONFIG) {
-		bitset<N_SECTIONS>Sects;
-		for (UINT i = 0; i < N_SECTIONS; i++) {
-			Sects.set(i);
-		}
-		ev = new Reconfiguration(VB1, Sects, "");
+		ev = new Reconfiguration(VB1, 0);
+	}
+	else if (type == Event::SHIFT_CG) {
+		ev = new ShiftCG(VB1, _V(0, 0, 0));
+	}
+	else if (type == Event::TEXTURE_SWAP) {
+		ev = new TextureSwap(VB1,0,0,NULL);
 	}
 	if (ev) {
 		ev->id = id_counter;
 		id_counter++;
 		ev->SetTrigger(_Trigger);
+		ev->SetName(name);
 	}
 	
 	Events.push_back(ev);
@@ -477,8 +547,26 @@ Event* EventManager::CreateResetMetEvent(string name, Event::TRIGGER _Trigger, b
 	return ev;
 }
 
-Event* EventManager::CreateReconfigurationEvent(string name, Event::TRIGGER _Trigger, bitset<N_SECTIONS>_Sections, string _newfilename) {
-	Event* ev = new Reconfiguration(VB1, _Sections, _newfilename);
+Event* EventManager::CreateReconfigurationEvent(string name, Event::TRIGGER _Trigger, UINT newconfig) {
+	Event* ev = new Reconfiguration(VB1, newconfig);
+	ev->SetTrigger(_Trigger);
+	ev->SetName(name);
+	ev->id = id_counter;
+	id_counter++;
+	Events.push_back(ev);
+	return ev;
+}
+Event* EventManager::CreateShiftCGEvent(string name, Event::TRIGGER _Trigger, VECTOR3 shift) {
+	Event* ev = new ShiftCG(VB1, shift);
+	ev->SetTrigger(_Trigger);
+	ev->SetName(name);
+	ev->id = id_counter;
+	id_counter++;
+	Events.push_back(ev);
+	return ev;
+}
+Event* EventManager::CreateTextureSwapEvent(string name, Event::TRIGGER _Trigger, UINT mesh, DWORD texidx, string texture_name) {
+	Event* ev = new TextureSwap(VB1, mesh,texidx,texture_name);
 	ev->SetTrigger(_Trigger);
 	ev->SetName(name);
 	ev->id = id_counter;

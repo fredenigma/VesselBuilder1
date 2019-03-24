@@ -173,7 +173,7 @@ BOOL DialogControl::CtrlSurfDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 		case IDC_BUTTON_CSDELETE:
 		{
 			CtrSurfMng->DeleteCtrlSurfDef(idx);
-			UpdateTree(hDlg, CTRLSURFACES, 0);
+			UpdateTree(hDlg, CTRLSURFACES, CurrentSelection.config);
 			break;
 		}
 		}

@@ -95,7 +95,7 @@ BOOL DialogControl::VarDragDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		case IDC_BUTTON_VBDELETE:
 		{
 			VardMng->DeleteVarDef(idx);
-			UpdateTree(hDlg, VARIABLEDRAG, 0);
+			UpdateTree(hDlg, VARIABLEDRAG, CurrentSelection.config);
 			break;
 		}
 		case IDC_BUTTON_VDNAMESET:

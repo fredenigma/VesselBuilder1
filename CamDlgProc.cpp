@@ -108,7 +108,7 @@ BOOL DialogControl::CamDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 		case IDC_BUTTON_DELETECAM:
 		{
 			CamMng->RemoveCamDef(idx);
-			UpdateTree(hDlg, CAMERA, 0);
+			UpdateTree(hDlg, CAMERA, CurrentSelection.config);
 			break;
 		}
 

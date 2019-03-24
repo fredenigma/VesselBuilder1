@@ -373,7 +373,7 @@ BOOL DialogControl::AnimCompDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 		case IDC_BUTTON_ANIMCOMPDEL:
 		{
 			AnimMng->DeleteAnimCompDef(idx);
-			UpdateTree(hDlg, ANIMATIONS, 0);
+			UpdateTree(hDlg, ANIMATIONS, CurrentSelection.config);
 			break;
 		}
 		case IDC_CHECK_ANIMCOMPARMTIP:

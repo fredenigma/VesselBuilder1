@@ -105,7 +105,7 @@ BOOL DialogControl::LightCreationDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LP
 			amb.b = col_a.z;
 			amb.a = 0;
 			LightsMng->AddLightDef(LightEmitter::TYPE::LT_POINT,diff,spec,amb);
-			UpdateTree(hDlg, LIGHTS, 0);
+			UpdateTree(hDlg, LIGHTS, CurrentSelection.config);
 			break;
 		}
 		case IDC_BUTTON_ADDSPOT:
@@ -127,7 +127,7 @@ BOOL DialogControl::LightCreationDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LP
 			amb.b = col_a.z;
 			amb.a = 0;
 			LightsMng->AddLightDef(LightEmitter::TYPE::LT_SPOT,diff,spec,amb);
-			UpdateTree(hDlg, LIGHTS, 0);
+			UpdateTree(hDlg, LIGHTS, CurrentSelection.config);
 			break;
 		}
 		}

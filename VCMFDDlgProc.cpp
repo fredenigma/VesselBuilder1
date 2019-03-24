@@ -258,7 +258,7 @@ BOOL DialogControl::VCMFDDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		case IDC_BUTTON_VCMFDDELETE:
 		{
 			VCMng->DeleteMFD(idx);
-			UpdateTree(hDlg, VCMFD, 0);
+			UpdateTree(hDlg, VCMFD, CurrentSelection.config);
 			break;
 		}
 

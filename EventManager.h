@@ -7,16 +7,17 @@ public:
 	VesselBuilder1 *VB1;
 	string name;
 	UINT id;
-	enum TYPE{NULL_EVENT, CHILD_SPAWN,PAYLOAD_JETTISON,ANIMATION_TRIGGER,THRUSTER_FIRING,THRUSTERGROUP_LEVEL,RESET_MET,RECONFIG,TEXTURE_SWAP};
+	enum TYPE{NULL_EVENT, CHILD_SPAWN,PAYLOAD_JETTISON,ANIMATION_TRIGGER,THRUSTER_FIRING,THRUSTERGROUP_LEVEL,RESET_MET,RECONFIG,TEXTURE_SWAP,SHIFT_CG};
 	virtual TYPE Type() const { return NULL_EVENT; }
 	
 	struct TRIGGER {
-		enum TRIGGERTYPE { NULL_TRIG, SIMSTART, KEYPRESS, ALTITUDE, MAINFUELTANK_LEVEL, VELOCITY, TIME, DYNPRESSURE }Type;
+		enum TRIGGERTYPE { NULL_TRIG, SIMSTART, KEYPRESS, ALTITUDE, MAINFUELTANK_LEVEL, VELOCITY, TIME, DYNPRESSURE,OTHER_EVENT }Type;
 		enum REPEAT_MODE{ONCE,ALWAYS}repeat_mode;
 		DWORD Key;
 		struct KEYMOD { bool Shift; bool Ctrl; bool Alt; }KeyMods;
-		enum FROM{BELOW,ABOVE}from;
+		enum CONDITION{BELOW,ABOVE}condition;
 		double TriggerValue;
+		Event* Other_event_h;
 		enum VEL_MODE{MS,MACH}vel_mode;
 		enum TIME_MODE{MET,MJD}time_mode;
 		TRIGGER() {
@@ -26,10 +27,11 @@ public:
 			KeyMods.Shift = false;
 			KeyMods.Ctrl = false;
 			KeyMods.Alt = false;
-			from = BELOW;
+			condition = BELOW;
 			TriggerValue = 0;
 			vel_mode = MS;
 			time_mode = MJD;
+			Other_event_h = NULL;
 		}
 	}Trigger;
 	void SetTrigger(TRIGGER _trig);
@@ -145,16 +147,43 @@ public:
 
 class Reconfiguration :public Event {
 public:
-	Reconfiguration(VesselBuilder1* VB1, bitset<N_SECTIONS>Sections, string newfilename);
+	Reconfiguration(VesselBuilder1* VB1, UINT _newconfig = 0);
 	~Reconfiguration();
 	TYPE Type() const { return RECONFIG; }
-	bitset<N_SECTIONS>Sections;
-	string newfilename;
+	UINT newconfig;
 	void ConsumeEvent();
-	void SetSections(bitset<N_SECTIONS>newSections);
-	bitset<N_SECTIONS> GetSections();
-	void SetNewFileName(string _newfilename);
-	string GetNewFileName();
+	void SetNewConfig(UINT _newconfig);
+	UINT GetNewConfig();
+};
+
+class ShiftCG : public Event {
+public:
+	ShiftCG(VesselBuilder1* VB1, VECTOR3 shift =_V(0,0,0));
+	~ShiftCG();
+	TYPE Type() const { return SHIFT_CG; }
+	VECTOR3 shift;
+	void ConsumeEvent();
+	void SetShift(VECTOR3 _shift);
+	VECTOR3 GetShift();
+};
+
+class TextureSwap : public Event {
+public:
+	TextureSwap(VesselBuilder1* VB1, UINT mesh,DWORD texidx,string texture);
+	~TextureSwap();
+	TYPE Type() const { return TEXTURE_SWAP; }
+	void ConsumeEvent();
+	void SetMesh(UINT _mesh);
+	UINT GetMesh();
+	void SetTexIdx(DWORD _texidx);
+	DWORD GetTexIdx();
+	void SetTextureName(string _texture);
+	string GetTextureName();
+	string texture_name;
+	UINT mesh;
+	DWORD texidx;
+
+	
 };
 class EventManager {
 public:
@@ -169,10 +198,13 @@ public:
 	Event* CreateThrusterGroupLevelEvent(string name, Event::TRIGGER _Trigger, THGROUP_TYPE thgroup_type, double level = 1);
 	Event* CreatePayloadJettisonEvent(string name, Event::TRIGGER _Trigger, bool next = true, UINT dock_idx = (UINT)-1);
 	Event* CreateResetMetEvent(string name, Event::TRIGGER _Trigger, bool now = true, double newmjd0 = 0);
-	Event* CreateReconfigurationEvent(string name, Event::TRIGGER _Trigger, bitset<N_SECTIONS>_Sections, string _newfilename);
+	Event* CreateReconfigurationEvent(string name, Event::TRIGGER _Trigger,UINT newconfig = 0);
+	Event* CreateShiftCGEvent(string name, Event::TRIGGER _Trigger, VECTOR3 shift = _V(0,0,0));
+	Event* CreateTextureSwapEvent(string name, Event::TRIGGER _Trigger, UINT mesh, DWORD texidx, string texture_name);
 	void DeleteEvent(Event* ev);
 	void PreStep(double simt, double simdt, double mjd);
 	void ConsumeBufferedKey(DWORD key, bool down, char *kstate);
 	UINT id_counter;
 
 };
+

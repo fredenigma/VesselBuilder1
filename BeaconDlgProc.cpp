@@ -131,7 +131,7 @@ BOOL DialogControl::BeaconsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		case IDC_BUTTON_BCNDEL:
 		{
 			LightsMng->DeleteBeaconDef(idx);
-			UpdateTree(hDlg, BEACONS, 0);
+			UpdateTree(hDlg, BEACONS, CurrentSelection.config);
 			break;
 		}
 

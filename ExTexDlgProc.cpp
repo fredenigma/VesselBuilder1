@@ -32,14 +32,14 @@ BOOL DialogControl::ExTexDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		{
 			if (ExTMng->IsExTexCreated(idx)) {
 				ExTMng->DelExTedDef(idx);
-				UpdateTree(hDlg, EXTEX, 0);
+				UpdateTree(hDlg, EXTEX, CurrentSelection.config);
 			}
 			else {
 				char cbuf[256] = { '\0' };
 				GetDlgItemText(hWnd, IDC_EDIT_EXTEXNAME, cbuf, 256);
 				string name(cbuf);
 				ExTMng->StoreExTexDef(name, idx);
-				UpdateTree(hDlg, EXTEX, 0);
+				UpdateTree(hDlg, EXTEX, CurrentSelection.config);
 			}
 			break;
 		}

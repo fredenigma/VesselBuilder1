@@ -17,6 +17,8 @@ public:
 	bool Active;
 	void ConfigCheck(char* cbuf, UINT config);
 	UINT Config_idx;
+	void SetConfigIdx(UINT config_idx);
+	UINT GetConfigIdx();
 	VesselBuilder1* VB1;
 };
 
@@ -45,6 +47,9 @@ public:
 			RotDrag = _V(1, 1, 1);
 		}
 	}Def;
+
+	Definitions GetSection();
+	void SetSection(Definitions d) { Def = d; }
 	/*double GetEmptyMass();
 	double GetSize();
 	VECTOR3 GetPMI();
@@ -78,6 +83,9 @@ public:
 	};
 	vector<Definitions> Defs;
 	MeshManager* MshMng;
+
+	vector<Definitions> GetSection();
+	void SetSection(vector<Definitions>d) { Defs = d; }
 /*	int GetMeshDefCount();
 	string GetMeshName(UINT idx);
 	VECTOR3 GetMeshPos(UINT idx);
@@ -110,7 +118,12 @@ public:
 		}
 	};
 	vector<Definitions> Defs;
+	
 	DockManager *DckMng;
+
+
+	vector<Definitions> GetSection();
+	void SetSection(vector<Definitions>d) { Defs = d; }
 /*	UINT GetDockCount();
 	string GetDockName(UINT idx);
 	void GetDockParams(UINT idx, VECTOR3 &pos, VECTOR3 &dir, VECTOR3 &rot);
@@ -147,6 +160,9 @@ public:
 	};
 	vector<Definitions> Defs;
 	AttachmentManager *AttMng;
+
+	vector<Definitions> GetSection();
+	void SetSection(vector<Definitions>d) { Defs = d; }
 /*	UINT GetAttCount();
 	bool GetIdCheck(UINT idx);
 	string GetIdCheckString(UINT idx);
@@ -218,6 +234,8 @@ public:
 	vector<AnimCompDefinitions>AnimCompDefs;
 	AnimationManager *AnimMng;
 
+	void GetSection(vector<AnimDefinitions> &ad, vector<AnimCompDefinitions> &acd);
+	void SetSection(vector<AnimDefinitions> ad, vector<AnimCompDefinitions> acd) { AnimDefs = ad; AnimCompDefs = acd; }
 /*	UINT GetAnimCount();
 	double GetAnimDefState(UINT idx);
 	string GetAnimName(UINT idx);
@@ -254,6 +272,9 @@ public:
 	};
 	vector<Definitions> Defs;
 	PropellantManager *PrpMng;
+
+	vector<Definitions> GetSection();
+	void SetSection(vector<Definitions>d) { Defs = d; }
 };
 
 class ThrusterSection : public Section {
@@ -308,6 +329,9 @@ public:
 	};
 	vector<Definitions> Defs;
 	ThrusterManager *ThrMng;
+
+	vector<Definitions> GetSection();
+	void SetSection(vector<Definitions>d) { Defs = d; }
 };
 
 class ThrusterGroupSection : public Section {
@@ -323,6 +347,9 @@ public:
 	map<THGROUP_TYPE, vector<UINT> >Thrusters;
 	
 	ThrusterGroupManager *ThrGrpMng;
+
+	void GetSection(map<THGROUP_TYPE, bool> &Def, map<THGROUP_TYPE, vector<UINT> > &thrusters);
+	void SetSection(map<THGROUP_TYPE, bool> Def, map<THGROUP_TYPE, vector<UINT> > thrusters) { Defined = Def; Thrusters = thrusters; }
 };
 
 class TouchDownPointSection : public Section {
@@ -354,6 +381,11 @@ public:
 	int changeoveranim;
 
 	TouchdownPointsManager *TdpMng;
+
+	void GetSection(vector<Definitions> &set1, vector<Definitions>&set2);
+	void SetSection(vector<Definitions> set1, vector<Definitions> set2) { Set1 = set1; Set2 = set2; }
+
+	
 };
 
 class AirfoilSection : public Section {
@@ -391,6 +423,9 @@ public:
 
 	vector<Definitions> Defs;
 	AirfoilsManager *AirfoilMng;
+
+	vector<Definitions> GetSection();
+	void SetSection(vector<Definitions>d) { Defs = d; }
 };
 
 class CtrlSurfaceSection : public Section {
@@ -422,6 +457,8 @@ public:
 	};
 	vector<Definitions> Defs;
 	ControlSurfacesManager *CtrSurfMng;
+	vector<Definitions> GetSection();
+	void SetSection(vector<Definitions>d) { Defs = d; }
 };
 
 class CameraSection : public Section {
@@ -447,6 +484,8 @@ public:
 	};
 	vector<Definitions> Defs;
 	CameraManager *CamMng;
+	vector<Definitions> GetSection();
+	void SetSection(vector<Definitions>d) { Defs = d; }
 };
 
 class VCSection : public Section {
@@ -507,6 +546,9 @@ public:
 	vector<PosDefinitions> PosDefs;
 	vector<MFDDefinitions> MFDDefs;
 	VCManager *VCMng;
+
+	void GetSection(vector<PosDefinitions> &pd, vector<MFDDefinitions>&md, HUDDefinition &hd);
+	void SetSection(vector<PosDefinitions> pd, vector<MFDDefinitions>md, HUDDefinition hd) { PosDefs = pd; MFDDefs = md; HUDDef = hd; }
 };
 
 class LightSection : public Section {
@@ -565,6 +607,9 @@ public:
 	vector<BcnDefinitions> BcnDefs;
 	vector<LightDefinitions> LgtDefs;
 	LightsManager *LightsMng;
+
+	void GetSection(vector<BcnDefinitions> &bd, vector<LightDefinitions>&ld);
+	void SetSection(vector<BcnDefinitions> bd, vector<LightDefinitions> ld) { BcnDefs = bd; LgtDefs = ld; }
 };
 
 class VardSection :public Section {
@@ -590,6 +635,9 @@ public:
 	};
 	vector<Definitions> Defs;
 	VariableDragManager *VardMng;
+
+	vector<Definitions> GetSection();
+	void SetSection(vector<Definitions>d) { Defs = d; }
 };
 
 
@@ -610,8 +658,42 @@ public:
 	void SetSectionActive(ItemType Type, bool set);
 	void UpdateValids();
 	vector<Section*>Sections;
+	void SetIndex(UINT confing_idx);
+	UINT GetIndex();
 	UINT Config_idx;
 	void Delete();
+	bool GetSettingSection(SettingSection::Definitions &d);
+	void SetSettingsSection(SettingSection::Definitions d);
+	bool GetMeshSection(vector<MeshSection::Definitions> &d);
+	void SetMeshSection(vector<MeshSection::Definitions>d);
+	bool GetDockSection(vector<DockSection::Definitions> &d);
+	void SetDockSection(vector<DockSection::Definitions>d);
+	bool GetAttachmentSection(vector<AttachmentSection::Definitions> &d);
+	void SetAttachmentSection(vector<AttachmentSection::Definitions> d);
+	bool GetAnimationSection(vector<AnimationSection::AnimDefinitions>&ad, vector<AnimationSection::AnimCompDefinitions>&acd);
+	void SetAnimationSection(vector<AnimationSection::AnimDefinitions> ad, vector<AnimationSection::AnimCompDefinitions> acd);
+	bool GetPropellantSection(vector<PropellantSection::Definitions>&d);
+	void SetPropellantSection(vector<PropellantSection::Definitions>d);
+	bool GetThrusterSection(vector<ThrusterSection::Definitions>&d);
+	void SetThrusterSection(vector<ThrusterSection::Definitions>d);
+	bool GetThrusterGroupSection(map<THGROUP_TYPE, bool> &Def, map<THGROUP_TYPE, vector<UINT> > &thrusters);
+	void SetThrusterGroupSection(map<THGROUP_TYPE, bool> Def, map<THGROUP_TYPE, vector<UINT> > thrusters);
+	bool GetTouchdownPointSection(vector<TouchDownPointSection::Definitions> &set1, vector<TouchDownPointSection::Definitions>&set2);
+	void SetTouchdownPointSection(vector<TouchDownPointSection::Definitions> set1, vector<TouchDownPointSection::Definitions> set2);
+	bool GetAirfoilSection(vector<AirfoilSection::Definitions>&d);
+	void SetAirfoilSection(vector<AirfoilSection::Definitions>d);
+	bool GetCtrlSurfSection(vector<CtrlSurfaceSection::Definitions>&d);
+	void SetCtrlSurfSection(vector<CtrlSurfaceSection::Definitions>d);
+	bool GetCameraSection(vector<CameraSection::Definitions>&d);
+	void SetCameraSection(vector<CameraSection::Definitions>d);
+	bool GetVCSection(vector<VCSection::PosDefinitions>&pd, vector<VCSection::MFDDefinitions>&md, VCSection::HUDDefinition &hd);
+	void SetVCSection(vector<VCSection::PosDefinitions>pd, vector<VCSection::MFDDefinitions>md, VCSection::HUDDefinition hd);
+	bool GetLightSection(vector<LightSection::BcnDefinitions>&bd, vector<LightSection::LightDefinitions>&ld);
+	void SetLightSection(vector<LightSection::BcnDefinitions> bd, vector<LightSection::LightDefinitions> ld);
+	bool GetVardSection(vector<VardSection::Definitions>&d);
+	void SetVardSection(vector<VardSection::Definitions>d);
+
+
 };
 
 class ConfigurationManager {
@@ -621,7 +703,7 @@ public:
 	VesselBuilder1* VB1;
 	vector<Configuration*>Configurations;
 	UINT config_counter;
-	void AddConfiguration(VesselBuilder1* VB1, map<ItemType,bool>_Sections, FILEHANDLE cfg);
+	UINT AddConfiguration(VesselBuilder1* VB1, map<ItemType,bool>_Sections, FILEHANDLE cfg);
 	void ApplyConfiguration(UINT config, bool firstload = false);
 	void ApplyDefaultConfiguration(bool firstload = false);
 	bool IsSectionValid(UINT config, ItemType Type);
@@ -639,6 +721,10 @@ public:
 	map<ItemType, bool> GetConfigurationSections(UINT config);
 
 	void DeleteConfiguration(UINT config);
+
+	void UpdateConfigIndexes();
+
+	void CopyConfigurationSection(UINT config_src, UINT config_dest, ItemType type);
 	/*
 	double GetEmptyMass(UINT config);
 	double GetSize(UINT config);

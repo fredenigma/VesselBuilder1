@@ -107,20 +107,20 @@ BOOL DialogControl::AnimDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 		case IDC_BUTTON_ANIMADDCOMPROT:
 		{
 			AnimMng->AddAnimCompDef(CurrentSelection.idx, MGROUP_TRANSFORM::ROTATE);
-			UpdateTree(hDlg, ANIMATIONS,0);
+			UpdateTree(hDlg, ANIMATIONS,CurrentSelection.config);
 			break;
 		}
 		case IDC_BUTTON_ANIMADDCOMPTR:
 		{
 			AnimMng->AddAnimCompDef(CurrentSelection.idx, MGROUP_TRANSFORM::TRANSLATE);
-			UpdateTree(hDlg, ANIMATIONS, 0);
+			UpdateTree(hDlg, ANIMATIONS, CurrentSelection.config);
 
 			break;
 		}
 		case IDC_BUTTON_ANIMADDCOMPSC:
 		{
 			AnimMng->AddAnimCompDef(CurrentSelection.idx, MGROUP_TRANSFORM::SCALE);
-			UpdateTree(hDlg, ANIMATIONS, 0);
+			UpdateTree(hDlg, ANIMATIONS, CurrentSelection.config);
 
 			break;
 		}
@@ -212,7 +212,7 @@ BOOL DialogControl::AnimDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 			TreeView_Select(GetDlgItem(hDlg, IDC_TREE1), Config_Items[CurrentSelection.config].hrootAnimations, 0);
 			AnimMng->DeleteAnimDef(idx);
 			
-			UpdateTree(hDlg, ANIMATIONS, 0);
+			UpdateTree(hDlg, ANIMATIONS, CurrentSelection.config);
 		//	UpdateAnimDialog(hWnd);
 			break;
 		}

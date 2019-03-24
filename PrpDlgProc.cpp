@@ -78,7 +78,7 @@ BOOL DialogControl::PrpDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 		case IDC_BUTTON_DELETETANK:
 		{
 			PrpMng->DelTankDef(idx);
-			UpdateTree(hDlg, PROPELLANT, 0);
+			UpdateTree(hDlg, PROPELLANT, CurrentSelection.config);
 			break;
 		}
 		case IDC_BUTTON_TANKPRIMARY:

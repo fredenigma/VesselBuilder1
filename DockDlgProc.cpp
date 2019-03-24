@@ -158,7 +158,7 @@ BOOL DialogControl::DockDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 				VB1->Laser->DeleteLaser(DockLaserMap[CurrentSelection.idx]);
 			}
 			DckMng->DeleteDockDef(CurrentSelection.idx);
-			UpdateTree(hDlg, DOCK,0);
+			UpdateTree(hDlg, DOCK, CurrentSelection.config);
 			break;
 		}
 		case IDC_BTN_DOCKPASTEV:

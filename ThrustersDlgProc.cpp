@@ -210,7 +210,7 @@ BOOL DialogControl::ThrDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 				VB1->Laser->DeleteLaser(ThLaserMap[idx]);
 			}
 			ThrMng->DelThrDef(idx);
-			UpdateTree(hDlg, THRUSTERS, 0);
+			UpdateTree(hDlg, THRUSTERS, CurrentSelection.config);
 			break;
 		}
 		case IDC_BTN_THPASTEV:
@@ -308,8 +308,8 @@ BOOL DialogControl::ThrDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 					bool customposdir;
 					VECTOR3 pos, dir;
 					ThrMng->GetThrExParams(idx, index, lsize, wsize, tex, customposdir, pos, dir);
-					SetDlgItemDouble(hWnd, IDC_EDIT_THEXL, lsize, 1);
-					SetDlgItemDouble(hWnd, IDC_EDIT_THEXW, wsize, 1);
+					SetDlgItemDouble(hWnd, IDC_EDIT_THEXL, lsize, 2);
+					SetDlgItemDouble(hWnd, IDC_EDIT_THEXW, wsize, 2);
 					if (tex != NULL) {
 						int extex = ExTMng->GetExTexIdx(tex);
 						SendDlgItemMessage(hWnd, IDC_COMBO_THEXTEX, CB_SETCURSEL, extex + 1, 0);

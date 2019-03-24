@@ -45,7 +45,13 @@ void Section::ConfigCheck(char* cbuf, UINT config) {
 	}
 	return;
 }
-
+void Section::SetConfigIdx(UINT config_idx) {
+	Config_idx = config_idx;
+	return;
+}
+UINT Section::GetConfigIdx() {
+	return Config_idx;
+}
 
 SettingSection::SettingSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg) : Section(VB1, config, cfg) {
 	Def = Definitions();
@@ -130,6 +136,10 @@ void SettingSection::UpdateSection() {
 }
 void SettingSection::ManagerClear() {
 	SetMng->Clear();
+}
+
+SettingSection::Definitions SettingSection::GetSection() {
+	return Def;
 }
 
 /*
@@ -266,6 +276,10 @@ void MeshSection::ApplySection() {
 	MshMng->PreLoadMeshes();
 	MshMng->AddMeshes();
 }
+
+vector<MeshSection::Definitions> MeshSection::GetSection() {
+	return Defs;
+}
 /*int MeshSection::GetMeshDefCount() {
 	return Defs.size();
 }
@@ -396,6 +410,9 @@ void DockSection::ApplySection() {
 	}
 }
 
+vector<DockSection::Definitions> DockSection::GetSection() {
+	return Defs;
+}
 /*UINT DockSection::GetDockCount() {
 	return Defs.size();
 }
@@ -557,6 +574,9 @@ void AttachmentSection::UpdateSection() {
 		d.idcheck_string = AttMng->att_defs[i].id_check_string;
 		Defs.push_back(d);
 	}
+}
+vector<AttachmentSection::Definitions> AttachmentSection::GetSection() {
+	return Defs;
 }
 
 /*UINT AttachmentSection::GetAttCount() {
@@ -937,6 +957,12 @@ void AnimationSection::UpdateSection() {
 	return;
 }
 
+void AnimationSection::GetSection(vector<AnimationSection::AnimDefinitions> &ad, vector<AnimationSection::AnimCompDefinitions> &acd) {
+	ad = AnimDefs;
+	acd = AnimCompDefs;
+	return;
+}
+
 /*UINT AnimationSection::GetAnimCount() {
 	return AnimDefs.size();
 }
@@ -1088,6 +1114,10 @@ void PropellantSection::UpdateSection() {
 	}
 	return;
 }
+vector<PropellantSection::Definitions> PropellantSection::GetSection() {
+	return Defs;
+}
+
 
 
 ThrusterSection::ThrusterSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg) :Section(VB1, config, cfg) {
@@ -1398,7 +1428,9 @@ void ThrusterSection::UpdateSection() {
 void ThrusterSection::ManagerClear() {
 	ThrMng->Clear();
 }
-
+vector<ThrusterSection::Definitions> ThrusterSection::GetSection() {
+	return Defs;
+}
 
 
 
@@ -1922,6 +1954,13 @@ void ThrusterGroupSection::UpdateSection() {
 void ThrusterGroupSection::ManagerClear() {
 	ThrGrpMng->ResetDefine();
 }
+void ThrusterGroupSection::GetSection(map<THGROUP_TYPE, bool> &Def, map<THGROUP_TYPE, vector<UINT> > &thrusters) {
+	Def = Defined;
+	thrusters = Thrusters;
+	return;
+}
+
+
 
 TouchDownPointSection::TouchDownPointSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg) :Section(VB1, config, cfg) {
 	Set1.clear();
@@ -2090,6 +2129,11 @@ void TouchDownPointSection::UpdateSection() {
 void TouchDownPointSection::ManagerClear() {
 	TdpMng->Clear();
 }
+void TouchDownPointSection::GetSection(vector<TouchDownPointSection::Definitions> &set1, vector<TouchDownPointSection::Definitions>&set2) {
+	set1 = Set1;
+	set2 = Set2;
+}
+
 
 AirfoilSection::AirfoilSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg) : Section(VB1, config, cfg) {
 	Defs.clear();
@@ -2259,6 +2303,11 @@ void AirfoilSection::UpdateSection() {
 void AirfoilSection::ManagerClear() {
 	AirfoilMng->Clear();
 }
+vector<AirfoilSection::Definitions> AirfoilSection::GetSection() {
+	return Defs;
+}
+
+
 
 CtrlSurfaceSection::CtrlSurfaceSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg) : Section(VB1,config,cfg) {
 	Defs.clear();
@@ -2411,6 +2460,9 @@ void CtrlSurfaceSection::UpdateSection() {
 void CtrlSurfaceSection::ManagerClear() {
 	CtrSurfMng->Clear();
 }
+vector<CtrlSurfaceSection::Definitions> CtrlSurfaceSection::GetSection() {
+	return Defs;
+}
 
 CameraSection::CameraSection(VesselBuilder1 *VB1, UINT config, FILEHANDLE cfg) : Section(VB1, config, cfg) {
 	Defs.clear();
@@ -2505,6 +2557,9 @@ void CameraSection::UpdateSection() {
 }
 void CameraSection::ManagerClear() {
 	CamMng->Clear();
+}
+vector<CameraSection::Definitions> CameraSection::GetSection() {
+	return Defs;
 }
 
 
@@ -2796,6 +2851,14 @@ void VCSection::UpdateSection(){
 void VCSection::ManagerClear() {
 	VCMng->Clear();
 }
+void VCSection::GetSection(vector<VCSection::PosDefinitions> &pd, vector<VCSection::MFDDefinitions>&md, VCSection::HUDDefinition &hd) {
+	hd = HUDDef;
+	pd = PosDefs;
+	md = MFDDefs;
+	return;
+}
+
+
 
 LightSection::LightSection(VesselBuilder1 *VB1, UINT config, FILEHANDLE cfg):Section(VB1,config,cfg) {
 	BcnDefs.clear();
@@ -3169,6 +3232,14 @@ void LightSection::UpdateSection() {
 void LightSection::ManagerClear() {
 	LightsMng->Clear();
 }
+void LightSection::GetSection(vector<LightSection::BcnDefinitions> &bd, vector<LightSection::LightDefinitions>&ld) {
+	bd = BcnDefs;
+	ld = LgtDefs;
+	return;
+}
+
+
+
 
 VardSection::VardSection(VesselBuilder1 *VB1, UINT config, FILEHANDLE cfg) :Section(VB1, config, cfg) {
 	Defs.clear();
@@ -3269,12 +3340,16 @@ void VardSection::UpdateSection() {
 void VardSection::ManagerClear() {
 	VardMng->Clear();
 }
+vector<VardSection::Definitions> VardSection::GetSection() {
+	return Defs;
+}
+
 
 Configuration::Configuration(VesselBuilder1 *_VB1, map<ItemType, bool> _Sections, UINT _config, FILEHANDLE _cfg) {
 	VB1 = _VB1;
 	Configuration_Sections = _Sections;
 	LogV("Adding Configuration n:%i", _config);
-
+	Sections.clear();
 	Sections.push_back(new SettingSection(_VB1, _config, _cfg)); //0
 	Sections.push_back(new MeshSection(_VB1, _config, _cfg)); //1
 	Sections.push_back(new DockSection(_VB1, _config, _cfg)); //2
@@ -3608,6 +3683,243 @@ void Configuration::UpdateValids() {
 		Sections[14]->SetValid(true);
 	}
 }
+void Configuration::SetIndex(UINT config_idx) {
+	Config_idx = config_idx;
+	for (UINT i = 0; i < Sections.size(); i++) {
+		Sections[i]->SetConfigIdx(config_idx);
+	}
+	return;
+}
+UINT Configuration::GetIndex() {
+	return Config_idx;
+}
+bool Configuration::GetSettingSection(SettingSection::Definitions &d){
+	if (IsSectionValid(SETTINGS)) {
+		d = ((SettingSection*)Sections[SETTINGS_SECTION])->GetSection();
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+void Configuration::SetSettingsSection(SettingSection::Definitions d) {
+	if (IsSectionValid(SETTINGS)) {
+		((SettingSection*)Sections[SETTINGS_SECTION])->SetSection(d);
+	}
+	return;
+}
+bool Configuration::GetMeshSection(vector<MeshSection::Definitions> &d) {
+	if (IsSectionValid(MESH)) {
+		d = ((MeshSection*)Sections[MESH_SECTION])->GetSection();
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+void Configuration::SetMeshSection(vector<MeshSection::Definitions>d) {
+	if (IsSectionValid(MESH)) {
+		((MeshSection*)Sections[MESH_SECTION])->SetSection(d);
+	}
+	return;
+}
+bool Configuration::GetDockSection(vector<DockSection::Definitions> &d) {
+	if (IsSectionValid(DOCK)) {
+		d = ((DockSection*)Sections[DOCK_SECTION])->GetSection();
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+void Configuration::SetDockSection(vector<DockSection::Definitions>d) {
+	if (IsSectionValid(DOCK)) {
+		((DockSection*)Sections[DOCK_SECTION])->SetSection(d);
+	}
+	return;
+}
+bool Configuration::GetAttachmentSection(vector<AttachmentSection::Definitions> &d) {
+	if (IsSectionValid(ATTACHMENT)) {
+		d = ((AttachmentSection*)Sections[ATT_SECTION])->GetSection();
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+void Configuration::SetAttachmentSection(vector<AttachmentSection::Definitions> d) {
+	if (IsSectionValid(ATTACHMENT)) {
+		((AttachmentSection*)Sections[ATT_SECTION])->SetSection(d);
+	}
+	return;
+}
+bool Configuration::GetAnimationSection(vector<AnimationSection::AnimDefinitions>&ad, vector<AnimationSection::AnimCompDefinitions>&acd) {
+	if (IsSectionValid(ANIMATIONS)) {
+		((AnimationSection*)Sections[ANIM_SECTION])->GetSection(ad, acd);
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+void Configuration::SetAnimationSection(vector<AnimationSection::AnimDefinitions> ad, vector<AnimationSection::AnimCompDefinitions> acd) {
+	if (IsSectionValid(ANIMATIONS)) {
+		((AnimationSection*)Sections[ANIM_SECTION])->SetSection(ad, acd);
+	}
+	return;
+}
+bool Configuration::GetPropellantSection(vector<PropellantSection::Definitions>&d) {
+	if (IsSectionValid(PROPELLANT)) {
+		d = ((PropellantSection*)Sections[PROP_SECTION])->GetSection();
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+void Configuration::SetPropellantSection(vector<PropellantSection::Definitions>d) {
+	if (IsSectionValid(PROPELLANT)) {
+		((PropellantSection*)Sections[PROP_SECTION])->SetSection(d);
+	}
+	return;
+}
+bool Configuration::GetThrusterSection(vector<ThrusterSection::Definitions>&d) {
+	if (IsSectionValid(THRUSTERS)) {
+		d = ((ThrusterSection*)Sections[THRUST_SECTION])->GetSection();
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+void Configuration::SetThrusterSection(vector<ThrusterSection::Definitions>d) {
+	if (IsSectionValid(THRUSTERS)) {
+		((ThrusterSection*)Sections[THRUST_SECTION])->SetSection(d);
+	}
+	return;
+}
+bool Configuration::GetThrusterGroupSection(map<THGROUP_TYPE, bool> &Def, map<THGROUP_TYPE, vector<UINT> > &thrusters) {
+	if (IsSectionValid(THRUSTERGROUPS)) {
+		((ThrusterGroupSection*)Sections[THGROUP_SECTION])->GetSection(Def, thrusters);
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+void Configuration::SetThrusterGroupSection(map<THGROUP_TYPE, bool> Def, map<THGROUP_TYPE, vector<UINT> > thrusters) {
+	if (IsSectionValid(THRUSTERGROUPS)) {
+		((ThrusterGroupSection*)Sections[THGROUP_SECTION])->SetSection(Def, thrusters);
+	}
+	return;
+}
+bool Configuration::GetTouchdownPointSection(vector<TouchDownPointSection::Definitions> &set1, vector<TouchDownPointSection::Definitions>&set2) {
+	if (IsSectionValid(TOUCHDOWNPOINTS)) {
+		((TouchDownPointSection*)Sections[TDP_SECTION])->GetSection(set1, set2);
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+void Configuration::SetTouchdownPointSection(vector<TouchDownPointSection::Definitions> set1, vector<TouchDownPointSection::Definitions> set2) {
+	if (IsSectionValid(TOUCHDOWNPOINTS)) {
+		((TouchDownPointSection*)Sections[TDP_SECTION])->SetSection(set1, set2);
+	}
+	return;
+}
+bool Configuration::GetAirfoilSection(vector<AirfoilSection::Definitions>&d) {
+	if (IsSectionValid(AIRFOILS)) {
+		d = ((AirfoilSection*)Sections[AIRFOIL_SECTION])->GetSection();
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+void Configuration::SetAirfoilSection(vector<AirfoilSection::Definitions>d) {
+	if (IsSectionValid(AIRFOILS)) {
+		((AirfoilSection*)Sections[AIRFOIL_SECTION])->SetSection(d);
+	}
+	return;
+}
+bool Configuration::GetCtrlSurfSection(vector<CtrlSurfaceSection::Definitions>&d) {
+	if (IsSectionValid(CTRLSURFACES)) {
+		d = ((CtrlSurfaceSection*)Sections[CTRLSURF_SECTION])->GetSection();
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+void Configuration::SetCtrlSurfSection(vector<CtrlSurfaceSection::Definitions>d) {
+	if (IsSectionValid(CTRLSURFACES)) {
+		((CtrlSurfaceSection*)Sections[CTRLSURF_SECTION])->SetSection(d);
+	}
+	return;
+}
+bool Configuration::GetCameraSection(vector<CameraSection::Definitions>&d) {
+	if (IsSectionValid(CAMERA)) {
+		d = ((CameraSection*)Sections[CAMERAS_SECTION])->GetSection();
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+void Configuration::SetCameraSection(vector<CameraSection::Definitions>d) {
+	if (IsSectionValid(CAMERA)) {
+		((CameraSection*)Sections[CAMERAS_SECTION])->SetSection(d);
+	}
+	return;
+}
+bool Configuration::GetVCSection(vector<VCSection::PosDefinitions>&pd, vector<VCSection::MFDDefinitions>&md, VCSection::HUDDefinition &hd) {
+	if (IsSectionValid(VC)) {
+		((VCSection*)Sections[VC_SECTION])->GetSection(pd, md, hd);
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+void Configuration::SetVCSection(vector<VCSection::PosDefinitions>pd, vector<VCSection::MFDDefinitions>md, VCSection::HUDDefinition hd) {
+	if (IsSectionValid(VC)) {
+		((VCSection*)Sections[VC_SECTION])->SetSection(pd, md, hd);
+	}
+	return;
+}
+bool Configuration::GetLightSection(vector<LightSection::BcnDefinitions>&bd, vector<LightSection::LightDefinitions>&ld) {
+	if (IsSectionValid(LIGHTS)) {
+		((LightSection*)Sections[LIGHTS_SECTION])->GetSection(bd, ld);
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+void Configuration::SetLightSection(vector<LightSection::BcnDefinitions> bd, vector<LightSection::LightDefinitions> ld) {
+	if (IsSectionValid(LIGHTS)) {
+		((LightSection*)Sections[LIGHTS_SECTION])->SetSection(bd, ld);
+	}
+	return;
+}
+bool Configuration::GetVardSection(vector<VardSection::Definitions>&d) {
+	if (IsSectionValid(VARIABLEDRAG)) {
+		d = ((VardSection*)Sections[VARDRAG_SECTION])->GetSection();
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+void Configuration::SetVardSection(vector<VardSection::Definitions>d) {
+	if (IsSectionValid(VARIABLEDRAG)) {
+		((VardSection*)Sections[VARDRAG_SECTION])->SetSection(d);
+	}
+	return;
+}
+
+
 
 
 ConfigurationManager::ConfigurationManager(VesselBuilder1 *_VB1) {
@@ -3627,11 +3939,14 @@ ConfigurationManager::~ConfigurationManager() {
 	return;
 }
 
-void ConfigurationManager::AddConfiguration(VesselBuilder1* VB1, map<ItemType, bool>_Sections, FILEHANDLE cfg) {
-	Configuration *Config = new Configuration(VB1, _Sections, config_counter, cfg);
-	config_counter++;
+UINT ConfigurationManager::AddConfiguration(VesselBuilder1* VB1, map<ItemType, bool>_Sections, FILEHANDLE cfg) {
+	UINT index = Configurations.size();
+	//Configuration *Config = new Configuration(VB1, _Sections, config_counter, cfg);
+	Configuration *Config = new Configuration(VB1, _Sections, index, cfg);
+	//config_counter++;
 	Configurations.push_back(Config);
-	return;
+	//return config_counter-1;
+	return index;
 }
 
 
@@ -3795,12 +4110,129 @@ void ConfigurationManager::DeleteConfiguration(UINT config) {
 	delete Configurations[config];
 	Configurations[config] = NULL;
 	Configurations.erase(Configurations.begin() + config);
+	UpdateConfigIndexes();
 	return;
 }
 
 void ConfigurationManager::SetSectionValid(UINT config, ItemType Type, bool set) {
 	return Configurations[config]->SetSectionValid(Type, set);
 }
+
+
+void ConfigurationManager::UpdateConfigIndexes() {
+	for (UINT i = 0; i < Configurations.size(); i++) {
+		Configurations[i]->SetIndex(i);
+	}
+}
+
+void ConfigurationManager::CopyConfigurationSection(UINT config_src, UINT config_dest, ItemType type) {
+	switch (type) {
+	case SETTINGS: 
+	{
+		SettingSection::Definitions d;
+		if (Configurations[config_src]->GetSettingSection(d)) {
+			Configurations[config_dest]->SetSettingsSection(d);
+		}
+		break;
+	}
+	case MESH:
+	{
+		vector<MeshSection::Definitions> d;
+		if (Configurations[config_src]->GetMeshSection(d)) {
+			Configurations[config_dest]->SetMeshSection(d);
+		}
+		break;
+	}
+	case DOCK:
+	{
+		vector<DockSection::Definitions>d;
+		if (Configurations[config_src]->GetDockSection(d)) {
+			Configurations[config_dest]->SetDockSection(d);
+		}
+		break;
+	}
+	case ATTACHMENT:
+	{
+		vector<AttachmentSection::Definitions>d;
+		if (Configurations[config_src]->GetAttachmentSection(d)) {
+			Configurations[config_dest]->SetAttachmentSection(d);
+		}
+		break;
+	}
+	case ANIMATIONS:
+	{
+		vector<AnimationSection::AnimDefinitions> ad;
+		vector<AnimationSection::AnimCompDefinitions> acd;
+		if (Configurations[config_src]->GetAnimationSection(ad, acd)) {
+			Configurations[config_dest]->SetAnimationSection(ad, acd);
+		}
+		break;
+	}
+	case PROPELLANT:
+	{
+		vector<PropellantSection::Definitions> d;
+		if (Configurations[config_src]->GetPropellantSection(d)) {
+			Configurations[config_dest]->SetPropellantSection(d);
+		}
+		break;
+	}
+	case TOUCHDOWNPOINTS:
+	{
+		vector<TouchDownPointSection::Definitions> set1;
+		vector<TouchDownPointSection::Definitions> set2;
+		if (Configurations[config_src]->GetTouchdownPointSection(set1, set2)) {
+			Configurations[config_dest]->SetTouchdownPointSection(set1, set2);
+		}
+		break;
+	}
+	case AIRFOILS:
+	{
+		vector<AirfoilSection::Definitions>d;
+		if (Configurations[config_src]->GetAirfoilSection(d)) {
+			Configurations[config_dest]->SetAirfoilSection(d);
+		}
+		break;
+	}
+	case CAMERA:
+	{
+		vector<CameraSection::Definitions>d;
+		if (Configurations[config_src]->GetCameraSection(d)) {
+			Configurations[config_dest]->SetCameraSection(d);
+		}
+		break;
+	}
+	case VC:
+	{
+		vector<VCSection::PosDefinitions>pd;
+		vector<VCSection::MFDDefinitions>md;
+		VCSection::HUDDefinition hd;
+		if (Configurations[config_src]->GetVCSection(pd, md, hd)) {
+			Configurations[config_dest]->SetVCSection(pd, md, hd);
+		}
+		break;
+	}
+	case LIGHTS:
+	{
+		vector<LightSection::BcnDefinitions>bd;
+		vector<LightSection::LightDefinitions>ld;
+		if (Configurations[config_src]->GetLightSection(bd, ld)) {
+			Configurations[config_dest]->SetLightSection(bd, ld);
+		}
+		break;
+	}
+	case VARIABLEDRAG:
+	{
+		vector<VardSection::Definitions>d;
+		if (Configurations[config_src]->GetVardSection(d)) {
+			Configurations[config_dest]->SetVardSection(d);
+		}
+		break;
+	}
+
+
+	}
+}
+
 
 /*
 double ConfigurationManager::GetEmptyMass(UINT config) {

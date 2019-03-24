@@ -23,7 +23,7 @@
 
 #pragma comment(lib, "comctl32.lib")
 
-
+using namespace std;
 
 extern HINSTANCE hDLL;
 //extern void RotateMeshClbk(MESHHANDLE, bool);
@@ -1268,7 +1268,261 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, UINT config) {
 	
 	
 }
+void DialogControl::UpdateRoots(HWND hWnd, UINT config) {
+	CONFIGITEMS* ci;
+	bool dontpushback = false;
+	if (Config_Items.size() > config) {
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootVessel);
+		while (ht != NULL) {
+			TreeItem.erase(ht);
+			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootVessel);
+		}
+		//TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), Config_Items[config].hrootVessel);
+		dontpushback = true;
+	}
+	if (dontpushback) {
+		ci = &Config_Items[config];
+	}
+	else {
+		ci = new CONFIGITEMS;
+	}
 
+	TVINSERTSTRUCT insertstruct = { 0 };
+	insertstruct.hInsertAfter = TVI_ROOT;
+	insertstruct.hParent = TVI_ROOT;
+	insertstruct.item.mask = TVIF_TEXT;
+	insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
+	TREE_ITEM_REF Tir = TREE_ITEM_REF();
+	
+		char vname[256] = { '\0' };
+
+		if (config == 0) {
+			sprintf(vname, "%s", VB1->GetName());
+		}
+		else {
+			sprintf(vname, "Reconfiguration %i", config);
+		}
+
+		string sname(vname);
+		UINT CurrentConfig = ConfigMng->GetCurrentConfiguration();
+		if (config == CurrentConfig) {
+			sname += " [ACTIVE]";
+		}
+		insertstruct.item.pszText = (LPSTR)sname.c_str();
+		insertstruct.item.cchTextMax = sname.size();
+	if (!dontpushback) {
+		ci->hrootVessel = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		
+		Tir.hitem = ci->hrootVessel;
+		Tir.config = config;
+		Tir.Type = ROOTS;
+		TreeItem[Tir.hitem] = Tir;
+	}
+	else {
+		TVITEM tvi;
+		tvi.mask = TVIF_TEXT;
+		char tbuf[256] = { '\0' };
+		sprintf(tbuf, "%s", sname.c_str());
+		tvi.pszText = (LPSTR)tbuf;
+		tvi.hItem = ci->hrootVessel;
+		TreeView_SetItem(GetDlgItem(hDlg, IDC_TREE1), &tvi);
+	}
+	
+
+	insertstruct.hParent = ci->hrootVessel;
+	
+	if (ConfigMng->IsSectionValid(config, SETTINGS)) {
+		insertstruct.hParent = ci->hrootVessel;
+		insertstruct.item.pszText = (LPSTR)TEXT("General Settings\0");
+		insertstruct.item.cchTextMax = 18;
+		ci->hrootSettings = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		Tir.hitem = ci->hrootSettings;
+		Tir.config = config;
+		TreeItem[Tir.hitem] = Tir;
+	}
+	if (ConfigMng->IsSectionValid(config, MESH)) {
+		insertstruct.hParent = ci->hrootVessel;
+		insertstruct.item.pszText = (LPSTR)TEXT("Meshes\0");
+		insertstruct.item.cchTextMax = 7;
+		ci->hrootMeshes = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		Tir.hitem = ci->hrootMeshes;
+		Tir.config = config;
+		TreeItem[Tir.hitem] = Tir;
+	}
+	if (ConfigMng->IsSectionValid(config, DOCK)) {
+		insertstruct.hParent = ci->hrootVessel;
+		insertstruct.item.pszText = (LPSTR)TEXT("Docks\0");
+		insertstruct.item.cchTextMax = 6;
+		ci->hrootDocks = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		Tir.hitem = ci->hrootDocks;
+		Tir.config = config;
+		TreeItem[Tir.hitem] = Tir;
+	}
+	if (ConfigMng->IsSectionValid(config, ATTACHMENT)) {
+		insertstruct.hParent = ci->hrootVessel;
+		insertstruct.item.pszText = (LPSTR)TEXT("Attachments\0");
+		insertstruct.item.cchTextMax = 12;
+		ci->hrootAttachments = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		Tir.hitem = ci->hrootAttachments;
+		Tir.config = config;
+		TreeItem[Tir.hitem] = Tir;
+	}
+	if (ConfigMng->IsSectionValid(config, ANIMATIONS)) {
+		insertstruct.hParent = ci->hrootVessel;
+		insertstruct.item.pszText = (LPSTR)TEXT("Animations\0");
+		insertstruct.item.cchTextMax = 11;
+		ci->hrootAnimations = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		Tir.hitem = ci->hrootAnimations;
+		Tir.config = config;
+		TreeItem[Tir.hitem] = Tir;
+	}
+	if (ConfigMng->IsSectionValid(config, PROPELLANT)) {
+		insertstruct.hParent = ci->hrootVessel;
+		insertstruct.item.pszText = (LPSTR)TEXT("Propellants\0");
+		insertstruct.item.cchTextMax = 12;
+		ci->hrootPropellant = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		Tir.hitem = ci->hrootPropellant;
+		Tir.config = config;
+		TreeItem[Tir.hitem] = Tir;
+	}
+	if (config == 0) {
+		insertstruct.hParent = ci->hrootVessel;
+		insertstruct.item.pszText = (LPSTR)TEXT("Exhaust Textures\0");
+		insertstruct.item.cchTextMax = 18;
+		ci->hrootExTex = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		Tir.hitem = ci->hrootExTex;
+		Tir.config = config;
+		TreeItem[Tir.hitem] = Tir;
+
+		insertstruct.item.pszText = (LPSTR)TEXT("Particle Streams\0");
+		insertstruct.item.cchTextMax = 18;
+		ci->hrootParticles = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		Tir.hitem = ci->hrootParticles;
+		Tir.config = config;
+		TreeItem[Tir.hitem] = Tir;
+	}
+	if (ConfigMng->IsSectionValid(config, THRUSTERS)) {
+		insertstruct.hParent = ci->hrootVessel;
+		insertstruct.item.pszText = (LPSTR)TEXT("Thrusters\0");
+		insertstruct.item.cchTextMax = 10;
+		ci->hrootThrusters = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		Tir.hitem = ci->hrootThrusters;
+		Tir.config = config;
+		TreeItem[Tir.hitem] = Tir;
+	}
+	if (ConfigMng->IsSectionValid(config, THRUSTERGROUPS)) {
+		insertstruct.hParent = ci->hrootVessel;
+		insertstruct.item.pszText = (LPSTR)TEXT("Thruster Groups\0");
+		insertstruct.item.cchTextMax = 18;
+		ci->hrootThrusterGroups = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		Tir.hitem = ci->hrootThrusterGroups;
+		Tir.config = config;
+		TreeItem[Tir.hitem] = Tir;
+	}
+	if (ConfigMng->IsSectionValid(config, TOUCHDOWNPOINTS)) {
+		insertstruct.hParent = ci->hrootVessel;
+		insertstruct.item.pszText = (LPSTR)TEXT("Touchdown Points\0");
+		insertstruct.item.cchTextMax = 18;
+		ci->hrootTouchdownPoints = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		Tir.hitem = ci->hrootTouchdownPoints;
+		Tir.config = config;
+		TreeItem[Tir.hitem] = Tir;
+	}
+	if (ConfigMng->IsSectionValid(config, AIRFOILS)) {
+		insertstruct.hParent = ci->hrootVessel;
+		insertstruct.item.pszText = (LPSTR)TEXT("Airfoils\0");
+		insertstruct.item.cchTextMax = 10;
+		ci->hrootAirfoils = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		Tir.hitem = ci->hrootAirfoils;
+		Tir.config = config;
+		TreeItem[Tir.hitem] = Tir;
+	}
+	if (ConfigMng->IsSectionValid(config, CTRLSURFACES)) {
+		insertstruct.hParent = ci->hrootVessel;
+		insertstruct.item.pszText = (LPSTR)TEXT("Control Surfaces\0");
+		insertstruct.item.cchTextMax = 18;
+		ci->hrootControlSurfaces = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		Tir.hitem = ci->hrootControlSurfaces;
+		Tir.config = config;
+		TreeItem[Tir.hitem] = Tir;
+	}
+	if (ConfigMng->IsSectionValid(config, LIGHTS)) {
+		insertstruct.hParent = ci->hrootVessel;
+		insertstruct.item.pszText = (LPSTR)TEXT("Lights\0");
+		insertstruct.item.cchTextMax = 7;
+		ci->hrootLights = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		Tir.hitem = ci->hrootLights;
+		Tir.config = config;
+		TreeItem[Tir.hitem] = Tir;
+		insertstruct.hParent = ci->hrootLights;
+		insertstruct.item.pszText = (LPSTR)TEXT("Beacons\0");
+		insertstruct.item.cchTextMax = 10;
+		ci->hrootBeacons = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		Tir.hitem = ci->hrootBeacons;
+		Tir.config = config;
+		TreeItem[Tir.hitem] = Tir;
+		insertstruct.item.pszText = (LPSTR)TEXT("Light Emitters\0");
+		insertstruct.item.cchTextMax = 16;
+		ci->hrootLightEmitters = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		Tir.hitem = ci->hrootLightEmitters;
+		Tir.config = config;
+		TreeItem[Tir.hitem] = Tir;
+	}
+	if (ConfigMng->IsSectionValid(config, CAMERA)) {
+		insertstruct.hParent = ci->hrootVessel;
+		insertstruct.item.pszText = (LPSTR)TEXT("Cameras\0");
+		insertstruct.item.cchTextMax = 8;
+		ci->hrootCameras = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		Tir.hitem = ci->hrootCameras;
+		Tir.config = config;
+		TreeItem[Tir.hitem] = Tir;
+	}
+	if (ConfigMng->IsSectionValid(config, VC)) {
+		insertstruct.hParent = ci->hrootVessel;
+		insertstruct.item.pszText = (LPSTR)TEXT("Virtual Cockpit\0");
+		insertstruct.item.cchTextMax = 18;
+		ci->hrootVC = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		Tir.hitem = ci->hrootVC;
+		Tir.config = config;
+		TreeItem[Tir.hitem] = Tir;
+		insertstruct.hParent = ci->hrootVC;
+		insertstruct.item.pszText = (LPSTR)TEXT("Positions\0");
+		insertstruct.item.cchTextMax = 11;
+		ci->hrootVCPositions = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		Tir.hitem = ci->hrootVCPositions;
+		Tir.config = config;
+		TreeItem[Tir.hitem] = Tir;
+		insertstruct.item.pszText = (LPSTR)TEXT("MFDs\0");
+		insertstruct.item.cchTextMax = 6;
+		ci->hrootVCMFDs = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		Tir.hitem = ci->hrootVCMFDs;
+		Tir.config = config;
+		TreeItem[Tir.hitem] = Tir;
+		insertstruct.item.pszText = (LPSTR)TEXT("HUD\0");
+		insertstruct.item.cchTextMax = 5;
+		ci->hrootVCHud = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		Tir.hitem = ci->hrootVCHud;
+		Tir.config = config;
+		TreeItem[Tir.hitem] = Tir;
+	}
+	if (ConfigMng->IsSectionValid(config, VARIABLEDRAG)) {
+		insertstruct.hParent = ci->hrootVessel;
+		insertstruct.item.pszText = (LPSTR)TEXT("Variable Drag Elems\0");
+		insertstruct.item.cchTextMax = 21;
+		ci->hrootVariableDrag = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		Tir.hitem = ci->hrootVariableDrag;
+		Tir.config = config;
+		TreeItem[Tir.hitem] = Tir;
+	}
+	
+	if (!dontpushback) {
+		Config_Items.push_back(*ci);
+		delete ci;
+	}
+	
+	return;
+}
 void DialogControl::InitTree(HWND hWnd) {
 	Config_Items.clear();
 	LONG style = GetWindowLong(GetDlgItem(hWnd, IDC_TREE1), GWL_STYLE);
@@ -1431,7 +1685,7 @@ void DialogControl::InitTree(HWND hWnd) {
 	
 
 	for (UINT i = 0; i < ConfigMng->GetConfigurationsCount(); i++) {
-		insertstruct.hInsertAfter = TVI_ROOT;
+		/*insertstruct.hInsertAfter = TVI_ROOT;
 		insertstruct.hParent = TVI_ROOT;
 		insertstruct.item.mask = TVIF_TEXT;
 		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
@@ -1646,56 +1900,11 @@ void DialogControl::InitTree(HWND hWnd) {
 		}
 				
 
-		Config_Items.push_back(ci);
+		Config_Items.push_back(ci);*/
 		
-			if (ConfigMng->IsSectionActive(i, MESH)) {
-				UpdateTree(hWnd, MESH, i);
-			}
-			if (ConfigMng->IsSectionActive(i, DOCK)) {
-				UpdateTree(hWnd, DOCK, i);
-			}
-			if (ConfigMng->IsSectionActive(i, ATTACHMENT)) {
-				UpdateTree(hWnd, ATTACHMENT, i);
-			}
-			if (ConfigMng->IsSectionActive(i, ANIMATIONS)) {
-				UpdateTree(hWnd, ANIMATIONS, i);
-			}
-			if (ConfigMng->IsSectionActive(i, PROPELLANT)) {
-				UpdateTree(hWnd, PROPELLANT, i);
-			}
-			if (i == 0) {
-				UpdateTree(hWnd, EXTEX, i);
-				UpdateTree(hWnd, PARTICLES, i);
-			}
-			if (ConfigMng->IsSectionActive(i, THRUSTERS)) {
-				UpdateTree(hWnd, THRUSTERS, i);
-			}
-			if (ConfigMng->IsSectionActive(i, THRUSTERGROUPS)) {
-				UpdateTree(hWnd, THRUSTERGROUPS, i);
-			}
-			if (ConfigMng->IsSectionActive(i, TOUCHDOWNPOINTS)) {
-				UpdateTree(hWnd, TOUCHDOWNPOINTS, i);
-			}
-			if (ConfigMng->IsSectionActive(i, AIRFOILS)) {
-				UpdateTree(hWnd, AIRFOILS, i);
-			}
-			if (ConfigMng->IsSectionActive(i, CTRLSURFACES)) {
-				UpdateTree(hWnd, CTRLSURFACES, i);
-			}
-			if (ConfigMng->IsSectionActive(i, CAMERA)) {
-				UpdateTree(hWnd, CAMERA, i);
-			}
-			if (ConfigMng->IsSectionActive(i, VC)) {
-				UpdateTree(hWnd, VCPOS, i);
-				UpdateTree(hWnd, VCMFD, i);
-			}
-			if (ConfigMng->IsSectionActive(i, LIGHTS)) {
-				UpdateTree(hWnd, BEACONS, i);
-				UpdateTree(hWnd, LIGHTS, i);
-			}
-			if (ConfigMng->IsSectionActive(i, VARIABLEDRAG)) {
-				UpdateTree(hWnd, VARIABLEDRAG, i);
-			}
+			UpdateRoots(hWnd, i);
+			UpdateSubs(hWnd, i);
+			
 		
 	
 	}
@@ -1722,7 +1931,57 @@ void DialogControl::InitTree(HWND hWnd) {
 	*/
 	return;
 }
-
+void DialogControl::UpdateSubs(HWND hWnd, UINT config) {
+	if (ConfigMng->IsSectionActive(config, MESH)) {
+		UpdateTree(hWnd, MESH, config);
+	}
+	if (ConfigMng->IsSectionActive(config, DOCK)) {
+		UpdateTree(hWnd, DOCK, config);
+	}
+	if (ConfigMng->IsSectionActive(config, ATTACHMENT)) {
+		UpdateTree(hWnd, ATTACHMENT, config);
+	}
+	if (ConfigMng->IsSectionActive(config, ANIMATIONS)) {
+		UpdateTree(hWnd, ANIMATIONS, config);
+	}
+	if (ConfigMng->IsSectionActive(config, PROPELLANT)) {
+		UpdateTree(hWnd, PROPELLANT, config);
+	}
+	if (config == 0) {
+		UpdateTree(hWnd, EXTEX, config);
+		UpdateTree(hWnd, PARTICLES, config);
+	}
+	if (ConfigMng->IsSectionActive(config, THRUSTERS)) {
+		UpdateTree(hWnd, THRUSTERS, config);
+	}
+	if (ConfigMng->IsSectionActive(config, THRUSTERGROUPS)) {
+		UpdateTree(hWnd, THRUSTERGROUPS, config);
+	}
+	if (ConfigMng->IsSectionActive(config, TOUCHDOWNPOINTS)) {
+		UpdateTree(hWnd, TOUCHDOWNPOINTS, config);
+	}
+	if (ConfigMng->IsSectionActive(config, AIRFOILS)) {
+		UpdateTree(hWnd, AIRFOILS, config);
+	}
+	if (ConfigMng->IsSectionActive(config, CTRLSURFACES)) {
+		UpdateTree(hWnd, CTRLSURFACES, config);
+	}
+	if (ConfigMng->IsSectionActive(config, CAMERA)) {
+		UpdateTree(hWnd, CAMERA, config);
+	}
+	if (ConfigMng->IsSectionActive(config, VC)) {
+		UpdateTree(hWnd, VCPOS, config);
+		UpdateTree(hWnd, VCMFD, config);
+	}
+	if (ConfigMng->IsSectionActive(config, LIGHTS)) {
+		UpdateTree(hWnd, BEACONS, config);
+		UpdateTree(hWnd, LIGHTS, config);
+	}
+	if (ConfigMng->IsSectionActive(config, VARIABLEDRAG)) {
+		UpdateTree(hWnd, VARIABLEDRAG, config);
+	}
+	return;
+}
 void DialogControl::ShowTheRightDialog(ItemType type) {
 	//SB1->AnimEditingMode = false;
 	if (type != MESH) {
@@ -1989,8 +2248,9 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 				Sects[VC] = false;
 				Sects[LIGHTS] = false;
 				Sects[VARIABLEDRAG] = false;
-				ConfigMng->AddConfiguration(VB1, Sects, NULL);
-				InitTree(hWnd);
+				UINT cf = ConfigMng->AddConfiguration(VB1, Sects, NULL);
+				//InitTree(hWnd);
+				UpdateRoots(hWnd, cf);
 			}
 			break;
 		}
@@ -2002,8 +2262,12 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 
 			}
 			else if (CurrentSelection.hitem == Config_Items[0].hrootVessel) {
+				UINT old_config = ConfigMng->GetCurrentConfiguration();
 				ConfigMng->ApplyDefaultConfiguration();
-				InitTree(hWnd);
+				//InitTree(hWnd);
+				UpdateRoots(hWnd,old_config);
+				UpdateRoots(hWnd,0);
+				UpdateSubs(hWnd, 0);
 			}
 			break;
 		}
