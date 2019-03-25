@@ -30,7 +30,6 @@
 #define IDD_DIALOG_ANIM1                128
 #define IDD_DIALOG_RECONFIGS            128
 #define IDD_DIALOG_EVENTS               129
-#define IDD_DIALOG_EVENTS1              130
 #define IDD_DIALOG_CHILDSPAWN           130
 #define IDC_TREE1                       1001
 #define IDC_SPIN_POSZ_S                 1005
@@ -641,6 +640,7 @@
 #define IDC_CHECK4                      1569
 #define IDC_BUTTON3                     1570
 #define IDC_COMBO6                      1571
+#define IDC_COMBO_EVENTTYPE             1572
 #define IDC_BUTTON4                     1577
 #define IDC_BUTTON5                     1578
 #define IDC_BUTTON6                     1579
@@ -651,7 +651,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1572
+#define _APS_NEXT_CONTROL_VALUE         1573
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

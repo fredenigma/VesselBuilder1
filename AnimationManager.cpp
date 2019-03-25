@@ -12,6 +12,7 @@ AnimationManager::AnimationManager(VesselBuilder1* _VB1) {
 	animcomp_defs.clear();
 	ManualArmMoving = false;
 	CurrentManualAnim = -1;
+	interval = 1;
 	return;
 }
 AnimationManager::~AnimationManager() {
@@ -373,9 +374,12 @@ void AnimationManager::SetAnimCompDefParent(def_idx d_idx, ANIMATIONCOMPONENT_HA
 			}
 		}
 		old_parent->nchildren = old_parent_nchildren - 1;
-		if (old_parent->children) {
-			delete[] old_parent->children;
-		}
+		//if (old_parent->children) {
+		//	for (UINT k = 0; k < old_parent_nchildren; k++) {
+		//		old_parent->children[k] = NULL;
+		//	}
+			//delete[] old_parent->children;
+		//}
 		old_parent->children = old_parent_newchildren;
 
 	}
@@ -386,19 +390,28 @@ void AnimationManager::SetAnimCompDefParent(def_idx d_idx, ANIMATIONCOMPONENT_HA
 		((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->parent = NULL;
 	}
 	else {
+		
 		newParent = (ANIMATIONCOMP*)parent_ach;
 		((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->parent = newParent;
-		int new_parent_nchildren = newParent->nchildren;
+		UINT new_parent_nchildren = newParent->nchildren;
 		ANIMATIONCOMP** newparent_newchildren = new ANIMATIONCOMP*[new_parent_nchildren + 1];
 		for (UINT k = 0; k < new_parent_nchildren; k++) {
 			newparent_newchildren[k] = newParent->children[k];
+			/*for (UINT q = 0; q < animcomp_defs.size(); q++) {
+				if (newparent_newchildren[k] == (ANIMATIONCOMP*)animcomp_defs[q].ach) {
+					LogV("child k:%i name:%s", k, animcomp_defs[q].name.c_str());
+				}
+			}*/
 		}
 		newparent_newchildren[new_parent_nchildren] = (ANIMATIONCOMP*)animcomp_defs[d_idx].ach;
-		if (newParent->children) {
-			delete[] newParent->children;
-		}
-		newParent->children = newparent_newchildren;
+	/*	if (newParent->children) {
+			for (UINT z = 0; z < new_parent_nchildren; z++) {
+				newParent->children[z] = NULL;
+			}
+		}*/
 		newParent->nchildren = new_parent_nchildren + 1;
+		newParent->children = newparent_newchildren;
+		
 
 	}
 	return;
@@ -770,7 +783,14 @@ void AnimationManager::AnimationPreStep(double simt, double simdt, double mjd) {
 	if (ManualArmActive()) {
 		sprintf(oapiDebugString(), "Manual Anim:%s %.3f", GetAnimName(CurrentManualAnim).c_str(), GetAnimationState(CurrentManualAnim));
 	}
-
+	/*interval -= oapiGetSimStep();
+	if (interval < 0) {
+		interval = 1;
+		for (UINT i = 0; i < animcomp_defs.size(); i++) {
+			LogV("animcomp:%i nchildren:%i", i, ((ANIMATIONCOMP*)animcomp_defs[i].ach)->nchildren);
+		}
+	}*/
+	
 
 
 	return;

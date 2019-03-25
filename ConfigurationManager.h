@@ -746,7 +746,8 @@ public:
 	void SetLightSection(vector<LightSection::BcnDefinitions> bd, vector<LightSection::LightDefinitions> ld);
 	bool GetVardSection(vector<VardSection::Definitions>&d);
 	void SetVardSection(vector<VardSection::Definitions>d);
-
+	bool GetEventSection(vector<EventSection::Definitions>&d);
+	void SetEventSection(vector<EventSection::Definitions>d);
 
 };
 

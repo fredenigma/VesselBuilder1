@@ -450,47 +450,58 @@ EventManager::~EventManager() {
 }
 Event* EventManager::CreateGeneralVBEvent(string name, Event::TYPE type, Event::TRIGGER _Trigger) {
 	Event* ev = NULL;
+	string empty;
+	empty.clear();
 	if (type == Event::CHILD_SPAWN) {
-		ev = new Child_Spawn(VB1,"","");
+		ev = CreateChildSpawnEvent(name, _Trigger, empty, empty);
 	}
 	else if (type == Event::ANIMATION_TRIGGER) {
-		ev = new Anim_Trigger(VB1, 0);
+		ev = CreateAnimTriggerEvent(name, _Trigger, 0, true);
 	}
 	else if (type == Event::THRUSTER_FIRING) {
-		ev = new Thruster_Fire(VB1, NULL);
+		ev = CreateThrusterFireEvent(name, _Trigger, NULL);
 	}
 	else if (type == Event::THRUSTERGROUP_LEVEL) {
-		ev = new ThrusterGroup_Fire(VB1, THGROUP_MAIN);
+		ev = CreateThrusterGroupLevelEvent(name, _Trigger, THGROUP_MAIN);
 	}
 	else if (type == Event::PAYLOAD_JETTISON) {
-		ev = new Payload_Jettison(VB1);
+		ev = CreatePayloadJettisonEvent(name, _Trigger);
 	}
 	else if (type == Event::RESET_MET) {
-		ev = new Reset_Met(VB1);
+		ev = CreateResetMetEvent(name, _Trigger);
 	}
 	else if (type == Event::RECONFIG) {
-		ev = new Reconfiguration(VB1, 0);
+		ev = CreateReconfigurationEvent(name, _Trigger, 0);
 	}
 	else if (type == Event::SHIFT_CG) {
-		ev = new ShiftCG(VB1, _V(0, 0, 0));
+		ev = CreateShiftCGEvent(name, _Trigger);
 	}
 	else if (type == Event::TEXTURE_SWAP) {
-		ev = new TextureSwap(VB1,0,0,NULL);
+		ev = CreateTextureSwapEvent(name, _Trigger, 0, 0, empty);
 	}
-	if (ev) {
+	/*if (ev) {
 		ev->id = id_counter;
 		id_counter++;
 		ev->SetTrigger(_Trigger);
-		ev->SetName(name);
+		//ev->SetName(name);
 	}
 	
-	Events.push_back(ev);
+	Events.push_back(ev);*/
 	return ev;
 }
 Event* EventManager::CreateChildSpawnEvent(string name, Event::TRIGGER _Trigger, string v_name, string v_class, VECTOR3 ofs, VECTOR3 vel, VECTOR3 rot_vel, int mesh_to_del) {
 	Event* ev = new Child_Spawn(VB1, v_name, v_class, ofs, vel, rot_vel, mesh_to_del);
 	ev->SetTrigger(_Trigger);
-	ev->SetName(name);
+	string evname;
+	if (name.size() <= 0) {
+		char nbuf[256] = { '\0' };
+		sprintf(nbuf, "Child Spawn %i", Events.size());
+		evname.assign(nbuf);
+	}
+	else {
+		evname = name;
+	}
+	ev->SetName(evname);
 	ev->id = id_counter;
 	id_counter++;
 	Events.push_back(ev);
@@ -501,7 +512,16 @@ Event* EventManager::CreateChildSpawnEvent(string name, Event::TRIGGER _Trigger,
 Event* EventManager::CreateAnimTriggerEvent(string name, Event::TRIGGER _Trigger, UINT _anim_idx, bool _forward) {
 	Event* ev = new Anim_Trigger(VB1, _anim_idx, _forward);
 	ev->SetTrigger(_Trigger);
-	ev->SetName(name);
+	string evname;
+	if (name.size() <= 0) {
+		char nbuf[256] = { '\0' };
+		sprintf(nbuf, "Start Animation %i", Events.size());
+		evname.assign(nbuf);
+	}
+	else {
+		evname = name;
+	}
+	ev->SetName(evname);
 	ev->id = id_counter;
 	id_counter++;
 	Events.push_back(ev);
@@ -510,7 +530,16 @@ Event* EventManager::CreateAnimTriggerEvent(string name, Event::TRIGGER _Trigger
 Event* EventManager::CreateThrusterFireEvent(string name, Event::TRIGGER _Trigger, THRUSTER_HANDLE th, double level) {
 	Event* ev = new Thruster_Fire(VB1, th, level);
 	ev->SetTrigger(_Trigger);
-	ev->SetName(name);
+	string evname;
+	if (name.size() <= 0) {
+		char nbuf[256] = { '\0' };
+		sprintf(nbuf, "Thruster Fire %i", Events.size());
+		evname.assign(nbuf);
+	}
+	else {
+		evname = name;
+	}
+	ev->SetName(evname);
 	ev->id = id_counter;
 	id_counter++;
 	Events.push_back(ev);
@@ -520,7 +549,16 @@ Event* EventManager::CreateThrusterFireEvent(string name, Event::TRIGGER _Trigge
 Event* EventManager::CreateThrusterGroupLevelEvent(string name, Event::TRIGGER _Trigger, THGROUP_TYPE thgroup_type, double level) {
 	Event* ev = new ThrusterGroup_Fire(VB1, thgroup_type, level);
 	ev->SetTrigger(_Trigger);
-	ev->SetName(name);
+	string evname;
+	if (name.size() <= 0) {
+		char nbuf[256] = { '\0' };
+		sprintf(nbuf, "Thruster Group Level %i", Events.size());
+		evname.assign(nbuf);
+	}
+	else {
+		evname = name;
+	}
+	ev->SetName(evname);
 	ev->id = id_counter;
 	id_counter++;
 	Events.push_back(ev);
@@ -530,7 +568,16 @@ Event* EventManager::CreateThrusterGroupLevelEvent(string name, Event::TRIGGER _
 Event* EventManager::CreatePayloadJettisonEvent(string name, Event::TRIGGER _Trigger, bool next, UINT dock_idx) {
 	Event* ev = new Payload_Jettison(VB1, next, dock_idx);
 	ev->SetTrigger(_Trigger);
-	ev->SetName(name);
+	string evname;
+	if (name.size() <= 0) {
+		char nbuf[256] = { '\0' };
+		sprintf(nbuf, "Dock Jettison %i", Events.size());
+		evname.assign(nbuf);
+	}
+	else {
+		evname = name;
+	}
+	ev->SetName(evname);
 	ev->id = id_counter;
 	id_counter++;
 	Events.push_back(ev);
@@ -540,7 +587,16 @@ Event* EventManager::CreatePayloadJettisonEvent(string name, Event::TRIGGER _Tri
 Event* EventManager::CreateResetMetEvent(string name, Event::TRIGGER _Trigger, bool now , double newmjd0) {
 	Event* ev = new Reset_Met(VB1, now, newmjd0);
 	ev->SetTrigger(_Trigger);
-	ev->SetName(name);
+	string evname;
+	if (name.size() <= 0) {
+		char nbuf[256] = { '\0' };
+		sprintf(nbuf, "Reset MET %i", Events.size());
+		evname.assign(nbuf);
+	}
+	else {
+		evname = name;
+	}
+	ev->SetName(evname);
 	ev->id = id_counter;
 	id_counter++;
 	Events.push_back(ev);
@@ -550,7 +606,16 @@ Event* EventManager::CreateResetMetEvent(string name, Event::TRIGGER _Trigger, b
 Event* EventManager::CreateReconfigurationEvent(string name, Event::TRIGGER _Trigger, UINT newconfig) {
 	Event* ev = new Reconfiguration(VB1, newconfig);
 	ev->SetTrigger(_Trigger);
-	ev->SetName(name);
+	string evname;
+	if (name.size() <= 0) {
+		char nbuf[256] = { '\0' };
+		sprintf(nbuf, "Reconfiguration %i", Events.size());
+		evname.assign(nbuf);
+	}
+	else {
+		evname = name;
+	}
+	ev->SetName(evname);
 	ev->id = id_counter;
 	id_counter++;
 	Events.push_back(ev);
@@ -559,7 +624,16 @@ Event* EventManager::CreateReconfigurationEvent(string name, Event::TRIGGER _Tri
 Event* EventManager::CreateShiftCGEvent(string name, Event::TRIGGER _Trigger, VECTOR3 shift) {
 	Event* ev = new ShiftCG(VB1, shift);
 	ev->SetTrigger(_Trigger);
-	ev->SetName(name);
+	string evname;
+	if (name.size() <= 0) {
+		char nbuf[256] = { '\0' };
+		sprintf(nbuf, "Shift CG %i", Events.size());
+		evname.assign(nbuf);
+	}
+	else {
+		evname = name;
+	}
+	ev->SetName(evname);
 	ev->id = id_counter;
 	id_counter++;
 	Events.push_back(ev);
@@ -568,7 +642,16 @@ Event* EventManager::CreateShiftCGEvent(string name, Event::TRIGGER _Trigger, VE
 Event* EventManager::CreateTextureSwapEvent(string name, Event::TRIGGER _Trigger, UINT mesh, DWORD texidx, string texture_name) {
 	Event* ev = new TextureSwap(VB1, mesh,texidx,texture_name);
 	ev->SetTrigger(_Trigger);
-	ev->SetName(name);
+	string evname;
+	if (name.size() <= 0) {
+		char nbuf[256] = { '\0' };
+		sprintf(nbuf, "Texture Change %i", Events.size());
+		evname.assign(nbuf);
+	}
+	else {
+		evname = name;
+	}
+	ev->SetName(evname);
 	ev->id = id_counter;
 	id_counter++;
 	Events.push_back(ev);
@@ -603,4 +686,193 @@ UINT EventManager::GetEventsCount() {
 }
 string EventManager::GetEventName(UINT idx) {
 	return Events[idx]->GetName();
+}
+Event::TRIGGER EventManager::GetEventTrigger(UINT idx) {
+	return Events[idx]->GetTrigger();
+}
+void EventManager::SetEventName(UINT idx, string newname) {
+	Events[idx]->SetName(newname);
+	return;
+}
+Event* EventManager::GetEventH(UINT idx) {
+	return Events[idx];
+}
+void EventManager::Clear() {
+	/*vector<Event*>::iterator it = find(Events.begin(), Events.end(), ev);
+	if (it != Events.cend()) {
+		delete ev;
+		Events.erase(it);
+	}*/
+	for (UINT i = 0; i < Events.size(); i++) {
+		delete Events[i];
+	}
+	Events.clear();
+	return;
+}
+Event::TYPE EventManager::GetEventType(UINT idx) {
+	return Events[idx]->Type();
+}
+UINT EventManager::GetEventIdx(Event* ev) {
+	for (UINT i = 0; i < Events.size(); i++) {
+		if (Events[i] == ev) {
+			return i;
+		}
+	}
+	return 0;
+}
+
+
+void EventManager::SetSpawnedVesselName(UINT idx, string newName) {
+	((Child_Spawn*)Events[idx])->SetSpawnedVesselName(newName);
+	return;
+}
+void EventManager::SetSpawnedVesselClass(UINT idx, string newClass) {
+	((Child_Spawn*)Events[idx])->SetSpawnedVesselClass(newClass);
+	return;
+}
+void EventManager::SetOfs(UINT idx, VECTOR3 ofs) {
+	((Child_Spawn*)Events[idx])->SetOfs(ofs);
+	return;
+}
+void EventManager::SetVel(UINT idx, VECTOR3 vel) {
+	((Child_Spawn*)Events[idx])->SetVel(vel);
+	return;
+}
+void EventManager::SetRotVel(UINT idx, VECTOR3 rot_Vel) {
+	((Child_Spawn*)Events[idx])->SetRotVel(rot_Vel);
+	return;
+}
+string EventManager::GetSpawnedVesselName(UINT idx) {
+	return ((Child_Spawn*)Events[idx])->GetSpawnedVesselName();
+}
+string EventManager::GetSpawnedVesselClass(UINT idx) {
+	return ((Child_Spawn*)Events[idx])->GetSpawnedVesselClass();
+}
+VECTOR3 EventManager::GetOfs(UINT idx) {
+	return ((Child_Spawn*)Events[idx])->GetOfs();
+}
+VECTOR3 EventManager::GetVel(UINT idx) {
+	return ((Child_Spawn*)Events[idx])->GetVel();
+}
+VECTOR3 EventManager::GetRotVel(UINT idx) {
+	return ((Child_Spawn*)Events[idx])->GetRotVel();
+}
+int EventManager::GetMeshToDel(UINT idx) {
+	return ((Child_Spawn*)Events[idx])->GetMeshToDel();
+}
+void EventManager::SetMeshToDel(UINT idx, int msh) {
+	((Child_Spawn*)Events[idx])->SetMeshToDel(msh);
+	return;
+}
+void EventManager::SetAnimIdx(UINT idx, UINT _anim_idx) {
+	((Anim_Trigger*)Events[idx])->SetAnimIdx(_anim_idx);
+	return;
+}
+UINT EventManager::GetAnimIdx(UINT idx) {
+	return ((Anim_Trigger*)Events[idx])->GetAnimIdx();
+}
+void EventManager::SetForward(UINT idx, bool set) {
+	((Anim_Trigger*)Events[idx])->SetForward(set);
+	return;
+}
+bool EventManager::GetForward(UINT idx) {
+	return ((Anim_Trigger*)Events[idx])->GetForward();
+}
+
+void EventManager::SetThrusterTH(UINT idx, THRUSTER_HANDLE _th) {
+	((Thruster_Fire*)Events[idx])->SetThrusterTH(_th);
+	return;
+}
+THRUSTER_HANDLE EventManager::GetThrusterTH(UINT idx) {
+	return ((Thruster_Fire*)Events[idx])->GetThrusterTH();
+}
+void EventManager::SetThLevel(UINT idx, double _Level) {
+	((Thruster_Fire*)Events[idx])->SetLevel(_Level);
+	return;
+}
+double EventManager::GetThLevel(UINT idx) {
+	return ((Thruster_Fire*)Events[idx])->GetLevel();
+}
+
+void EventManager::SetThGroup(UINT idx, THGROUP_TYPE thgrp_type) {
+	((ThrusterGroup_Fire*)Events[idx])->SetThGroup(thgrp_type);
+	return;
+}
+THGROUP_TYPE EventManager::GetThGroup(UINT idx) {
+	return ((ThrusterGroup_Fire*)Events[idx])->GetThGroup();
+}
+void EventManager::SetThGLevel(UINT idx, double _level) {
+	((ThrusterGroup_Fire*)Events[idx])->SetLevel(_level);
+	return;
+}
+double EventManager::GetThGLevel(UINT idx) {
+	return ((ThrusterGroup_Fire*)Events[idx])->GetLevel();
+}
+
+void EventManager::SetDockIdx(UINT idx, UINT _dock_idx) {
+	((Payload_Jettison*)Events[idx])->SetDockIdx(_dock_idx);
+	return;
+}
+UINT EventManager::GetDockIdx(UINT idx) {
+	return ((Payload_Jettison*)Events[idx])->GetDockIdx();
+}
+void EventManager::SetNext(UINT idx, bool set) {
+	((Payload_Jettison*)Events[idx])->SetNext(set);
+	return;
+}
+bool EventManager::GetNext(UINT idx) {
+	return ((Payload_Jettison*)Events[idx])->GetNext();
+}
+
+void EventManager::SetNow(UINT idx, bool set) {
+	((Reset_Met*)Events[idx])->SetNow(set);
+	return;
+}
+bool EventManager::GetNow(UINT idx) {
+	return ((Reset_Met*)Events[idx])->GetNow();
+}
+void EventManager::SetNewMJD0(UINT idx, double _newmjd0) {
+	((Reset_Met*)Events[idx])->SetNewMJD0(_newmjd0);
+	return;
+}
+double EventManager::GetNewMJD0(UINT idx) {
+	return ((Reset_Met*)Events[idx])->GetNewMJD0();
+}
+
+void EventManager::SetNewConfig(UINT idx, UINT _newconfig) {
+	((Reconfiguration*)Events[idx])->SetNewConfig(_newconfig);
+	return;
+}
+UINT EventManager::GetNewConfig(UINT idx) {
+	return ((Reconfiguration*)Events[idx])->GetNewConfig();
+}
+
+void EventManager::SetShift(UINT idx, VECTOR3 _shift) {
+	((ShiftCG*)Events[idx])->SetShift(_shift);
+	return;
+}
+VECTOR3 EventManager::GetShift(UINT idx) {
+	return ((ShiftCG*)Events[idx])->GetShift();
+}
+
+void EventManager::SetMesh(UINT idx, UINT _mesh) {
+	((TextureSwap*)Events[idx])->SetMesh(_mesh);
+	return;
+}
+UINT EventManager::GetMesh(UINT idx) {
+	return ((TextureSwap*)Events[idx])->GetMesh();
+}
+void EventManager::SetTexIdx(UINT idx, DWORD _texidx) {
+	((TextureSwap*)Events[idx])->SetTexIdx(_texidx);
+	return;
+}
+DWORD EventManager::GetTexIdx(UINT idx) {
+	return ((TextureSwap*)Events[idx])->GetTexIdx();
+}
+void EventManager::SetTextureName(UINT idx, string _texture) {
+	((TextureSwap*)Events[idx])->SetTextureName(_texture);
+	return;
+}
+string EventManager::GetTextureName(UINT idx) {
+	return ((TextureSwap*)Events[idx])->GetTextureName();
 }

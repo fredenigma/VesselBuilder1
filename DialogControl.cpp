@@ -378,7 +378,29 @@ void DialogControl::InitDialog(HWND hWnd) {
 	sprintf(verbuf, "Ver:%i", VBVERSION);
 	SetDlgItemText(hWnd, IDC_STATIC_VBVERSION, verbuf);
 	
-	
+	SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_RESETCONTENT, 0, 0);
+	int index = SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_ADDSTRING, 0, (LPARAM)"Choose Event Type...");
+	SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_SETITEMDATA, index, (LPARAM)NULL);
+	index = SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_ADDSTRING, 0, (LPARAM)"CHILD SPAWN");
+	SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_SETITEMDATA, index, (LPARAM)Event::TYPE::CHILD_SPAWN);
+	index = SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_ADDSTRING, 0, (LPARAM)"DOCK JETTISON");
+	SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_SETITEMDATA, index, (LPARAM)Event::TYPE::PAYLOAD_JETTISON);
+	index = SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_ADDSTRING, 0, (LPARAM)"START ANIMATION");
+	SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_SETITEMDATA, index, (LPARAM)Event::TYPE::ANIMATION_TRIGGER);
+	index = SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_ADDSTRING, 0, (LPARAM)"FIRE THRUSTER");
+	SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_SETITEMDATA, index, (LPARAM)Event::TYPE::THRUSTER_FIRING);
+	index = SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_ADDSTRING, 0, (LPARAM)"THRUSTER GROUP LEVEL");
+	SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_SETITEMDATA, index, (LPARAM)Event::TYPE::THRUSTERGROUP_LEVEL);
+	index = SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_ADDSTRING, 0, (LPARAM)"RESET MET");
+	SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_SETITEMDATA, index, (LPARAM)Event::TYPE::RESET_MET);
+	index = SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_ADDSTRING, 0, (LPARAM)"VESSEL RECONFIGURATION");
+	SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_SETITEMDATA, index, (LPARAM)Event::TYPE::RECONFIG);
+	index = SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_ADDSTRING, 0, (LPARAM)"CHANGE TEXTURE");
+	SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_SETITEMDATA, index, (LPARAM)Event::TYPE::TEXTURE_SWAP);
+	index = SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_ADDSTRING, 0, (LPARAM)"SHIFT CG");
+	SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_SETITEMDATA, index, (LPARAM)Event::TYPE::SHIFT_CG);
+	SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_SETCURSEL, 0, 0);
+	ShowWindow(GetDlgItem(hWnd, IDC_COMBO_EVENTTYPE), SW_HIDE);
 
 	return;
 }
@@ -1284,7 +1306,7 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, UINT config) {
 		insertstruct.hParent = Config_Items[config].hrootEvents;
 		for (UINT i = 0; i < EvMng->GetEventsCount() ; i++) {
 			char cbuf[256] = { '\0' };
-			sprintf(cbuf, "*%s", EvMng->GetEventName(i).c_str());
+			sprintf(cbuf, "%s", EvMng->GetEventName(i).c_str());
 			insertstruct.item.pszText = (LPSTR)cbuf;
 			insertstruct.item.cchTextMax = strlen(cbuf);
 			TREE_ITEM_REF Tir = TREE_ITEM_REF();
@@ -2291,8 +2313,16 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 				UpdateTree(hWnd, VARIABLEDRAG, ConfigMng->GetSectionActiveConfig(VARIABLEDRAG));
 			}
 			else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(EVENTS)].hrootEvents) {
-				/////WHAT TO DO HERE???????????????????
-				UpdateTree(hWnd, EVENTS, ConfigMng->GetSectionActiveConfig(EVENTS));
+				int index = SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_GETCURSEL, 0, 0);
+				if (index > 0) {
+					Event::TYPE tp = (Event::TYPE)SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_GETITEMDATA, index, 0);
+					Event::TRIGGER trig = Event::TRIGGER();
+					string empty;
+					empty.clear();
+					EvMng->CreateGeneralVBEvent(empty, tp, trig);
+					UpdateTree(hWnd, EVENTS, ConfigMng->GetSectionActiveConfig(EVENTS));
+				}
+				
 			}
 			else if (CurrentSelection.hitem == Config_Items[0].hrootVessel) {
 				map<ItemType, bool>Sects;
@@ -2368,12 +2398,14 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 					if (CurrentSelection.hitem == Config_Items[0].hrootVessel) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_SHOW);
+						ShowWindow(GetDlgItem(hWnd, IDC_COMBO_EVENTTYPE), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD RECONFIGURATION");
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD2), (LPCSTR)"APPLY DEFAULT CONFIGURATION");
 					}
 					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(MESH)].hrootMeshes) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
+						ShowWindow(GetDlgItem(hWnd, IDC_COMBO_EVENTTYPE), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD MESH");
 					}else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(DOCK)].hrootDocks) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
@@ -2383,91 +2415,109 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(ATTACHMENT)].hrootAttachments) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
+						ShowWindow(GetDlgItem(hWnd, IDC_COMBO_EVENTTYPE), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD ATTACHMENT");
 					}
 					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(LIGHTS)].hrootLights) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
+						ShowWindow(GetDlgItem(hWnd, IDC_COMBO_EVENTTYPE), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD LIGHT");
 					}
 					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(CAMERA)].hrootCameras) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
+						ShowWindow(GetDlgItem(hWnd, IDC_COMBO_EVENTTYPE), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD CAMERA");
 					}
 					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(SETTINGS)].hrootSettings) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_HIDE);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
+						ShowWindow(GetDlgItem(hWnd, IDC_COMBO_EVENTTYPE), SW_HIDE);
 					}
 					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(ANIMATIONS)].hrootAnimations) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
+						ShowWindow(GetDlgItem(hWnd, IDC_COMBO_EVENTTYPE), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD ANIMATION");
 					}
 					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(PROPELLANT)].hrootPropellant) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
+						ShowWindow(GetDlgItem(hWnd, IDC_COMBO_EVENTTYPE), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD PROPELLANT TANK");
 					}
 					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(EXTEX)].hrootExTex) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
+						ShowWindow(GetDlgItem(hWnd, IDC_COMBO_EVENTTYPE), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD EXHAUST TEXTURE");
 					}
 					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(PARTICLES)].hrootParticles) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
+						ShowWindow(GetDlgItem(hWnd, IDC_COMBO_EVENTTYPE), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD PARTICLE STREAM");
 					}
 					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(THRUSTERS)].hrootThrusters) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
+						ShowWindow(GetDlgItem(hWnd, IDC_COMBO_EVENTTYPE), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD THRUSTER");
 					}
 					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(AIRFOILS)].hrootAirfoils) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_SHOW);
+						ShowWindow(GetDlgItem(hWnd, IDC_COMBO_EVENTTYPE), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD VERTICAL AIRFOIL");
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD2), (LPCSTR)"ADD HORIZONTAL AIRFOIL");
 					}
 					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(CTRLSURFACES)].hrootControlSurfaces) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
+						ShowWindow(GetDlgItem(hWnd, IDC_COMBO_EVENTTYPE), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD CONTROL SURFACE");
 					}
 					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(VC)].hrootVCPositions) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
+						ShowWindow(GetDlgItem(hWnd, IDC_COMBO_EVENTTYPE), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD VIRTUAL COCKPIT POSITION");
 					}
 					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(VC)].hrootVCMFDs) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
+						ShowWindow(GetDlgItem(hWnd, IDC_COMBO_EVENTTYPE), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD MFD DEFINITION");
 					}
 					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(LIGHTS)].hrootBeacons) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
+						ShowWindow(GetDlgItem(hWnd, IDC_COMBO_EVENTTYPE), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD BEACON");
 					}
 					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(THRUSTERGROUPS)].hrootThrusterGroups) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
+						ShowWindow(GetDlgItem(hWnd, IDC_COMBO_EVENTTYPE), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD DEFAULT RCS SYSTEM");
 					}
 					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(VARIABLEDRAG)].hrootVariableDrag) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
+						ShowWindow(GetDlgItem(hWnd, IDC_COMBO_EVENTTYPE), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD VARIABLE DRAG ELEMENT");
 					}
 					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(EVENTS)].hrootEvents) {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
+						ShowWindow(GetDlgItem(hWnd, IDC_COMBO_EVENTTYPE), SW_SHOW);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD EVENT");
 					}
 					else {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_HIDE);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
+						ShowWindow(GetDlgItem(hWnd, IDC_COMBO_EVENTTYPE), SW_HIDE);
 					}
 
 

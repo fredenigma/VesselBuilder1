@@ -157,4 +157,6 @@ public:
 	anim_idx GetAnimIdx(def_idx d_idx);
 
 	void Clear();
+
+	double interval;
 };

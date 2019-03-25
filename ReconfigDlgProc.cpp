@@ -22,7 +22,8 @@ void DialogControl::UpdateReconfigDialog(HWND hWnd) {
 	SetCheckBox(hWnd, IDC_CHECK_RCCAM, Sections[CAMERA] ? true : false);
 	SetCheckBox(hWnd, IDC_CHECK_RCVC, Sections[VC] ? true : false);
 	SetCheckBox(hWnd, IDC_CHECK_RCVARD, Sections[VARIABLEDRAG] ? true : false);
-	//events to do
+	SetCheckBox(hWnd, IDC_CHECK_RCEVENTS, Sections[EVENTS] ? true : false);
+	
 	return;
 }
 
@@ -195,6 +196,16 @@ BOOL DialogControl::ReconfigDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 				bool check = IsCheckBoxChecked(hWnd, IDC_CHECK_RCVARD);
 				ConfigMng->SetSectionValid(config, VARIABLEDRAG, check);
 				ConfigMng->CopyConfigurationSection(0, config, VARIABLEDRAG);
+				UpdateRoots(hDlg, config);
+			}
+			break;
+		}
+		case IDC_CHECK_RCEVENTS:
+		{
+			if (HIWORD(wParam) == BN_CLICKED) {
+				bool check = IsCheckBoxChecked(hWnd, IDC_CHECK_RCEVENTS);
+				ConfigMng->SetSectionValid(config, EVENTS, check);
+				ConfigMng->CopyConfigurationSection(0, config, EVENTS);
 				UpdateRoots(hDlg, config);
 			}
 			break;

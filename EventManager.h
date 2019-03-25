@@ -47,7 +47,7 @@ public:
 	UINT GetID();
 	void SetName(string newname);
 	string GetName();
-	
+	TRIGGER GetTrigger() { return Trigger; }
 };
 
 class Child_Spawn :public Event {
@@ -73,6 +73,8 @@ public:
 	VECTOR3 GetOfs();
 	VECTOR3 GetVel();
 	VECTOR3 GetRotVel();
+	int GetMeshToDel() { return mesh_to_del; }
+	void SetMeshToDel(int msh) { mesh_to_del = msh; }
 };
 
 class Anim_Trigger :public Event {
@@ -207,5 +209,65 @@ public:
 	UINT id_counter;
 	UINT GetEventsCount();
 	string GetEventName(UINT idx);
+	void SetEventName(UINT idx, string newname);
+	Event::TRIGGER GetEventTrigger(UINT idx);
+	Event* GetEventH(UINT idx);
+	UINT GetEventIdx(Event* ev);
+	Event::TYPE GetEventType(UINT idx);
+
+	void SetSpawnedVesselName(UINT idx, string newName);
+	void SetSpawnedVesselClass(UINT idx, string newClass);
+	void SetOfs(UINT idx, VECTOR3 ofs);
+	void SetVel(UINT idx, VECTOR3 vel);
+	void SetRotVel(UINT idx, VECTOR3 rot_Vel);
+	string GetSpawnedVesselName(UINT idx);
+	string GetSpawnedVesselClass(UINT idx);
+	VECTOR3 GetOfs(UINT idx);
+	VECTOR3 GetVel(UINT idx);
+	VECTOR3 GetRotVel(UINT idx);
+	int GetMeshToDel(UINT idx);
+	void SetMeshToDel(UINT idx, int msh);
+
+	void SetAnimIdx(UINT idx, UINT _anim_idx);
+	UINT GetAnimIdx(UINT idx);
+	void SetForward(UINT idx, bool set);
+	bool GetForward(UINT idx);
+
+	void SetThrusterTH(UINT idx, THRUSTER_HANDLE _th);
+	THRUSTER_HANDLE GetThrusterTH(UINT idx);
+	void SetThLevel(UINT idx, double _Level);
+	double GetThLevel(UINT idx);
+
+	void SetThGroup(UINT idx, THGROUP_TYPE thgrp_type);
+	THGROUP_TYPE GetThGroup(UINT idx);
+	void SetThGLevel(UINT idx, double _level);
+	double GetThGLevel(UINT idx);
+
+	void SetDockIdx(UINT idx, UINT _dock_idx);
+	UINT GetDockIdx(UINT idx);
+	void SetNext(UINT idx, bool set);
+	bool GetNext(UINT idx);
+
+	void SetNow(UINT idx, bool set);
+	bool GetNow(UINT idx);
+	void SetNewMJD0(UINT idx, double _newmjd0);
+	double GetNewMJD0(UINT idx);
+
+	void SetNewConfig(UINT idx, UINT _newconfig);
+	UINT GetNewConfig(UINT idx);
+
+	void SetShift(UINT idx, VECTOR3 _shift);
+	VECTOR3 GetShift(UINT idx);
+
+	void SetMesh(UINT idx, UINT _mesh);
+	UINT GetMesh(UINT idx);
+	void SetTexIdx(UINT idx, DWORD _texidx);
+	DWORD GetTexIdx(UINT idx);
+	void SetTextureName(UINT idx, string _texture);
+	string GetTextureName(UINT idx);
+
+
+
+	void Clear();
 };
 

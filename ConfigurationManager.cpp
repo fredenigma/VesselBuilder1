@@ -3367,6 +3367,9 @@ void VardSection::ManagerClear() {
 vector<VardSection::Definitions> VardSection::GetSection() {
 	return Defs;
 }
+
+
+
 EventSection::EventSection(VesselBuilder1 *VB1, UINT config, FILEHANDLE cfg) :Section(VB1, config, cfg) {
 	Defs.clear();
 	EvMng = VB1->EvMng;
@@ -3404,7 +3407,7 @@ void EventSection::ParseSection(FILEHANDLE fh) {
 		VECTOR3 ofs;
 		VECTOR3 vel;
 		VECTOR3 rot_vel;
-		bool delmesh;
+		//bool delmesh;
 		int mesh_to_del;
 		int anim_idx;
 		bool forward;
@@ -3602,15 +3605,368 @@ void EventSection::ParseSection(FILEHANDLE fh) {
 	}
 }
 void EventSection::WriteSection(FILEHANDLE fh) {
+	oapiWriteLine(fh, " ");
+	oapiWriteLine(fh, ";<-------------------------EVENTS DEFINITIONS------------------------->");
+	oapiWriteLine(fh, " ");
+
+	for (UINT i = 0; i < EvMng->GetEventsCount(); i++) {
+		char cbuf[256] = { '\0' };
+		sprintf(cbuf, "EVENT_%i_ID", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_int(fh, cbuf, i);
+		sprintf(cbuf, "EVENT_%i_NAME", i);
+		ConfigCheck(cbuf, Config_idx);
+		char namebuf[256] = { '\0' };
+		sprintf(namebuf, "%s", Defs[i].name.c_str());
+		oapiWriteItem_string(fh, cbuf, namebuf);
+		sprintf(cbuf, "EVENT_%i_TYPE", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_int(fh, cbuf, Defs[i].type);
+		sprintf(cbuf, "EVENT_%i_TRIGGERTYPE", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_int(fh, cbuf, Defs[i].trigger_type);
+		sprintf(cbuf, "EVENT_%i_REPEAT", i);
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_int(fh, cbuf, Defs[i].repeat_mode);
+		if (Defs[i].trigger_type == (int)Event::TRIGGER::TRIGGERTYPE::KEYPRESS) {
+			sprintf(cbuf, "EVENT_%i_KEY", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_int(fh, cbuf, Defs[i].key);
+			sprintf(cbuf, "EVENT_%i_KEYMOD", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_int(fh, cbuf, Defs[i].keymod);
+		}
+		if ((Defs[i].trigger_type == (int)Event::TRIGGER::TRIGGERTYPE::ALTITUDE) || (Defs[i].trigger_type == (int)Event::TRIGGER::TRIGGERTYPE::VELOCITY) || (Defs[i].trigger_type == (int)Event::TRIGGER::TRIGGERTYPE::DYNPRESSURE)) {
+			sprintf(cbuf, "EVENT_%i_CONDITION", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_int(fh, cbuf, Defs[i].condition);
+		}
+		if ((Defs[i].trigger_type == (int)Event::TRIGGER::TRIGGERTYPE::ALTITUDE) || (Defs[i].trigger_type == (int)Event::TRIGGER::TRIGGERTYPE::MAINFUELTANK_LEVEL) || (Defs[i].trigger_type == (int)Event::TRIGGER::TRIGGERTYPE::VELOCITY) || (Defs[i].trigger_type == (int)Event::TRIGGER::TRIGGERTYPE::TIME) || (Defs[i].trigger_type == (int)Event::TRIGGER::TRIGGERTYPE::DYNPRESSURE)) {
+			sprintf(cbuf, "EVENT_%i_TRIGGERVALUE", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_float(fh, cbuf, Defs[i].trigger_value);
+		}
+		if (Defs[i].trigger_type == (int)Event::TRIGGER::TRIGGERTYPE::OTHER_EVENT) {
+			sprintf(cbuf, "EVENT_%i_OTHEREVENT", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_int(fh, cbuf, Defs[i].other_event);
+		}
+		if (Defs[i].trigger_type == (int)Event::TRIGGER::TRIGGERTYPE::VELOCITY) {
+			sprintf(cbuf, "EVENT_%i_VELMODE", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_int(fh, cbuf, Defs[i].vel_mode);
+		}
+		if (Defs[i].trigger_type == (int)Event::TRIGGER::TRIGGERTYPE::TIME) {
+			sprintf(cbuf, "EVENT_%i_TIMEMODE", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_int(fh, cbuf, Defs[i].time_mode);
+		}
+		if (Defs[i].type == (int)Event::TYPE::CHILD_SPAWN) {
+			char ccbuf[256] = { '\0' };
+			sprintf(cbuf, "EVENT_%i_SPAWNEDCLASS", i);
+			ConfigCheck(cbuf, Config_idx);
+			sprintf(ccbuf, "%s", Defs[i].spawned_vessel_class.c_str());
+			oapiWriteItem_string(fh, cbuf, ccbuf);
+			sprintf(cbuf, "EVENT_%i_SPAWNEDNAME", i);
+			ConfigCheck(cbuf, Config_idx);
+			sprintf(ccbuf, "%s", Defs[i].spawned_vessel_name.c_str());
+			oapiWriteItem_string(fh, cbuf, ccbuf);
+			sprintf(cbuf, "EVENT_%i_SPAWNEDOFS", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_vec(fh, cbuf, Defs[i].ofs);
+			sprintf(cbuf, "EVENT_%i_SPAWNEDVEL", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_vec(fh, cbuf, Defs[i].vel);
+			sprintf(cbuf, "EVENT_%i_SPAWNEDROTVEL", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_vec(fh, cbuf, Defs[i].rot_vel);
+			sprintf(cbuf, "EVENT_%i_SPAWNDELMESH", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_int(fh, cbuf, Defs[i].mesh_to_del);
+		}
+		if (Defs[i].type == (int)Event::TYPE::ANIMATION_TRIGGER) {
+			sprintf(cbuf, "EVENT_%i_ANIM", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_int(fh, cbuf, Defs[i].anim_idx);
+			sprintf(cbuf, "EVENT_%i_ANIMFWD", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_bool(fh, cbuf, Defs[i].forward);
+		}
+		if (Defs[i].type == (int)Event::TYPE::THRUSTER_FIRING) {
+			sprintf(cbuf, "EVENT_%i_THR", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_int(fh, cbuf, Defs[i].thruster);
+			sprintf(cbuf, "EVENT_%i_THRLVL", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_float(fh, cbuf, Defs[i].thlevel);
+		}
+		if (Defs[i].type == (int)Event::TYPE::THRUSTERGROUP_LEVEL) {
+			sprintf(cbuf, "EVENT_%i_THG", i);
+			ConfigCheck(cbuf, Config_idx);
+			int thg = (int)Defs[i].group;
+			oapiWriteItem_int(fh, cbuf, thg);
+			sprintf(cbuf, "EVENT_%i_THGLVL", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_float(fh, cbuf, Defs[i].thglevel);
+		}
+		if (Defs[i].type == (int)Event::TYPE::PAYLOAD_JETTISON) {
+			sprintf(cbuf, "EVENT_%i_JETTNEXT", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_bool(fh, cbuf, Defs[i].next);
+			if (!Defs[i].next) {
+				sprintf(cbuf, "EVENT_%i_JETTIDX", i);
+				ConfigCheck(cbuf, Config_idx);
+				oapiWriteItem_int(fh, cbuf, Defs[i].dock_idx);
+			}
+		}
+		if (Defs[i].type == (int)Event::TYPE::RESET_MET) {
+			sprintf(cbuf, "EVENT_%i_TIMENOW", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_bool(fh, cbuf, Defs[i].now);
+			if (!Defs[i].now) {
+				sprintf(cbuf, "EVENT_%i_TIMEMJD0", i);
+				ConfigCheck(cbuf, Config_idx);
+				oapiWriteItem_float(fh, cbuf, Defs[i].newmjd0);
+			}
+		}
+		if (Defs[i].type == (int)Event::TYPE::RECONFIG) {
+			sprintf(cbuf, "EVENT_%i_RECONFIG", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_int(fh, cbuf, Defs[i].newconfig);
+		}
+		if (Defs[i].type == (int)Event::TYPE::SHIFT_CG) {
+			sprintf(cbuf, "EVENT_%i_SHIFTCG", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_vec(fh, cbuf, Defs[i].shiftcg);
+		}
+		if (Defs[i].type == (int)Event::TYPE::TEXTURE_SWAP) {
+			sprintf(cbuf, "EVENT_%i_TXSWMESH", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_int(fh, cbuf, Defs[i].mesh);
+			sprintf(cbuf, "EVENT_%i_TXSWTEXIDX", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_int(fh, cbuf, Defs[i].texidx);
+			char ccbuf[256] = { '\0' };
+			sprintf(cbuf, "EVENT_%i_TXSWTEXNAME", i);
+			ConfigCheck(cbuf, Config_idx);
+			sprintf(ccbuf, "%s", Defs[i].texture_name.c_str());
+			oapiWriteItem_string(fh, cbuf, ccbuf);
+		}
+	}
 	return;
 }
 void EventSection::ApplySection() {
+	Section::ApplySection();
+	for (UINT i = 0; i < Defs.size(); i++) {
+		Event::TRIGGER trig = Event::TRIGGER();
+		trig.Type = (Event::TRIGGER::TRIGGERTYPE)Defs[i].trigger_type;
+		trig.repeat_mode = (Event::TRIGGER::REPEAT_MODE)Defs[i].repeat_mode;
+		if (trig.Type == Event::TRIGGER::TRIGGERTYPE::KEYPRESS) {
+			trig.Key = (DWORD)Defs[i].key;
+
+			trig.KeyMods.Alt = false;
+			trig.KeyMods.Shift = false;
+			trig.KeyMods.Ctrl = false;
+			if (Defs[i].keymod == 1 || 3 || 5 || 7) {
+				trig.KeyMods.Shift = true;
+			}
+			if (Defs[i].keymod == 2 || 3 || 6 || 7) {
+				trig.KeyMods.Ctrl = true;
+			}
+			if (Defs[i].keymod == 4 || 5 || 6 || 7) {
+				trig.KeyMods.Alt = true;
+			}
+			/*switch (Defs[i].keymod) {
+			case 0:
+			{
+				trig.KeyMods.Alt = false;
+				trig.KeyMods.Shift = false;
+				trig.KeyMods.Ctrl = false;
+				break;
+			}
+			case 1:
+			{
+				trig.KeyMods.Alt = false;
+				trig.KeyMods.Shift = true;
+				trig.KeyMods.Ctrl = false;
+				break;
+			}
+			case 2:
+			{
+				trig.KeyMods.Alt = false;
+				trig.KeyMods.Shift = false;
+				trig.KeyMods.Ctrl = true;
+				break;
+			}
+			case 3:
+			{
+				trig.KeyMods.Alt = false;
+				trig.KeyMods.Shift = true;
+				trig.KeyMods.Ctrl = true;
+				break;
+			}
+			case 4:
+			{
+				trig.KeyMods.Alt = true;
+				trig.KeyMods.Shift = false;
+				trig.KeyMods.Ctrl = false;
+				break;
+			}
+			case 5:
+			{
+				trig.KeyMods.Alt = true;
+				trig.KeyMods.Shift = true;
+				trig.KeyMods.Ctrl = false;
+				break;
+			}
+			case 6:
+			{
+				trig.KeyMods.Alt = true;
+				trig.KeyMods.Shift = false;
+				trig.KeyMods.Ctrl = true;
+				break;
+			}
+			case 7:
+			{
+				trig.KeyMods.Alt = true;
+				trig.KeyMods.Shift = true;
+				trig.KeyMods.Ctrl = true;
+				break;
+			}
+			}*/
+		}
+		if (trig.Type == Event::TRIGGER::TRIGGERTYPE::ALTITUDE||Event::TRIGGER::TRIGGERTYPE::VELOCITY || Event::TRIGGER::TRIGGERTYPE::DYNPRESSURE) {
+			trig.condition = (Event::TRIGGER::CONDITION)Defs[i].condition;
+		}
+		if (trig.Type == Event::TRIGGER::TRIGGERTYPE::ALTITUDE || Event::TRIGGER::TRIGGERTYPE::MAINFUELTANK_LEVEL || Event::TRIGGER::TRIGGERTYPE::VELOCITY || Event::TRIGGER::TRIGGERTYPE::TIME || Event::TRIGGER::TRIGGERTYPE::TIME || Event::TRIGGER::TRIGGERTYPE::DYNPRESSURE) {
+			trig.TriggerValue = Defs[i].trigger_value;
+		}
+		if (trig.Type == Event::TRIGGER::TRIGGERTYPE::OTHER_EVENT) {
+			trig.Other_event_h = EvMng->GetEventH(Defs[i].other_event);
+		}
+		if (trig.Type == Event::TRIGGER::TRIGGERTYPE::VELOCITY) {
+			trig.vel_mode = (Event::TRIGGER::VEL_MODE)Defs[i].vel_mode;
+		}
+		if (trig.Type == Event::TRIGGER::TRIGGERTYPE::TIME) {
+			trig.time_mode = (Event::TRIGGER::TIME_MODE)Defs[i].time_mode;
+		}
+
+		Event::TYPE etp = (Event::TYPE)Defs[i].type;
+		switch (etp) {
+		case Event::TYPE::CHILD_SPAWN:
+		{
+			EvMng->CreateChildSpawnEvent(Defs[i].name, trig, Defs[i].spawned_vessel_name, Defs[i].spawned_vessel_class, Defs[i].ofs, Defs[i].vel, Defs[i].rot_vel, Defs[i].mesh_to_del);
+			break;
+		}
+		case Event::TYPE::ANIMATION_TRIGGER:
+		{
+			EvMng->CreateAnimTriggerEvent(Defs[i].name, trig, Defs[i].anim_idx, Defs[i].forward);
+			break;
+		}
+		case Event::TYPE::THRUSTER_FIRING:
+		{
+			THRUSTER_HANDLE th = VB1->ThrMng->GetThrTH(Defs[i].thruster);
+			EvMng->CreateThrusterFireEvent(Defs[i].name, trig, th, Defs[i].thlevel);
+			break;
+		}
+		case Event::TYPE::THRUSTERGROUP_LEVEL:
+		{
+			EvMng->CreateThrusterGroupLevelEvent(Defs[i].name, trig, Defs[i].group, Defs[i].thglevel);
+			break;
+		}
+		case Event::TYPE::PAYLOAD_JETTISON:
+		{
+			EvMng->CreatePayloadJettisonEvent(Defs[i].name, trig, Defs[i].next, Defs[i].dock_idx);
+			break;
+		}
+		case Event::TYPE::RESET_MET:
+		{
+			EvMng->CreateResetMetEvent(Defs[i].name, trig, Defs[i].now, Defs[i].newmjd0);
+			break;
+		}
+		case Event::TYPE::RECONFIG:
+		{
+			EvMng->CreateReconfigurationEvent(Defs[i].name, trig, Defs[i].newconfig);
+			break;
+		}
+		case Event::TYPE::SHIFT_CG:
+		{
+			EvMng->CreateShiftCGEvent(Defs[i].name, trig, Defs[i].shiftcg);
+			break;
+		}
+		case Event::TYPE::TEXTURE_SWAP:
+		{
+			EvMng->CreateTextureSwapEvent(Defs[i].name, trig, Defs[i].mesh, Defs[i].texidx, Defs[i].texture_name);
+			break;
+		}
+
+		}
+
+	}
 	return;
 }
 void EventSection::UpdateSection() {
+	Defs.clear();
+	for (UINT i = 0; i < EvMng->GetEventsCount(); i++) {
+		Definitions d;
+		d.name = EvMng->GetEventName(i);
+		Event::TYPE tp = EvMng->GetEventType(i);
+		d.type = (int)tp;
+		Event::TRIGGER trig = EvMng->GetEventTrigger(i);
+		d.trigger_type = (int)trig.Type;
+		d.repeat_mode = (int)trig.repeat_mode;
+		d.key = trig.Key;
+		d.keymod = trig.KeyMods.Shift ? 1 : 0 + trig.KeyMods.Ctrl ? 2 : 0 + trig.KeyMods.Alt ? 4 : 0;
+		d.condition = (int)trig.condition;
+		d.trigger_value = trig.TriggerValue;
+		d.other_event = EvMng->GetEventIdx(trig.Other_event_h);
+		d.vel_mode = (int)trig.vel_mode;
+		d.time_mode = (int)trig.time_mode;
+		if (tp == Event::TYPE::CHILD_SPAWN) {
+			d.spawned_vessel_class = EvMng->GetSpawnedVesselClass(i);
+			d.spawned_vessel_name = EvMng->GetSpawnedVesselName(i);
+			d.ofs = EvMng->GetOfs(i);
+			d.vel = EvMng->GetVel(i);
+			d.rot_vel = EvMng->GetRotVel(i);
+			d.mesh_to_del = EvMng->GetMeshToDel(i);
+		}
+		else if (tp == Event::TYPE::ANIMATION_TRIGGER) {
+			d.anim_idx = EvMng->GetAnimIdx(i);
+			d.forward = EvMng->GetForward(i);
+		}
+		else if (tp == Event::TYPE::THRUSTER_FIRING) {
+			d.thruster = VB1->ThrMng->GetThrIdx(EvMng->GetThrusterTH(i));
+			d.thlevel = EvMng->GetThLevel(i);
+		}
+		else if (tp == Event::TYPE::THRUSTERGROUP_LEVEL) {
+			d.group = EvMng->GetThGroup(i);
+			d.thglevel = EvMng->GetThGLevel(i);
+		}
+		else if (tp == Event::TYPE::PAYLOAD_JETTISON) {
+			d.dock_idx = EvMng->GetDockIdx(i);
+			d.next = EvMng->GetNext(i);
+		}
+		else if (tp == Event::TYPE::RESET_MET) {
+			d.now = EvMng->GetNow(i);
+			d.newmjd0 = EvMng->GetNewMJD0(i);
+		}
+		else if (tp == Event::TYPE::RECONFIG) {
+			d.newconfig = EvMng->GetNewConfig(i);
+		}
+		else if (tp == Event::TYPE::SHIFT_CG) {
+			d.shiftcg = EvMng->GetShift(i);
+		}
+		else if (tp == Event::TYPE::TEXTURE_SWAP) {
+			d.mesh = EvMng->GetMesh(i);
+			d.texidx = EvMng->GetTexIdx(i);
+			d.texture_name = EvMng->GetTextureName(i);
+		}
+		Defs.push_back(d);
+	}
 	return;
 }
 void EventSection::ManagerClear() {
+	EvMng->Clear();
 	return;
 }
 
@@ -3642,7 +3998,7 @@ Configuration::Configuration(VesselBuilder1 *_VB1, map<ItemType, bool> _Sections
 	Sections.push_back(new VCSection(_VB1, _config, _cfg)); //12
 	Sections.push_back(new LightSection(_VB1, _config, _cfg)); //13
 	Sections.push_back(new VardSection(_VB1, _config, _cfg)); //14
-	
+	Sections.push_back(new EventSection(_VB1, _config, _cfg)); //15
 	UpdateValids();
 
 	
@@ -3794,7 +4150,11 @@ bool Configuration::IsSectionActive(ItemType Type) {
 		sect = VARDRAG_SECTION;
 		break;
 	}
-	//case EVENTS
+	case EVENTS:
+	{
+		sect = EVENTS_SECTION;
+		break;
+	}
 	}
 
 	if (sect == -1) {
@@ -3881,7 +4241,11 @@ void Configuration::SetSectionActive(ItemType Type, bool set) {
 		sect = VARDRAG_SECTION;
 		break;
 	}
-	//case EVENTS
+	case EVENTS:
+	{
+		sect = EVENTS_SECTION;
+		break;
+	}
 	}
 
 	if (sect == -1) {
@@ -3958,6 +4322,10 @@ void Configuration::UpdateValids() {
 	if (Configuration_Sections[VARIABLEDRAG]) {
 		LogV("Variable Drag Section included");
 		Sections[14]->SetValid(true);
+	}
+	if (Configuration_Sections[EVENTS]) {
+		LogV("Events Section included");
+		Sections[15]->SetValid(true);
 	}
 }
 void Configuration::SetIndex(UINT config_idx) {
@@ -4195,7 +4563,21 @@ void Configuration::SetVardSection(vector<VardSection::Definitions>d) {
 	}
 	return;
 }
-
+bool Configuration::GetEventSection(vector<EventSection::Definitions>&d) {
+	if (IsSectionValid(EVENTS)) {
+		d = ((EventSection*)Sections[EVENTS_SECTION])->GetSection();
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+void Configuration::SetEventSection(vector<EventSection::Definitions>d) {
+	if (IsSectionValid(EVENTS)) {
+		((EventSection*)Sections[EVENTS_SECTION])->SetSection(d);
+	}
+	return;
+}
 
 
 
@@ -4297,6 +4679,7 @@ void ConfigurationManager::ParseCfgFile(FILEHANDLE fh) {
 	Sects[VC] = true;
 	Sects[LIGHTS] = true;
 	Sects[VARIABLEDRAG] = true;
+	Sects[EVENTS] = true;
 	for (UINT i = 0; i < Configs; i++) {
 		if (i > 0) {
 			char cbuf[256] = { '\0' };
@@ -4320,6 +4703,7 @@ void ConfigurationManager::ParseCfgFile(FILEHANDLE fh) {
 			VB1->IsUintInVector(VC_SECTION, Sections_n) ? Sects[VC] = true : Sects[VC] = false;
 			VB1->IsUintInVector(LIGHTS_SECTION, Sections_n) ? Sects[LIGHTS] = true : Sects[LIGHTS] = false;
 			VB1->IsUintInVector(VARDRAG_SECTION, Sections_n) ? Sects[VARIABLEDRAG] = true : Sects[VARIABLEDRAG] = false;
+			VB1->IsUintInVector(EVENTS_SECTION, Sections_n) ? Sects[EVENTS] = true : Sects[EVENTS] = false;
 			
 		}
 		AddConfiguration(VB1, Sects,fh);
@@ -4351,6 +4735,7 @@ void ConfigurationManager::WriteCfg(FILEHANDLE fh) {
 			if (IsSectionValid(i, VC)) { Sections_n.push_back(VC_SECTION); }
 			if (IsSectionValid(i, LIGHTS)) { Sections_n.push_back(LIGHTS_SECTION); }
 			if (IsSectionValid(i, VARIABLEDRAG)) { Sections_n.push_back(VARDRAG_SECTION); }
+			if (IsSectionValid(i, EVENTS)) { Sections_n.push_back(EVENTS_SECTION); }
 			string Section_s = VB1->WriteVectorUINT(Sections_n, false);
 			sprintf(Sections_c, "%s", Section_s.c_str());
 			oapiWriteItem_string(fh, cbuf, Sections_c);
@@ -4502,6 +4887,14 @@ void ConfigurationManager::CopyConfigurationSection(UINT config_src, UINT config
 		vector<VardSection::Definitions>d;
 		if (Configurations[config_src]->GetVardSection(d)) {
 			Configurations[config_dest]->SetVardSection(d);
+		}
+		break;
+	}
+	case EVENTS:
+	{
+		vector<EventSection::Definitions>d;
+		if (Configurations[config_src]->GetEventSection(d)) {
+			Configurations[config_dest]->SetEventSection(d);
 		}
 		break;
 	}
