@@ -598,3 +598,9 @@ void EventManager::ConsumeBufferedKey(DWORD key, bool down, char *kstate) {
 	}
 	return;
 }
+UINT EventManager::GetEventsCount() {
+	return Events.size();
+}
+string EventManager::GetEventName(UINT idx) {
+	return Events[idx]->GetName();
+}

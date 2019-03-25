@@ -20,6 +20,7 @@
 #include "VCManager.h"
 #include "LightsManager.h"
 #include "VariableDragManager.h"
+#include "EventManager.h"
 
 #pragma comment(lib, "comctl32.lib")
 
@@ -194,6 +195,13 @@ BOOL CALLBACK ReconfigDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
 	return DlgCtrl->ReconfigDlgProc(hWnd, uMsg, wParam, lParam);
 }
+BOOL CALLBACK EventsDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	if (uMsg == WM_INITDIALOG) {
+		SetWindowLong(hWnd, GWL_USERDATA, (LONG)lParam);
+	}
+	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
+	return DlgCtrl->EventsDlgProc(hWnd, uMsg, wParam, lParam);
+}
 BOOL CALLBACK EnableChilds(HWND hWnd, LPARAM lParam) {
 	EnableWindow(hWnd, lParam);
 	return true;
@@ -218,6 +226,7 @@ DialogControl::DialogControl(VesselBuilder1 *_VB1) {
 	LightsMng = VB1->LightsMng;
 	VardMng = VB1->VardMng;
 	ConfigMng = VB1->ConfigMng;
+	EvMng = VB1->EvMng;
 
 	open = false;
 	hDlg = NULL;
@@ -257,6 +266,7 @@ DialogControl::~DialogControl() {
 	LightsMng = NULL;
 	VardMng = NULL;
 	ConfigMng = NULL;
+	EvMng = NULL;
 	hDlg = NULL;
 	DeleteObject(penblack);
 	DeleteObject(pengray);
@@ -313,7 +323,7 @@ void DialogControl::InitDialog(HWND hWnd) {
 	hWnd_Lights= CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_LIGHTS), hWnd, LightsDlgProcHook, (LPARAM)this);
 	hWnd_VarDrag = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_VARDRAG), hWnd, VarDragDlgProcHook, (LPARAM)this);
 	hWnd_Reconfig = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_RECONFIGS), hWnd, ReconfigDlgProcHook, (LPARAM)this);
-	
+	hWnd_Events = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_EVENTS), hWnd, EventsDlgProcHook, (LPARAM)this);
 	SetWindowPos(hwnd_Mesh, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hwnd_Mesh, SW_HIDE);
 	SetWindowPos(hWnd_Dock, NULL, 255, 10, 0, 0, SWP_NOSIZE);
@@ -360,7 +370,8 @@ void DialogControl::InitDialog(HWND hWnd) {
 	ShowWindow(hWnd_VarDrag, SW_HIDE);
 	SetWindowPos(hWnd_Reconfig, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hWnd_Reconfig, SW_HIDE);
-
+	SetWindowPos(hWnd_Events, NULL, 255, 10, 0, 0, SWP_NOSIZE);
+	ShowWindow(hWnd_Events, SW_HIDE);
 
 
 	char verbuf[256] = { '\0' };
@@ -1257,7 +1268,35 @@ void DialogControl::UpdateTree(HWND hWnd, ItemType type, UINT config) {
 		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), Config_Items[config].hrootVariableDrag, TVE_EXPAND);
 		break;
 	}
+	case EVENTS:
+	{
+		HTREEITEM ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootEvents);
+		while (ht != NULL) {
+			TreeItem.erase(ht);
+			TreeView_DeleteItem(GetDlgItem(hWnd, IDC_TREE1), ht);
+			ht = (HTREEITEM)SendDlgItemMessage(hWnd, IDC_TREE1, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)Config_Items[config].hrootEvents);
+		}
+		TVINSERTSTRUCT insertstruct = { 0 };
 
+		insertstruct.hInsertAfter = TVI_ROOT;
+		insertstruct.item.mask = TVIF_TEXT;
+		insertstruct.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_EXPANDED;
+		insertstruct.hParent = Config_Items[config].hrootEvents;
+		for (UINT i = 0; i < EvMng->GetEventsCount() ; i++) {
+			char cbuf[256] = { '\0' };
+			sprintf(cbuf, "*%s", EvMng->GetEventName(i).c_str());
+			insertstruct.item.pszText = (LPSTR)cbuf;
+			insertstruct.item.cchTextMax = strlen(cbuf);
+			TREE_ITEM_REF Tir = TREE_ITEM_REF();
+			Tir.Type = EVENTS;
+			Tir.idx = i;
+			Tir.config = config;
+			Tir.hitem = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+			TreeItem[Tir.hitem] = Tir;
+		}
+		TreeView_Expand(GetDlgItem(hWnd, IDC_TREE1), Config_Items[config].hrootEvents, TVE_EXPAND);
+		break;
+	}
 
 
 	}
@@ -1512,6 +1551,15 @@ void DialogControl::UpdateRoots(HWND hWnd, UINT config) {
 		insertstruct.item.cchTextMax = 21;
 		ci->hrootVariableDrag = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
 		Tir.hitem = ci->hrootVariableDrag;
+		Tir.config = config;
+		TreeItem[Tir.hitem] = Tir;
+	}
+	if (ConfigMng->IsSectionValid(config, EVENTS)) {
+		insertstruct.hParent = ci->hrootVessel;
+		insertstruct.item.pszText = (LPSTR)TEXT("Events\0");
+		insertstruct.item.cchTextMax = 8;
+		ci->hrootEvents = TreeView_InsertItem(GetDlgItem(hWnd, IDC_TREE1), &insertstruct);
+		Tir.hitem = ci->hrootEvents;
 		Tir.config = config;
 		TreeItem[Tir.hitem] = Tir;
 	}
@@ -1980,6 +2028,9 @@ void DialogControl::UpdateSubs(HWND hWnd, UINT config) {
 	if (ConfigMng->IsSectionActive(config, VARIABLEDRAG)) {
 		UpdateTree(hWnd, VARIABLEDRAG, config);
 	}
+	if (ConfigMng->IsSectionActive(config, EVENTS)) {
+		UpdateTree(hWnd, EVENTS, config);
+	}
 	return;
 }
 void DialogControl::ShowTheRightDialog(ItemType type) {
@@ -2047,6 +2098,9 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 	}
 	if (type != VARIABLEDRAG) {
 		ShowWindow(hWnd_VarDrag, SW_HIDE);
+	}
+	if (type != EVENTS) {
+		ShowWindow(hWnd_Events, SW_HIDE);
 	}
 
 	
@@ -2147,6 +2201,11 @@ void DialogControl::ShowTheRightDialog(ItemType type) {
 		ShowWindow(hWnd_VarDrag, SW_SHOW);
 		break;
 	}
+	case EVENTS:
+	{
+		ShowWindow(hWnd_Events, SW_SHOW);
+		break;
+	}
 	}
 
 	return;
@@ -2231,6 +2290,10 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 				VardMng->AddUndefinedVardDef();
 				UpdateTree(hWnd, VARIABLEDRAG, ConfigMng->GetSectionActiveConfig(VARIABLEDRAG));
 			}
+			else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(EVENTS)].hrootEvents) {
+				/////WHAT TO DO HERE???????????????????
+				UpdateTree(hWnd, EVENTS, ConfigMng->GetSectionActiveConfig(EVENTS));
+			}
 			else if (CurrentSelection.hitem == Config_Items[0].hrootVessel) {
 				map<ItemType, bool>Sects;
 				Sects[SETTINGS] = false;
@@ -2248,6 +2311,7 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 				Sects[VC] = false;
 				Sects[LIGHTS] = false;
 				Sects[VARIABLEDRAG] = false;
+				Sects[EVENTS] = false;
 				UINT cf = ConfigMng->AddConfiguration(VB1, Sects, NULL);
 				//InitTree(hWnd);
 				UpdateRoots(hWnd, cf);
@@ -2395,6 +2459,11 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD VARIABLE DRAG ELEMENT");
+					}
+					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(EVENTS)].hrootEvents) {
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
+						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
+						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD EVENT");
 					}
 					else {
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_HIDE);
@@ -2560,6 +2629,11 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 						case VARIABLEDRAG:
 						{
 							UpdateVarDragDialog(hWnd_VarDrag);
+							break;
+						}
+						case EVENTS:
+						{
+							UpdateEventsDialog(hWnd_Events);
 							break;
 						}
 					}

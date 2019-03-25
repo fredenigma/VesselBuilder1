@@ -125,7 +125,7 @@ public:
  bool clbkLoadVC(int id);
  bool clbkVCMouseEvent(int id, int event, VECTOR3 &p);
  void clbkDockEvent(int dock, OBJHANDLE mate);
-
+ bool clbkDrawHUD(int mode, const HUDPAINTSPEC *hps, oapi::Sketchpad *skp);
 
  GeneralSettingsManager* SetMng;
  MeshManager* MshMng;
@@ -153,7 +153,7 @@ public:
 
  VISHANDLE visual;
  
-
+ //NOTEHANDLE Met_Note;
 
  void WriteCfgFile(string filename);
  void WriteBackupFile();

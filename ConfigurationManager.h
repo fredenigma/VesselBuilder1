@@ -38,6 +38,8 @@ public:
 		VECTOR3 CrossSections;
 		double GravityGradientDamping;
 		VECTOR3 RotDrag;
+		bool met_enabled;
+		bool show_met_in_hud;
 		Definitions() {
 			EmptyMass = 100;
 			Size = 10;
@@ -45,6 +47,8 @@ public:
 			CrossSections = _V(10, 10, 10);
 			GravityGradientDamping = 20;
 			RotDrag = _V(1, 1, 1);
+			met_enabled = false;
+			show_met_in_hud = false;
 		}
 	}Def;
 
@@ -637,6 +641,56 @@ public:
 	VariableDragManager *VardMng;
 
 	vector<Definitions> GetSection();
+	void SetSection(vector<Definitions>d) { Defs = d; }
+};
+
+class EventSection : public Section {
+public:
+	EventSection(VesselBuilder1 *VB1, UINT config, FILEHANDLE cfg);
+	~EventSection();
+	void ParseSection(FILEHANDLE fh);
+	void WriteSection(FILEHANDLE fh);
+	void ApplySection();
+	void UpdateSection();
+	void ManagerClear();
+	struct Definitions {
+		string name;
+		int type;
+		int trigger_type;
+		int repeat_mode;
+		DWORD key;
+		int keymod; //1 shift, 2 ctrl, 4 alt, 3 shift + ctrl, 5 shift + alt, 6 ctrl + alt, 7 shift + ctrl + alt
+		int condition;
+		double trigger_value;
+		int other_event;
+		int vel_mode;
+		int time_mode;
+		string spawned_vessel_name;
+		string spawned_vessel_class;
+		VECTOR3 ofs;
+		VECTOR3 vel;
+		VECTOR3 rot_vel;
+		bool delmesh;
+		int mesh_to_del;
+		UINT anim_idx;
+		bool forward;
+		int thruster;
+		double thlevel;
+		THGROUP_TYPE group;
+		double thglevel;
+		UINT dock_idx;
+		bool next;
+		bool now;
+		double newmjd0;
+		UINT newconfig;
+		VECTOR3 shiftcg;
+		int mesh;
+		DWORD texidx;
+		string texture_name;
+	};
+	vector<Definitions> Defs;
+	EventManager *EvMng;
+	vector<Definitions> GetSection() { return Defs; }
 	void SetSection(vector<Definitions>d) { Defs = d; }
 };
 

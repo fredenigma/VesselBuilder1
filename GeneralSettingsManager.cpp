@@ -1,9 +1,13 @@
 #include "VesselBuilder1.h"
 #include "DialogControl.h"
 #include "GeneralSettingsManager.h"
+#include "MET.h"
 
 GeneralSettingsManager::GeneralSettingsManager(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;
+	HUDTxt.clear();
+	HudTxtenabled = false;
+//	show_met = NOSHOW;
 }
 GeneralSettingsManager::~GeneralSettingsManager() {
 	VB1 = NULL;
@@ -56,8 +60,34 @@ VECTOR3 GeneralSettingsManager::GetRotDrag() {
 	VB1->GetRotDrag(rd);
 	return rd;
 }
+void GeneralSettingsManager::EnableMET(bool enable) {
+	VB1->Met->Enable(enable);
+	return;
+}
+bool GeneralSettingsManager::IsMETEnabled() {
+	return VB1->Met->Enabled();
+}
+/*GeneralSettingsManager::SHOWMET GeneralSettingsManager::GetShowMet() {
+	return show_met;
+}*/
+//void GeneralSettingsManager::SetShowMet(GeneralSettingsManager::SHOWMET show) {
+void GeneralSettingsManager::SetShowMet(bool show) {
+	ShowInHUD = show;
+	return;
+}
+void GeneralSettingsManager::SetHUDText(string _text) {
+	HUDTxt = _text;
+	return;
+}
+string GeneralSettingsManager::GetHUDText() {
+	return HUDTxt;
+}
+
+
 void GeneralSettingsManager::Clear() {
+	HUDTxt.clear();
+//	VB1->Met->Enable(false);
+	SetShowMet(false);
 	
-	//nothing to do here I believe...
 	return;
 }

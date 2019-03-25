@@ -178,6 +178,7 @@
     <ClCompile Include="DockDlgProc.cpp" />
     <ClCompile Include="DockManager.cpp" />
     <ClCompile Include="EventManager.cpp" />
+    <ClCompile Include="EventsDlgProc.cpp" />
     <ClCompile Include="ExTexDlgProc.cpp" />
     <ClCompile Include="ExTexManager.cpp" />
     <ClCompile Include="FollowMeDlg.cpp" />

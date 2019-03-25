@@ -29,6 +29,9 @@
 #define IDD_DIALOG_TEXTREADER           127
 #define IDD_DIALOG_ANIM1                128
 #define IDD_DIALOG_RECONFIGS            128
+#define IDD_DIALOG_EVENTS               129
+#define IDD_DIALOG_EVENTS1              130
+#define IDD_DIALOG_CHILDSPAWN           130
 #define IDC_TREE1                       1001
 #define IDC_SPIN_POSZ_S                 1005
 #define IDC_SPIN_POSZ_L                 1006
@@ -600,8 +603,47 @@
 #define IDC_CHECK_RCVARD                1529
 #define IDC_CHECK_RCEVENTS              1530
 #define IDC_BUTTON_RCACTIVATE           1531
-#define IDC_BUTTON2                     1532
 #define IDC_BUTTON_RCDELETE             1532
+#define IDC_CHECK_SETMETENABLE          1533
+#define IDC_EDIT_SETHUDTXT              1536
+#define IDC_CHECK_SETHUDTXTENABLE       1537
+#define IDC_BUTTON_HUDTXTSET            1538
+#define IDC_CHECK_SETSHOWMET            1539
+#define IDC_STATIC_SETHUDTXT            1540
+#define IDC_CHECK_PRPKEEPFUEL           1541
+#define IDC_EDIT1                       1542
+#define IDC_BUTTON1                     1543
+#define IDC_COMBO1                      1544
+#define IDC_COMBO2                      1545
+#define IDC_EDIT2                       1546
+#define IDC_EDIT3                       1547
+#define IDC_EDIT4                       1548
+#define IDC_EDIT5                       1549
+#define IDC_EDIT6                       1550
+#define IDC_EDIT7                       1551
+#define IDC_EDIT8                       1552
+#define IDC_EDIT9                       1553
+#define IDC_EDIT10                      1554
+#define IDC_EDIT11                      1555
+#define IDC_EDIT12                      1556
+#define IDC_COMBO3                      1557
+#define IDC_COMBO4                      1558
+#define IDC_COMBO5                      1559
+#define IDC_EDIT13                      1560
+#define IDC_BUTTON2                     1561
+#define IDC_CHECK1                      1562
+#define IDC_CHECK2                      1563
+#define IDC_CHECK3                      1564
+#define IDC_STATIC_EVTRIGREP            1565
+#define IDC_STATIC_EVTRIGREP2           1566
+#define IDC_STATIC_EVTRIGREP3           1567
+#define IDC_STATIC_EVTRIGREP4           1568
+#define IDC_CHECK4                      1569
+#define IDC_BUTTON3                     1570
+#define IDC_COMBO6                      1571
+#define IDC_BUTTON4                     1577
+#define IDC_BUTTON5                     1578
+#define IDC_BUTTON6                     1579
 
 // Next default values for new objects
 // 
@@ -609,7 +651,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1533
+#define _APS_NEXT_CONTROL_VALUE         1572
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

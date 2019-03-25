@@ -19,6 +19,7 @@ void DialogControl::UpdatePrpDialog(HWND hWnd) {
 	SetDlgItemText(hWnd, IDC_EDIT_TANKEFFIC, cbuf);
 	sprintf(cbuf, "%.2f", PrpMng->GetTankCurrentMass(idx));
 	SetDlgItemText(hWnd, IDC_EDIT_TANKCURRMASS, cbuf);
+	SetCheckBox(hWnd, IDC_CHECK_PRPKEEPFUEL, PrpMng->GetPrpRetainFuel(idx));
 	if (PrpMng->IsPrimary(idx)) {
 		SetDlgItemText(hWnd, IDC_EDIT_TANKISPRIMARY, "TRUE");
 	}
@@ -87,7 +88,14 @@ BOOL DialogControl::PrpDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 			UpdatePrpDialog(hWnd);
 			break;
 		}
-
+		case IDC_CHECK_PRPKEEPFUEL:
+		{
+			if (HIWORD(wParam) == BN_CLICKED) {
+				bool check = IsCheckBoxChecked(hWnd, IDC_CHECK_PRPKEEPFUEL);
+				PrpMng->SetPrpRetainFuel(idx, check);
+			}
+			break;
+		}
 
 		}
 		break;

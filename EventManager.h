@@ -205,6 +205,7 @@ public:
 	void PreStep(double simt, double simdt, double mjd);
 	void ConsumeBufferedKey(DWORD key, bool down, char *kstate);
 	UINT id_counter;
-
+	UINT GetEventsCount();
+	string GetEventName(UINT idx);
 };
 

@@ -262,6 +262,9 @@
     <ClCompile Include="ReconfigDlgProc.cpp">
       <Filter>Dialog</Filter>
     </ClCompile>
+    <ClCompile Include="EventsDlgProc.cpp">
+      <Filter>Dialog</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="VesselBuilder1.rc">

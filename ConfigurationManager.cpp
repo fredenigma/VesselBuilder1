@@ -17,6 +17,7 @@
 #include "LightsManager.h"
 #include "VariableDragManager.h"
 #include "ConfigurationManager.h"
+#include "EventManager.h"
 
 #define LogV(x,...) VB1->Log->Log(x,##__VA_ARGS__)
 
@@ -88,7 +89,14 @@ void SettingSection::ParseSection(FILEHANDLE fh) {
 	sprintf(cbuf, "ROTDRAG");
 	ConfigCheck(cbuf, Config_idx);
 	oapiReadItem_vec(fh, cbuf, Def.RotDrag);
-	
+	sprintf(cbuf, "MET_ENABLED");
+	ConfigCheck(cbuf, Config_idx);
+	if (!oapiReadItem_bool(fh, cbuf, Def.met_enabled)) { Def.met_enabled = false; }
+	if (Def.met_enabled) {
+		sprintf(cbuf, "MET_IN_HUD");
+		ConfigCheck(cbuf, Config_idx);
+		if (!oapiReadItem_bool(fh, cbuf, Def.show_met_in_hud)) { Def.show_met_in_hud= false; }
+	}
 }
 void SettingSection::WriteSection(FILEHANDLE fh) {
 	char cbuf[256] = { '\0' };
@@ -114,6 +122,18 @@ void SettingSection::WriteSection(FILEHANDLE fh) {
 	sprintf(cbuf, "ROTDRAG");
 	ConfigCheck(cbuf, Config_idx);
 	oapiWriteItem_vec(fh, cbuf, Def.RotDrag);
+	if (Def.met_enabled) {
+		sprintf(cbuf, "MET_ENABLED");
+		ConfigCheck(cbuf, Config_idx);
+		oapiWriteItem_bool(fh, cbuf, Def.met_enabled);
+		if (Def.show_met_in_hud) {
+			sprintf(cbuf, "MET_IN_HUD");
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_bool(fh, cbuf, Def.show_met_in_hud);
+		}
+	}
+	
+		
 	oapiWriteLine(fh, " ");
 	
 }
@@ -125,6 +145,8 @@ void SettingSection::ApplySection() {
 	SetMng->SetCrossSections(Def.CrossSections);
 	SetMng->SetGravityGradientDamping(Def.GravityGradientDamping);
 	SetMng->SetRotDrag(Def.RotDrag);
+	SetMng->EnableMET(Def.met_enabled);
+	SetMng->SetShowMet(Def.show_met_in_hud);
 }
 void SettingSection::UpdateSection() {
 	Def.EmptyMass = SetMng->GetEmptyMass();
@@ -133,6 +155,8 @@ void SettingSection::UpdateSection() {
 	Def.CrossSections = SetMng->GetCrossSections();
 	Def.GravityGradientDamping = SetMng->GetGravityGradientDamping();
 	Def.RotDrag = SetMng->GetRotDrag();
+	Def.met_enabled = SetMng->IsMETEnabled();
+	Def.show_met_in_hud = SetMng->GetShowMet();
 }
 void SettingSection::ManagerClear() {
 	SetMng->Clear();
@@ -3343,6 +3367,259 @@ void VardSection::ManagerClear() {
 vector<VardSection::Definitions> VardSection::GetSection() {
 	return Defs;
 }
+EventSection::EventSection(VesselBuilder1 *VB1, UINT config, FILEHANDLE cfg) :Section(VB1, config, cfg) {
+	Defs.clear();
+	EvMng = VB1->EvMng;
+	if (cfg != NULL) {
+		ParseSection(cfg);
+	}
+	else {
+		UpdateSection();
+	}
+	return;
+}
+EventSection::~EventSection() {
+	EvMng = NULL;
+}
+void EventSection::ParseSection(FILEHANDLE fh) {
+	char cbuf[256] = { '\0' };
+	UINT event_counter = 0;
+	sprintf(cbuf, "EVENT_%i_ID", event_counter);
+	ConfigCheck(cbuf, Config_idx);
+	int id;
+	while (oapiReadItem_int(fh, cbuf, id)) {
+		char namebuf[256] = { '\0' };
+		int type;
+		int trigger_type;
+		int repeat_mode;
+		int key;
+		int keymod; //1 shift, 2 ctrl, 4 alt, 3 shift + ctrl, 5 shift + alt, 6 ctrl + alt, 7 shift + ctrl + alt
+		int condition;
+		double trigger_value;
+		int other_event;
+		int vel_mode;
+		int time_mode;
+		string spawned_vessel_name;
+		string spawned_vessel_class;
+		VECTOR3 ofs;
+		VECTOR3 vel;
+		VECTOR3 rot_vel;
+		bool delmesh;
+		int mesh_to_del;
+		int anim_idx;
+		bool forward;
+		int thruster;
+		double thlevel;
+		THGROUP_TYPE group;
+		double thglevel;
+		int dock_idx;
+		bool next;
+		bool now;
+		double newmjd0;
+		int newconfig;
+		VECTOR3 shiftcg;
+		int mesh;
+		int texidx;
+		string texture_name;
+
+
+		sprintf(cbuf, "EVENT_%i_NAME", event_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_string(fh, cbuf, namebuf);
+		string name(namebuf);
+		sprintf(cbuf, "EVENT_%i_TYPE", event_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_int(fh, cbuf, type);
+		sprintf(cbuf, "EVENT_%i_TRIGGERTYPE", event_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_int(fh, cbuf, trigger_type);
+		sprintf(cbuf, "EVENT_%i_REPEAT", event_counter);
+		ConfigCheck(cbuf, Config_idx);
+		oapiReadItem_int(fh, cbuf, repeat_mode);
+		if (trigger_type == (int)Event::TRIGGER::TRIGGERTYPE::KEYPRESS) {
+			sprintf(cbuf, "EVENT_%i_KEY", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_int(fh, cbuf, key);
+			sprintf(cbuf, "EVENT_%i_KEYMOD", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_int(fh, cbuf, keymod);
+		}
+		if ((trigger_type == (int)Event::TRIGGER::TRIGGERTYPE::ALTITUDE) || (trigger_type == (int)Event::TRIGGER::TRIGGERTYPE::VELOCITY) || (trigger_type == (int)Event::TRIGGER::TRIGGERTYPE::DYNPRESSURE)) {
+			sprintf(cbuf, "EVENT_%i_CONDITION", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_int(fh, cbuf, condition);
+		}
+		if ((trigger_type == (int)Event::TRIGGER::TRIGGERTYPE::ALTITUDE) || (trigger_type == (int)Event::TRIGGER::TRIGGERTYPE::MAINFUELTANK_LEVEL) || (trigger_type == (int)Event::TRIGGER::TRIGGERTYPE::VELOCITY) || (trigger_type == (int)Event::TRIGGER::TRIGGERTYPE::TIME) || (trigger_type == (int)Event::TRIGGER::TRIGGERTYPE::DYNPRESSURE)) {
+			sprintf(cbuf, "EVENT_%i_TRIGGERVALUE", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_float(fh, cbuf, trigger_value);
+		}
+		if (trigger_type == (int)Event::TRIGGER::TRIGGERTYPE::OTHER_EVENT) {
+			sprintf(cbuf, "EVENT_%i_OTHEREVENT", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_int(fh, cbuf, other_event);
+		}
+		if (trigger_type == (int)Event::TRIGGER::TRIGGERTYPE::VELOCITY) {
+			sprintf(cbuf, "EVENT_%i_VELMODE", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_int(fh, cbuf, vel_mode);
+		}
+		if (trigger_type == (int)Event::TRIGGER::TRIGGERTYPE::TIME) {
+			sprintf(cbuf, "EVENT_%i_TIMEMODE", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_int(fh, cbuf, time_mode);
+		}
+		if (type == (int)Event::TYPE::CHILD_SPAWN) {
+			char ccbuf[256] = { '\0' };
+			sprintf(cbuf, "EVENT_%i_SPAWNEDCLASS", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_string(fh, cbuf, ccbuf);
+			spawned_vessel_class.assign(ccbuf);
+			sprintf(cbuf, "EVENT_%i_SPAWNEDNAME", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_string(fh, cbuf, ccbuf);
+			spawned_vessel_name.assign(ccbuf);
+			sprintf(cbuf, "EVENT_%i_SPAWNEDOFS", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_vec(fh, cbuf, ofs);
+			sprintf(cbuf, "EVENT_%i_SPAWNEDVEL", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_vec(fh, cbuf, vel);
+			sprintf(cbuf, "EVENT_%i_SPAWNEDROTVEL", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_vec(fh, cbuf, rot_vel);
+			sprintf(cbuf, "EVENT_%i_SPAWNDELMESH", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_int(fh, cbuf, mesh_to_del);
+		}
+		if (type == (int)Event::TYPE::ANIMATION_TRIGGER) {
+			sprintf(cbuf, "EVENT_%i_ANIM", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_int(fh, cbuf, anim_idx);
+			sprintf(cbuf, "EVENT_%i_ANIMFWD", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			if (!oapiReadItem_bool(fh, cbuf, forward)) { forward = false; }
+		}
+		if (type == (int)Event::TYPE::THRUSTER_FIRING) {
+			sprintf(cbuf, "EVENT_%i_THR", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_int(fh, cbuf, thruster);
+			sprintf(cbuf, "EVENT_%i_THRLVL", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_float(fh, cbuf, thlevel);
+		}
+		if (type == (int)Event::TYPE::THRUSTERGROUP_LEVEL) {
+			sprintf(cbuf, "EVENT_%i_THG", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			int thg;
+			oapiReadItem_int(fh, cbuf, thg);
+			group = (THGROUP_TYPE)thg;
+			sprintf(cbuf, "EVENT_%i_THGLVL", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_float(fh, cbuf, thglevel);
+		}
+		if (type == (int)Event::TYPE::PAYLOAD_JETTISON) {
+			sprintf(cbuf, "EVENT_%i_JETTNEXT", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			if (!oapiReadItem_bool(fh, cbuf, next)) { next = false; }
+			if (!next) {
+				sprintf(cbuf, "EVENT_%i_JETTIDX", event_counter);
+				ConfigCheck(cbuf, Config_idx);
+				oapiReadItem_int(fh, cbuf, dock_idx);
+			}
+		}
+		if (type == (int)Event::TYPE::RESET_MET) {
+			sprintf(cbuf, "EVENT_%i_TIMENOW", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			if (!oapiReadItem_bool(fh, cbuf, now)) { now = false; }
+			if (!now) {
+				sprintf(cbuf, "EVENT_%i_TIMEMJD0", event_counter);
+				ConfigCheck(cbuf, Config_idx);
+				oapiReadItem_float(fh, cbuf, newmjd0);
+			}
+		}
+		if (type == (int)Event::TYPE::RECONFIG) {
+			sprintf(cbuf, "EVENT_%i_RECONFIG", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_int(fh, cbuf, newconfig);
+		}
+		if (type == (int)Event::TYPE::SHIFT_CG) {
+			sprintf(cbuf, "EVENT_%i_SHIFTCG", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_vec(fh, cbuf, shiftcg);
+		}
+		if (type == (int)Event::TYPE::TEXTURE_SWAP) {
+			sprintf(cbuf, "EVENT_%i_TXSWMESH", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_int(fh, cbuf, mesh);
+			sprintf(cbuf, "EVENT_%i_TXSWTEXIDX", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_int(fh, cbuf, texidx);
+			char ccbuf[256] = { '\0' };
+			sprintf(cbuf, "EVENT_%i_TXSWTEXNAME", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_string(fh, cbuf, ccbuf);
+			texture_name.assign(ccbuf);
+		}
+		Definitions d;
+		d.name = name;
+		d.type = type;
+		d.trigger_type = trigger_type;
+		d.repeat_mode = repeat_mode;
+		d.key = key;
+		d.keymod = keymod;
+		d.condition = condition;
+		d.trigger_value = trigger_value;
+		d.other_event = other_event;
+		d.vel_mode = vel_mode;
+		d.time_mode = time_mode;
+		d.spawned_vessel_name = spawned_vessel_name;
+		d.spawned_vessel_class = spawned_vessel_class;
+		d.ofs = ofs;
+		d.vel = vel;
+		d.rot_vel = rot_vel;
+		d.mesh_to_del = mesh_to_del;
+		d.anim_idx = anim_idx;
+		d.forward = forward;
+		d.thruster = thruster;
+		d.thlevel = thlevel;
+		d.group = group;
+		d.thglevel = thglevel;
+		d.dock_idx = dock_idx;
+		d.next = next;
+		d.now = now;
+		d.newmjd0 = newmjd0;
+		d.newconfig = newconfig;
+		d.shiftcg = shiftcg;
+		d.mesh = mesh;
+		d.texidx = texidx;
+		d.texture_name = texture_name;
+		Defs.push_back(d);
+		event_counter++;
+		sprintf(cbuf, "EVENT_%i_ID", event_counter);
+		ConfigCheck(cbuf, Config_idx);
+		
+	}
+}
+void EventSection::WriteSection(FILEHANDLE fh) {
+	return;
+}
+void EventSection::ApplySection() {
+	return;
+}
+void EventSection::UpdateSection() {
+	return;
+}
+void EventSection::ManagerClear() {
+	return;
+}
+
+
+
+
+
+
+
 
 
 Configuration::Configuration(VesselBuilder1 *_VB1, map<ItemType, bool> _Sections, UINT _config, FILEHANDLE _cfg) {

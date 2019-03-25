@@ -18,5 +18,18 @@ public:
 	void SetRotDrag(VECTOR3 rd);
 	VECTOR3 GetRotDrag();
 	void Clear();
-	
+	bool IsMETEnabled();
+	void EnableMET(bool enable);
+	bool ShowInHUD;
+	bool GetShowMet() { return ShowInHUD; }
+	//enum SHOWMET{NOSHOW,HUD,NOTE}show_met;
+	//SHOWMET GetShowMet();
+	//void SetShowMet(SHOWMET show);
+	void SetShowMet(bool show);
+	bool HudTxtenabled;
+	bool HUDTextEnabled() { return HudTxtenabled; }
+	void EnableHUDText(bool enable) { HudTxtenabled = enable; }
+	void SetHUDText(string _text);
+	string GetHUDText();
+	string HUDTxt;
 };

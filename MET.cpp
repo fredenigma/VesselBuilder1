@@ -6,12 +6,14 @@ MET::MET() {
 	mjd0 = oapiGetSimMJD();
 	d_secs = 0;
 	d_mjd = 0;
+	enabled = false;
 	return;
 }
 MET::MET(double reset_mjd) {
 	mjd0 = reset_mjd;
 	d_secs = 0;
 	d_mjd = 0;
+	enabled = true;
 	return;
 }
 MET::~MET() {}
@@ -19,9 +21,10 @@ MET::~MET() {}
 int MET::MyRound(double x) {
 	return(int)x - (x < (int)x);
 }
-void MET::PreStep(double mjd) {
+void MET::PreStep(double simdt, double mjd) {
 	d_mjd = mjd - mjd0;
 	d_secs = (d_mjd)*mjdsec;
+	//d_secs += simdt;
 	return;
 }
 double MET::GetMJD0() {
@@ -57,7 +60,7 @@ void MET::GetHMS(int &sign, int &hrs, int &mins, int &secs) {
 	mins = int(minutes);
 	double remainder_mins = minutes - (double)mins;
 	double seconds = remainder_mins * 60;
-	secs = int(seconds);
+	secs = (int)std::round(seconds);
 
 	if (d_secs >= 0) {
 		sign = 1;
@@ -65,12 +68,15 @@ void MET::GetHMS(int &sign, int &hrs, int &mins, int &secs) {
 	else {
 		sign = -1;
 	}
+//	sprintf(oapiDebugString(), "seconds:%.3f secs:%i secs_input:%.3f", seconds, secs,secs_input);
 	return;
 }
 void MET::SetMJD0(double mjd) {
 	mjd0 = mjd;
+	d_secs = (oapiGetSimMJD()-mjd0)*mjdsec;
 }
 void MET::Reset() {
 	mjd0 = oapiGetSimMJD();
+	d_secs = 0;
 	return;
 }

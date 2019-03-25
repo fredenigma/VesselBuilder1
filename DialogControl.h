@@ -1,7 +1,7 @@
 #pragma once
 #include <CommCtrl.h>
 
-enum ItemType { MESH, DOCK, ATTACHMENT, LIGHTS, CAMERA, SPECIAL, SETTINGS,ROOTS,NONE,ANIMATIONS,ANIM_COMP,PROPELLANT,EXTEX,THRUSTERS,THRUSTERGROUPS,PARTICLES,TOUCHDOWNPOINTS,AIRFOILS,CTRLSURFACES,VCPOS,VCMFD,VCHUD,VC,BEACONS,VARIABLEDRAG,CONFIGURATIONS };
+enum ItemType { MESH, DOCK, ATTACHMENT, LIGHTS, CAMERA, SPECIAL, SETTINGS,ROOTS,NONE,ANIMATIONS,ANIM_COMP,PROPELLANT,EXTEX,THRUSTERS,THRUSTERGROUPS,PARTICLES,TOUCHDOWNPOINTS,AIRFOILS,CTRLSURFACES,VCPOS,VCMFD,VCHUD,VC,BEACONS,VARIABLEDRAG,CONFIGURATIONS,EVENTS };
 struct TREE_ITEM_REF {
 	ItemType Type;
 	UINT idx;
@@ -43,9 +43,9 @@ public:
 	BOOL LightCreationDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL LightsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL VarDragDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	//events here
-	BOOL ReconfigDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	
+	BOOL ReconfigDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	BOOL EventsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	//void Enumwins(HWND hWnd);
 	
 
@@ -87,6 +87,7 @@ public:
 		HTREEITEM hrootBeacons;
 		HTREEITEM hrootLightEmitters;
 		HTREEITEM hrootVariableDrag;
+		HTREEITEM hrootEvents;
 
 	};
 	vector<CONFIGITEMS>Config_Items;
@@ -143,6 +144,7 @@ public:
 	void UpdateLightsDialog(HWND hWnd);
 	void UpdateVarDragDialog(HWND hWnd);
 	void UpdateReconfigDialog(HWND hWnd);
+	void UpdateEventsDialog(HWND hWnd);
 
 	HTREEITEM FindHtreeItem(ItemType type, UINT idx);
 	void InitAnimKeyCombo(HWND hWnd);
@@ -191,7 +193,7 @@ public:
 	HWND hWnd_Lights;
 	HWND hWnd_VarDrag;
 	HWND hWnd_Reconfig;
-	
+	HWND hWnd_Events;
 
 	HWND GetDlg() { return hDlg; }
 	map<DWORD, string> oapi_keys;
@@ -213,6 +215,7 @@ public:
 	LightsManager *LightsMng;
 	VariableDragManager *VardMng;
 	ConfigurationManager *ConfigMng;
+	EventManager *EvMng;
 	bool AnimTesting;
 	double GetDlgItemDouble(HWND hWnd, int control_id);
 	void SetDlgItemDouble(HWND hWnd, int control_id, double val, UINT precision);

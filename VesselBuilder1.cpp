@@ -99,6 +99,7 @@ VesselBuilder1::VesselBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
 
 	vclip = V_CLIPBOARD();
 	
+	//Met_Note = oapiCreateAnnotation(false, 0.5, _V(0.5, 0.5, 0.5));
 	
 	GrabMode = false;
 	currentGrabAtt = 0;
@@ -345,6 +346,13 @@ void VesselBuilder1::clbkLoadStateEx(FILEHANDLE scn,void *vs)
 				LightsMng->ActivateLight(lc[i], true);
 			}
 		}
+		//oapiWriteScenario_float(scn, "METMJD0", Met->GetMJD0());
+		else if (!_strnicmp(line, "METMJD0", 7)) {
+			double mjd0;
+			sscanf(line + 7, "%lf", &mjd0);
+			Met->Enable(true);
+			Met->SetMJD0(mjd0);
+		}
 		else{ 
 			ParseScenarioLineEx(line, vs); 
 		}	
@@ -413,6 +421,9 @@ void VesselBuilder1::clbkSaveState(FILEHANDLE scn)
 			sprintf(lbuf, "%s", lights_on.c_str());
 			oapiWriteScenario_string(scn, cbuf, lbuf);
 		}
+	}
+	if (Met->Enabled()) {
+		oapiWriteScenario_float(scn, "METMJD0", Met->GetMJD0());
 	}
 
 	if (follow_me) {
@@ -781,7 +792,7 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 
 
 void VesselBuilder1::clbkPreStep(double simt, double simdt, double mjd) {
-	Met->PreStep(mjd);
+	Met->PreStep(simdt,mjd);
 	if (GrabMode) {
 		def_idx attidx = AttMng->IdxAtt2Def(currentGrabAtt);
 		sprintf(oapiDebugString(), "Attachment ready for Grab: %i %s", currentGrabAtt, AttMng->GetAttDefId(attidx).c_str());
@@ -793,10 +804,29 @@ void VesselBuilder1::clbkPreStep(double simt, double simdt, double mjd) {
 	}
 	DckMng->DockPreStep(simt, simdt, mjd);
 	EvMng->PreStep(simt, simdt, mjd);
+
+
+/*	if ((Met->Enabled()) && (SetMng->GetShowMet() == GeneralSettingsManager::SHOWMET::NOTE)) {
+		char METbuff[256] = { '\0' };
+		int sign, hrs, mins, secs;
+		Met->GetHMS(sign, hrs, mins, secs);
+		if (sign > 0) {
+			sprintf(METbuff, "MET:%03d:%02d:%02d", hrs, mins, secs);
+		}
+		else {
+			sprintf(METbuff, "T-:%03d:%02d:%02d", hrs, mins, secs);
+		}
+		oapiAnnotationSetText(Met_Note, METbuff);
+		//skp->Text(0.02*w, 0.25*h + 40, METbuff, strlen(METbuff));
+		//skp->Text(0, hps->H*0.25, METbuff, strlen(METbuff));
+	}
+	else {
+		oapiAnnotationSetText(Met_Note, "");
+	}*/
 	/*
 	int sign, hrs, mins, secs;
 	Met->GetHMS(sign, hrs, mins, secs);
-
+	
 	sprintf(oapiDebugString(), "%i %02d:%02d:%02d %.8f %i", sign, hrs, mins, secs,Met->d_secs,Met->MyRound(Met->d_secs));*/
 	return;
 }
@@ -809,7 +839,7 @@ void VesselBuilder1::clbkPostStep(double simt, double simdt, double mjd) {
 	GetRotDrag(rd);
 	sprintf(oapiDebugString(), "GGD:%.3f CS:%.3f %.3f %.3f RD:%.3f %.3f %.3f cw:%.3f %.3f %.3f %.3f", GetGravityGradientDamping(), CS.x, CS.y, CS.z, rd.x, rd.y, rd.z, cw_zp, cw_zm, cw_x, cw_y);*/
 	
-	sprintf(oapiDebugString(), "Current Configuration:%i", ConfigMng->GetCurrentConfiguration());
+	//sprintf(oapiDebugString(), "Current Configuration:%i", ConfigMng->GetCurrentConfiguration());
 	
 	
 	return;
@@ -843,6 +873,38 @@ void VesselBuilder1::clbkDockEvent(int dock, OBJHANDLE mate) {
 	LogV("Dock Event Finished");
 	return;
 }
+bool VesselBuilder1::clbkDrawHUD(int mode, const HUDPAINTSPEC *hps, oapi::Sketchpad *skp) {
+	VESSEL3::clbkDrawHUD(mode, hps, skp);
+	if ((Met->Enabled())&&(SetMng->GetShowMet())) {
+		int cx = hps->CX, cy = hps->CY;
+
+		/*DWORD w;
+		DWORD h;
+		DWORD bpp;
+		oapiGetViewportSize(&w, &h, &bpp);*/
+		char METbuff[256] = { '\0' };
+		int sign, hrs, mins, secs;
+		Met->GetHMS(sign, hrs, mins, secs);
+		if (sign > 0) {
+			sprintf(METbuff, "MET:%03d:%02d:%02d", hrs, mins, secs);
+		}
+		else {
+			sprintf(METbuff, "T-:%03d:%02d:%02d", hrs, mins, secs);
+		}
+		
+		//skp->Text(0.02*w, 0.25*h + 40, METbuff, strlen(METbuff));
+		//DWORD csize = skp->GetCharSize();
+		//sprintf(oapiDebugString(), "height: %i width:%i", LOWORD(csize), HIWORD(csize));
+		skp->Text(5, hps->H*0.25, METbuff, strlen(METbuff));
+	}
+
+	
+	
+	return true;
+}
+
+
+
 
 bool VesselBuilder1::JettisonNextDock() {
 	for (UINT i = 0; i < DckMng->GetDockCount(); i++) {
@@ -1233,21 +1295,21 @@ void VesselBuilder1::AddDefaultRCS() {
 	}
 	if (!ThrGrpMng->IsGroupDefined(THGROUP_ATT_BANKLEFT)) {
 		UINT idx_bankleft1 = ThrMng->AddThrDef("Bank_left_1", _V(arm, 0, 0), _V(0, 1, 0), force_needed.z*0.5, PrpMng->GetMainTankPH(), massive_isp, 0, 101400);
-		UINT idx_bankleft2 = ThrMng->AddThrDef("Bank_left_2", _V(arm, 0, 0), _V(0, -1, 0), force_needed.z*0.5, PrpMng->GetMainTankPH(), massive_isp, 0, 101400);
+		UINT idx_bankleft2 = ThrMng->AddThrDef("Bank_left_2", _V(-arm, 0, 0), _V(0, -1, 0), force_needed.z*0.5, PrpMng->GetMainTankPH(), massive_isp, 0, 101400);
 		th_h.clear();
 		th_idx.clear();
 		th_idx.push_back(idx_bankleft1);
-		th_idx.push_back(idx_bankleft1);
+		th_idx.push_back(idx_bankleft2);
 		th_h = ThrGrpMng->GetThrustersfromIdx(th_idx);
 		ThrGrpMng->DefineGroup(THGROUP_ATT_BANKLEFT, th_h);
 	}
 	if (!ThrGrpMng->IsGroupDefined(THGROUP_ATT_BANKRIGHT)) {
 		UINT idx_bankright1 = ThrMng->AddThrDef("Bank_right_1", _V(arm, 0, 0), _V(0, -1, 0), force_needed.z*0.5, PrpMng->GetMainTankPH(), massive_isp, 0, 101400);
-		UINT idx_bankright2 = ThrMng->AddThrDef("Bank_right_2", _V(arm, 0, 0), _V(0, 1, 0), force_needed.z*0.5, PrpMng->GetMainTankPH(), massive_isp, 0, 101400);
+		UINT idx_bankright2 = ThrMng->AddThrDef("Bank_right_2", _V(-arm, 0, 0), _V(0, 1, 0), force_needed.z*0.5, PrpMng->GetMainTankPH(), massive_isp, 0, 101400);
 		th_h.clear();
 		th_idx.clear();
 		th_idx.push_back(idx_bankright1);
-		th_idx.push_back(idx_bankright1);
+		th_idx.push_back(idx_bankright2);
 		th_h = ThrGrpMng->GetThrustersfromIdx(th_idx);
 		ThrGrpMng->DefineGroup(THGROUP_ATT_BANKRIGHT, th_h);
 	}

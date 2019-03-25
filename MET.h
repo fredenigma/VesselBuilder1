@@ -10,7 +10,7 @@ public:
 	double d_mjd;
 	const double secmjd = 1 / 86400;
 	const double mjdsec = 86400;
-	void PreStep(double mjd);
+	void PreStep(double simdt, double mjd);
 	double GetMJD0();
 	double GetDMJD();
 	double GetDeltaSeconds();
@@ -21,4 +21,7 @@ public:
 	void SetMJD0(double mjd);
 	void Reset();
 	int MyRound(double x);
+	bool enabled;
+	bool Enabled() { return enabled; }
+	void Enable(bool set) { enabled = set; }
 };
