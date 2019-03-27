@@ -82,6 +82,9 @@
     <ClInclude Include="GeneralSettingsManager.h">
       <Filter>Vessel\Managers</Filter>
     </ClInclude>
+    <ClInclude Include="SoftDock.h">
+      <Filter>Vessel</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\Orbitersdk\lib\orbiter.lib">
@@ -264,6 +267,9 @@
     </ClCompile>
     <ClCompile Include="EventsDlgProc.cpp">
       <Filter>Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="SoftDock.cpp">
+      <Filter>Vessel</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

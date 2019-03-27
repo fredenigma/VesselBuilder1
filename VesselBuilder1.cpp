@@ -33,6 +33,7 @@
 #include "MET.h"
 #include "EventManager.h"
 #include "ConfigurationManager.h"
+#include "SoftDock.h"
 
 #define LogV(x,...) Log->Log(x,##__VA_ARGS__)
 
@@ -109,6 +110,12 @@ VesselBuilder1::VesselBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
 	redL = oapiRegisterExhaustTexture("red_L");
 	greenL = oapiRegisterExhaustTexture("green_L");
 	blueL = oapiRegisterExhaustTexture("blue_L");
+
+
+	SD = new SoftDock(this);
+
+//	soft_dock_distance = 3;
+
 	LogV("Class Initialized");
 //	SBLog("Class Initialize");
 	return;
@@ -164,6 +171,9 @@ VesselBuilder1::~VesselBuilder1(){
 	Met = NULL;
 	delete ConfigMng;
 	ConfigMng = NULL;
+
+	delete SD;
+	SD = NULL;
 	LogV("Destructor Completed");
 	Log->CloseLog();
 	delete Log;
@@ -271,6 +281,7 @@ void VesselBuilder1::clbkSetClassCaps(FILEHANDLE cfg){
 	
 	SetNosewheelSteering(true);
 	SetMaxWheelbrakeForce(2e5);
+	
 	LogV("Set Class Caps Completed");
 	return;
 }
@@ -288,6 +299,7 @@ void VesselBuilder1::clbkLoadStateEx(FILEHANDLE scn,void *vs)
 		else if (!_strnicmp(line, "ANIM_", 5)) {
 			UINT seq = 0;
 			sscanf(line + 5, "%i", &seq);
+			LogV("anim:%i", seq);
 			if (seq >= AnimMng->GetAnimDefsCount()) { continue; }
 			UINT c = 1;
 			if ((seq > 9)&&(seq<100)) { c = 2; }
@@ -296,6 +308,7 @@ void VesselBuilder1::clbkLoadStateEx(FILEHANDLE scn,void *vs)
 			double state;
 			int status;
 			sscanf(line + 5 + 1 + c, "%lf %d", &state, &status);
+			LogV("state:%.3f status:%i", state, status);
 			AnimMng->SetAnimationState(seq, state);
 			if (status == 1) {
 				AnimMng->StartAnimation(seq);
@@ -627,7 +640,8 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 	LightsMng->ConsumeLightsBufferedKey(key, down, kstate);
 	EvMng->ConsumeBufferedKey(key, down, kstate);
 	//}
-	
+	SD->ConsumeSoftDockKey(key, down, kstate);
+
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == OAPI_KEY_SPACE) {
 		if (!NoEditor) {
 			if (Dlg->IsOpen()) {
@@ -670,6 +684,7 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 	}
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == OAPI_KEY_K) {
 	
+	//	soft_dock_distance -= 0.1;
 	//	ConfigMng->ApplyConfiguration(1);
 		//Met->SetMJD0(oapiGetSimMJD() + 0.01);
 	/*	DWORD td_count = this->GetTouchdownPointCount();
@@ -705,18 +720,7 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 		return 1;
 	}
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && KEYMOD_CONTROL(kstate) && key == OAPI_KEY_K) {
-		Event::TRIGGER Trig = Event::TRIGGER();
-		Trig.Type = Event::TRIGGER::TIME;
-		//Trig.time_mode = Event::TRIGGER::TIME_MODE::MET;
-		//Trig.TriggerValue = 10;
-		Trig.Type = Event::TRIGGER::TRIGGERTYPE::KEYPRESS;
-		Trig.Key = OAPI_KEY_M;
-		Trig.repeat_mode = Event::TRIGGER::ONCE;
-		EvMng->CreateTextureSwapEvent("test texture swap", Trig, 0, 1, "\\DG\\Skins\\Blue\\dgmk4_4.dds");
-		EvMng->CreateTextureSwapEvent("test1 texture swap", Trig, 0, 2, "\\DG\\Skins\\Blue\\dgmk4_1.dds");
-		EvMng->CreateTextureSwapEvent("test2 texture swap", Trig, 0, 3, "\\DG\\Skins\\Blue\\dgmk4_2_ns.dds");
-		EvMng->CreateTextureSwapEvent("test3 texture swap", Trig, 0, 4, "\\DG\\Skins\\Blue\\dgmk4_3.dds");
-		EvMng->CreateTextureSwapEvent("test4 texture swap", Trig, 0, 5, "\\DG\\Skins\\Blue\\idpanel1.dds");
+	
 		//Trig.KeyMods.Alt = true;
 		//Trig.repeat_mode = Event::TRIGGER::REPEAT_MODE::ALWAYS;
 		//EvMng->CreateChildSpawnEvent("TestSpawn", Trig, "SLS\\core", "stage");
@@ -793,6 +797,7 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 
 void VesselBuilder1::clbkPreStep(double simt, double simdt, double mjd) {
 	Met->PreStep(simdt,mjd);
+	SD->PreStep();
 	if (GrabMode) {
 		def_idx attidx = AttMng->IdxAtt2Def(currentGrabAtt);
 		sprintf(oapiDebugString(), "Attachment ready for Grab: %i %s", currentGrabAtt, AttMng->GetAttDefId(attidx).c_str());
@@ -804,7 +809,7 @@ void VesselBuilder1::clbkPreStep(double simt, double simdt, double mjd) {
 	}
 	DckMng->DockPreStep(simt, simdt, mjd);
 	EvMng->PreStep(simt, simdt, mjd);
-
+	
 
 /*	if ((Met->Enabled()) && (SetMng->GetShowMet() == GeneralSettingsManager::SHOWMET::NOTE)) {
 		char METbuff[256] = { '\0' };
@@ -828,6 +833,7 @@ void VesselBuilder1::clbkPreStep(double simt, double simdt, double mjd) {
 	Met->GetHMS(sign, hrs, mins, secs);
 	
 	sprintf(oapiDebugString(), "%i %02d:%02d:%02d %.8f %i", sign, hrs, mins, secs,Met->d_secs,Met->MyRound(Met->d_secs));*/
+//	SoftDockTest();
 	return;
 }
 void VesselBuilder1::clbkPostStep(double simt, double simdt, double mjd) {
@@ -841,6 +847,7 @@ void VesselBuilder1::clbkPostStep(double simt, double simdt, double mjd) {
 	
 	//sprintf(oapiDebugString(), "Current Configuration:%i", ConfigMng->GetCurrentConfiguration());
 	
+	//sprintf(oapiDebugString(),"texture count mesh 0 :%i mesh 1 :%i",oapiMeshTextureCount(MshMng->GetMeshDefMH(0)), oapiMeshTextureCount(MshMng->GetMeshDefMH(1)));
 	
 	return;
 }
@@ -869,6 +876,7 @@ bool VesselBuilder1::clbkVCMouseEvent(int id, int event, VECTOR3 &p) {
 }
 void VesselBuilder1::clbkDockEvent(int dock, OBJHANDLE mate) {
 	LogV("Dock Event");
+	EvMng->DockEvent(dock, mate);
 	DckMng->DockEvent(dock, mate);
 	LogV("Dock Event Finished");
 	return;
@@ -1667,9 +1675,47 @@ void StationBuilder1::ClearDelete(vector<MGROUP_ROTATE*>vmgr) {
 }
 */
 //Creation
+/*
+void VesselBuilder1::SoftDockTest() {
+	OBJHANDLE h_iss = oapiGetObjectByName("ISS");
+	if (!oapiIsVessel(h_iss)) {
+		return;
+	}
+	//double soft_dock_distance = 3.0;
+	VESSEL* v_iss = oapiGetVesselInterface(h_iss);
+	VESSELSTATUS2 vs2;
+	memset(&vs2, 0, sizeof(vs2));
+	vs2.version = 2;
+	v_iss->GetStatusEx(&vs2);
+	VECTOR3 relative_pos;
+	DOCKHANDLE iss_dh = v_iss->GetDockHandle(0);
+	DOCKHANDLE my_dh = GetDockHandle(0);
+	if (GetDockStatus(my_dh) != NULL) { return; }
+	VECTOR3 dock_iss_pos, dock_iss_dir, dock_iss_rot;
+	v_iss->GetDockParams(iss_dh, dock_iss_pos, dock_iss_dir, dock_iss_rot);
+	VECTOR3 dock_my_pos, dock_my_dir, dock_my_rot;
+	GetDockParams(my_dh, dock_my_pos, dock_my_dir, dock_my_rot);
+	double distance = soft_dock_distance*AnimMng->GetAnimationState(int(5));
+	relative_pos = (dock_my_pos+((dock_my_dir)*distance)) + dock_iss_pos;
+	v_iss->Local2Rel(relative_pos, vs2.rpos);
+	VECTOR3 my_dir_reversed = dock_my_dir*(-1);
+	MATRIX3 rm = FindRM(dock_iss_dir, dock_iss_rot, my_dir_reversed, dock_my_rot);
+	MATRIX3 iss_rm;
+	v_iss->GetRotationMatrix(iss_rm);
+	MATRIX3 finalrm = mul(iss_rm, rm);
+	vs2.arot.x = atan2(finalrm.m23, finalrm.m33);
+	vs2.arot.y = -asin(finalrm.m13);
+	vs2.arot.z = atan2(finalrm.m12, finalrm.m11);
+	
+	DefSetStateEx(&vs2);
 
+	
 
+	sprintf(oapiDebugString(), "SoftDockDist:%.3f distance:%.3f", soft_dock_distance,distance);
 
+	return;
+}
+*/
 
 
 DLLCLBK void InitModule(HINSTANCE hModule) {

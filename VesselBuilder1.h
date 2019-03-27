@@ -108,6 +108,8 @@ class ConfigurationManager;
 
 class MET;
 
+class SoftDock;
+
 class VesselBuilder1 :public VESSEL4{
 public:
  VesselBuilder1(OBJHANDLE hObj,int fmodel);
@@ -223,6 +225,13 @@ public:
  double GetMET();
  bool JettisonNextDock();
  bool JettisonDock(UINT idx);
+
+ //EXPERIMENTAL!!!
+ SoftDock *SD;
+
+
+ //void SoftDockTest();
+ //double soft_dock_distance;
 };
 
 

@@ -202,6 +202,13 @@ BOOL CALLBACK EventsDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
 	return DlgCtrl->EventsDlgProc(hWnd, uMsg, wParam, lParam);
 }
+BOOL CALLBACK ChildSpawnDlgProcHook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	if (uMsg == WM_INITDIALOG) {
+		SetWindowLong(hWnd, GWL_USERDATA, (LONG)lParam);
+	}
+	DialogControl *DlgCtrl = (DialogControl*)GetWindowLong(hWnd, GWL_USERDATA);
+	return DlgCtrl->ChildSpawnDlgProc(hWnd, uMsg, wParam, lParam);
+}
 BOOL CALLBACK EnableChilds(HWND hWnd, LPARAM lParam) {
 	EnableWindow(hWnd, lParam);
 	return true;
@@ -324,6 +331,7 @@ void DialogControl::InitDialog(HWND hWnd) {
 	hWnd_VarDrag = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_VARDRAG), hWnd, VarDragDlgProcHook, (LPARAM)this);
 	hWnd_Reconfig = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_RECONFIGS), hWnd, ReconfigDlgProcHook, (LPARAM)this);
 	hWnd_Events = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_EVENTS), hWnd, EventsDlgProcHook, (LPARAM)this);
+	hWnd_ChildSpawn = CreateDialogParam(hDLL, MAKEINTRESOURCE(IDD_DIALOG_CHILDSPAWN), hWnd_Events, ChildSpawnDlgProcHook, (LPARAM)this);
 	SetWindowPos(hwnd_Mesh, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hwnd_Mesh, SW_HIDE);
 	SetWindowPos(hWnd_Dock, NULL, 255, 10, 0, 0, SWP_NOSIZE);
@@ -372,6 +380,8 @@ void DialogControl::InitDialog(HWND hWnd) {
 	ShowWindow(hWnd_Reconfig, SW_HIDE);
 	SetWindowPos(hWnd_Events, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hWnd_Events, SW_HIDE);
+	SetWindowPos(hWnd_ChildSpawn, NULL, 0, 0, 0, 0, SWP_NOSIZE);
+	ShowWindow(hWnd_ChildSpawn, SW_HIDE);
 
 
 	char verbuf[256] = { '\0' };
@@ -381,6 +391,8 @@ void DialogControl::InitDialog(HWND hWnd) {
 	SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_RESETCONTENT, 0, 0);
 	int index = SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_ADDSTRING, 0, (LPARAM)"Choose Event Type...");
 	SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_SETITEMDATA, index, (LPARAM)NULL);
+	index = SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_ADDSTRING, 0, (LPARAM)"NULL EVENT");
+	SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_SETITEMDATA, index, (LPARAM)Event::TYPE::NULL_EVENT);
 	index = SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_ADDSTRING, 0, (LPARAM)"CHILD SPAWN");
 	SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_SETITEMDATA, index, (LPARAM)Event::TYPE::CHILD_SPAWN);
 	index = SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_ADDSTRING, 0, (LPARAM)"DOCK JETTISON");
@@ -399,6 +411,8 @@ void DialogControl::InitDialog(HWND hWnd) {
 	SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_SETITEMDATA, index, (LPARAM)Event::TYPE::TEXTURE_SWAP);
 	index = SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_ADDSTRING, 0, (LPARAM)"SHIFT CG");
 	SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_SETITEMDATA, index, (LPARAM)Event::TYPE::SHIFT_CG);
+	index = SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_ADDSTRING, 0, (LPARAM)"DELETE ME");
+	SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_SETITEMDATA, index, (LPARAM)Event::TYPE::DELETE_ME);
 	SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_SETCURSEL, 0, 0);
 	ShowWindow(GetDlgItem(hWnd, IDC_COMBO_EVENTTYPE), SW_HIDE);
 
@@ -2543,11 +2557,12 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 						else {
 							ShowWindow(hWnd_LightCreation, SW_HIDE);
 						}
-					for (UINT i = 1; i < Config_Items.size(); i++) {
-						if (CurrentSelection.hitem == Config_Items[i].hrootVessel) {
-							ShowWindow(hWnd_Reconfig, SW_SHOW);
-							UpdateReconfigDialog(hWnd_Reconfig);
-							break;
+					for (UINT i = 0; i < Config_Items.size(); i++) {
+						if (i > 0) {
+							if (CurrentSelection.hitem == Config_Items[i].hrootVessel) {
+								ShowWindow(hWnd_Reconfig, SW_SHOW);
+								UpdateReconfigDialog(hWnd_Reconfig);
+							}
 						}
 						else {
 							ShowWindow(hWnd_Reconfig, SW_HIDE);

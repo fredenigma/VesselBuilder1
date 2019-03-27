@@ -22,7 +22,7 @@ UINT DockManager::AddDockDef() {
 	string name(cbuf);
 	return AddDockDef(name, _V(0, 0, 0), _V(0, 0, 1), _V(0, 1, 0), false);
 }
-UINT DockManager::AddDockDef(string name, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot, bool dockjett) {
+UINT DockManager::AddDockDef(string name, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot, bool dockjett, bool SoftDock, double SoftDockDistance , def_idx SoftDockAnim) {
 	LogV("Adding Dock:%s pos:%.3f %.3f %.3f dir:%.3f %.3f %.3f rot:%.3f %.3f %.3f Jettisonable?:%i", name.c_str(), pos.x, pos.y, pos.z, dir.x, dir.y, dir.z, rot.x, rot.y, rot.z, dockjett);
 	DCK_DEF dd = DCK_DEF();
 	dd.name = name;
@@ -34,6 +34,10 @@ UINT DockManager::AddDockDef(string name, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot,
 	dd.dir = dir;
 	dd.rot = rot;
 	dd.dh = VB1->CreateDock(pos, dir, rot);
+	dd.SoftDock = SoftDock;
+	dd.SoftDockDistance = SoftDockDistance;
+	dd.SoftDockAnim = SoftDockAnim;
+
 	UINT index = dock_defs.size();
 	dock_defs.push_back(dd);
 	return index;
@@ -236,4 +240,15 @@ UINT DockManager::GetOrbiterDockIdx(DOCKHANDLE dh) {
 		}
 	}
 	return (UINT)-1;
+}
+void DockManager::SetSoftDockParams(def_idx d_idx, bool enable, double distance, def_idx anim) {
+	dock_defs[d_idx].SoftDock = enable;
+	dock_defs[d_idx].SoftDockDistance = distance;
+	dock_defs[d_idx].SoftDockAnim = anim;
+	return;
+}
+void DockManager::GetSoftDockParams(def_idx d_idx, bool &enable, double &distance, def_idx &anim) {
+	enable = dock_defs[d_idx].SoftDock;
+	distance = dock_defs[d_idx].SoftDockDistance;
+	anim = dock_defs[d_idx].SoftDockAnim;
 }

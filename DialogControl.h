@@ -16,6 +16,7 @@ struct TREE_ITEM_REF {
 };
 
 
+
 class DialogControl {
 public:
 	DialogControl(VesselBuilder1 *_VB1);
@@ -46,6 +47,7 @@ public:
 	
 	BOOL ReconfigDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL EventsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	BOOL ChildSpawnDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	//void Enumwins(HWND hWnd);
 	
 
@@ -62,7 +64,10 @@ public:
 	void UpdateSubs(HWND hWnd, UINT config);
 	void MeshNotify(HWND hWnd, WPARAM wParam, LPARAM lParam);
 	void DockNotify(HWND hWnd, WPARAM wParam, LPARAM lParam);
-	
+	void SetTriggerDialog(HWND hWnd, int trigger_type);
+	void UpdateTriggerDialog(HWND hWnd, UINT idx);
+	void SetEventsDialog(HWND hWnd, int event_type);
+	void UpdateChildSpawnDialog(HWND hWnd);
 	struct CONFIGITEMS {
 		HTREEITEM hrootVessel;
 		HTREEITEM hrootMeshes;
@@ -194,6 +199,7 @@ public:
 	HWND hWnd_VarDrag;
 	HWND hWnd_Reconfig;
 	HWND hWnd_Events;
+	HWND hWnd_ChildSpawn;
 
 	HWND GetDlg() { return hDlg; }
 	map<DWORD, string> oapi_keys;

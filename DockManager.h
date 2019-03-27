@@ -8,6 +8,9 @@ struct DCK_DEF {
 	VECTOR3 *pos_ptr;
 	VECTOR3 *antidir_ptr;
 	VECTOR3 *antirot_ptr;
+	bool SoftDock;
+	double SoftDockDistance;
+	def_idx SoftDockAnim;
 	DCK_DEF() {
 		name.clear();
 		IsDockJett = false;
@@ -18,6 +21,9 @@ struct DCK_DEF {
 		pos = _V(0, 0, 0);
 		dir = _V(0, 0, 1);
 		rot = _V(0, 1, 0);
+		SoftDock = false;
+		SoftDockDistance = 0;
+		SoftDockAnim = 0;
 	}
 };
 
@@ -28,7 +34,7 @@ public:
 	VesselBuilder1 *VB1;
 	vector<DCK_DEF>dock_defs;
 	UINT AddDockDef();
-	UINT AddDockDef(string name, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot,bool dockjett);
+	UINT AddDockDef(string name, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot,bool dockjett,bool SoftDock = false, double SoftDockDistance=0, def_idx SoftDockAnim = 0);
 	bool DeleteDockDef(def_idx  d_idx);
 	void GetDockParams(def_idx d_idx,VECTOR3 &pos, VECTOR3 &dir, VECTOR3 &rot);
 	void SetDockParams(def_idx d_idx, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot);
@@ -54,5 +60,9 @@ public:
 	UINT GetOrbiterDockIdx(DOCKHANDLE dh);
 	vector<DOCKHANDLE>docks_to_del;
 	vector<UINT>docks_jettisoned;
+
+	void SetSoftDockParams(def_idx d_idx, bool enable, double distance, def_idx anim);
+	void GetSoftDockParams(def_idx d_idx, bool &enable, double &distance, def_idx &anim);
+
 	void Clear();
 };

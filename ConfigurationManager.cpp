@@ -349,6 +349,9 @@ void DockSection::ParseSection(FILEHANDLE fh) {
 		char namebuf[256] = { '\0' };
 		VECTOR3 pos, dir, rot;
 		bool jett;
+		bool sd;
+		double sd_dist = 0;
+		int sd_anim = -1;
 		sprintf(cbuf, "DOCK_%i_NAME", dock_counter);
 		ConfigCheck(cbuf, config);
 		oapiReadItem_string(fh, cbuf, namebuf);
@@ -364,6 +367,18 @@ void DockSection::ParseSection(FILEHANDLE fh) {
 		oapiReadItem_vec(fh, cbuf, rot);
 		sprintf(cbuf, "DOCK_%i_JETT", dock_counter);
 		ConfigCheck(cbuf, config);
+		sprintf(cbuf, "DOCK_%i_SOFTDOCK", dock_counter);
+		ConfigCheck(cbuf, config);
+		if (!oapiReadItem_bool(fh, cbuf, sd)) { sd = false; }
+		if (sd) {
+			sprintf(cbuf, "DOCK_%i_SOFTDOCKDISTANCE", dock_counter);
+			ConfigCheck(cbuf, config);
+			oapiReadItem_float(fh, cbuf, sd_dist);
+			sprintf(cbuf, "DOCK_%i_SOFTDOCKANIM", dock_counter);
+			ConfigCheck(cbuf, config);
+			oapiReadItem_int(fh, cbuf, sd_anim);
+		}
+		
 		if (!oapiReadItem_bool(fh, cbuf, jett)) { jett = false; }
 		Definitions d = Definitions();
 		d.name = name;
@@ -371,6 +386,9 @@ void DockSection::ParseSection(FILEHANDLE fh) {
 		d.dir = dir;
 		d.rot = rot;
 		d.jettisonable = jett;
+		d.softdock = sd;
+		d.sd_distance = sd_dist;
+		d.sd_anim = sd_anim;
 		Defs.push_back(d);
 		dock_counter++;
 		sprintf(cbuf, "DOCK_%i_ID", dock_counter);
@@ -406,6 +424,17 @@ void DockSection::WriteSection(FILEHANDLE fh) {
 		sprintf(cbuf, "DOCK_%i_JETT", i);
 		ConfigCheck(cbuf, config);
 		oapiWriteItem_bool(fh, cbuf, Defs[i].jettisonable);
+		sprintf(cbuf, "DOCK_%i_SOFTDOCK", i);
+		ConfigCheck(cbuf, config);
+		oapiWriteItem_bool(fh, cbuf, Defs[i].softdock);
+		if (Defs[i].softdock) {
+			sprintf(cbuf, "DOCK_%i_SOFTDOCKDISTANCE", i);
+			ConfigCheck(cbuf, config);
+			oapiWriteItem_float(fh, cbuf, Defs[i].sd_distance);
+			sprintf(cbuf, "DOCK_%i_SOFTDOCKANIM", i);
+			ConfigCheck(cbuf, config);
+			oapiWriteItem_int(fh, cbuf, Defs[i].sd_anim);
+		}
 		oapiWriteLine(fh, " ");
 	}
 }
@@ -420,7 +449,14 @@ void DockSection::UpdateSection() {
 		d.dir = dir;
 		d.rot = rot;
 		d.name = DckMng->GetDockName(i);
+		bool sd;
+		double sd_dist;
+		def_idx sd_anim;
 		d.jettisonable = DckMng->IsDockJettisonable(i);
+		DckMng->GetSoftDockParams(i, sd, sd_dist, sd_anim);
+		d.softdock = sd;
+		d.sd_distance = sd_dist;
+		d.sd_anim = sd_anim;
 		Defs.push_back(d);
 	}
 }
@@ -430,7 +466,13 @@ void DockSection::ManagerClear() {
 void DockSection::ApplySection() {
 	Section::ApplySection();
 	for (UINT i = 0; i < Defs.size(); i++) {
-		DckMng->AddDockDef(Defs[i].name, Defs[i].pos, Defs[i].dir, Defs[i].rot, Defs[i].jettisonable);
+		if (Defs[i].softdock) {
+			DckMng->AddDockDef(Defs[i].name, Defs[i].pos, Defs[i].dir, Defs[i].rot, Defs[i].jettisonable,Defs[i].softdock,Defs[i].sd_distance,Defs[i].sd_anim);
+		}
+		else {
+			DckMng->AddDockDef(Defs[i].name, Defs[i].pos, Defs[i].dir, Defs[i].rot, Defs[i].jettisonable);
+		}
+		
 	}
 }
 
@@ -3397,6 +3439,10 @@ void EventSection::ParseSection(FILEHANDLE fh) {
 		int repeat_mode;
 		int key;
 		int keymod; //1 shift, 2 ctrl, 4 alt, 3 shift + ctrl, 5 shift + alt, 6 ctrl + alt, 7 shift + ctrl + alt
+		int docking_port;
+		string mate_name;
+		bool any_mate;
+		bool when_docking;
 		int condition;
 		double trigger_value;
 		int other_event;
@@ -3471,6 +3517,25 @@ void EventSection::ParseSection(FILEHANDLE fh) {
 			sprintf(cbuf, "EVENT_%i_TIMEMODE", event_counter);
 			ConfigCheck(cbuf, Config_idx);
 			oapiReadItem_int(fh, cbuf, time_mode);
+		}
+		if (trigger_type == (int)Event::TRIGGER::TRIGGERTYPE::DOCK_EVENT) {
+			sprintf(cbuf, "EVENT_%i_DOCKPORT", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_int(fh, cbuf, docking_port);
+			sprintf(cbuf, "EVENT_%i_WHENDOCKING", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			if (!oapiReadItem_bool(fh, cbuf, when_docking)) { when_docking = false; }
+			sprintf(cbuf, "EVENT_%i_ANYMATE", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			if (!oapiReadItem_bool(fh, cbuf, any_mate)) { any_mate = false; }
+			if (!any_mate) {
+				sprintf(cbuf, "EVENT_%i_MATENAME", event_counter);
+				ConfigCheck(cbuf, Config_idx);
+				char matebuff[256] = { '\0' };
+				oapiReadItem_string(fh, cbuf, matebuff);
+				mate_name.assign(matebuff);
+			}
+			
 		}
 		if (type == (int)Event::TYPE::CHILD_SPAWN) {
 			char ccbuf[256] = { '\0' };
@@ -3571,6 +3636,10 @@ void EventSection::ParseSection(FILEHANDLE fh) {
 		d.repeat_mode = repeat_mode;
 		d.key = key;
 		d.keymod = keymod;
+		d.docking_port = docking_port;
+		d.mate_name = mate_name;
+		d.any_mate = any_mate;
+		d.when_docking = when_docking;
 		d.condition = condition;
 		d.trigger_value = trigger_value;
 		d.other_event = other_event;
@@ -3660,6 +3729,25 @@ void EventSection::WriteSection(FILEHANDLE fh) {
 			sprintf(cbuf, "EVENT_%i_TIMEMODE", i);
 			ConfigCheck(cbuf, Config_idx);
 			oapiWriteItem_int(fh, cbuf, Defs[i].time_mode);
+		}
+		if (Defs[i].trigger_type == (int)Event::TRIGGER::TRIGGERTYPE::DOCK_EVENT) {
+			sprintf(cbuf, "EVENT_%i_DOCKPORT", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_int(fh, cbuf, Defs[i].docking_port);
+			sprintf(cbuf, "EVENT_%i_WHENDOCKING", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_bool(fh, cbuf, Defs[i].when_docking);
+			sprintf(cbuf, "EVENT_%i_ANYMATE", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_bool(fh, cbuf, Defs[i].any_mate);
+			if (!Defs[i].any_mate) {
+				sprintf(cbuf, "EVENT_%i_MATENAME", i);
+				ConfigCheck(cbuf, Config_idx);
+				char matebuff[256] = { '\0' };
+				sprintf(matebuff, "%s", Defs[i].mate_name.c_str());
+				oapiWriteItem_string(fh, cbuf, matebuff);
+			}
+			
 		}
 		if (Defs[i].type == (int)Event::TYPE::CHILD_SPAWN) {
 			char ccbuf[256] = { '\0' };
@@ -3752,6 +3840,7 @@ void EventSection::WriteSection(FILEHANDLE fh) {
 			sprintf(ccbuf, "%s", Defs[i].texture_name.c_str());
 			oapiWriteItem_string(fh, cbuf, ccbuf);
 		}
+		oapiWriteLine(fh, " ");
 	}
 	return;
 }
@@ -3767,13 +3856,13 @@ void EventSection::ApplySection() {
 			trig.KeyMods.Alt = false;
 			trig.KeyMods.Shift = false;
 			trig.KeyMods.Ctrl = false;
-			if (Defs[i].keymod == 1 || 3 || 5 || 7) {
+			if ((Defs[i].keymod == 1 )||(Defs[i].keymod == 3) ||(Defs[i].keymod == 5) || (Defs[i].keymod == 7)) {
 				trig.KeyMods.Shift = true;
 			}
-			if (Defs[i].keymod == 2 || 3 || 6 || 7) {
+			if ((Defs[i].keymod == 2 )||(Defs[i].keymod == 3) ||(Defs[i].keymod == 6) || (Defs[i].keymod == 7)) {
 				trig.KeyMods.Ctrl = true;
 			}
-			if (Defs[i].keymod == 4 || 5 || 6 || 7) {
+			if ((Defs[i].keymod == 4 )||(Defs[i].keymod == 5) ||(Defs[i].keymod == 6) ||(Defs[i].keymod == 7)) {
 				trig.KeyMods.Alt = true;
 			}
 			/*switch (Defs[i].keymod) {
@@ -3835,10 +3924,10 @@ void EventSection::ApplySection() {
 			}
 			}*/
 		}
-		if (trig.Type == Event::TRIGGER::TRIGGERTYPE::ALTITUDE||Event::TRIGGER::TRIGGERTYPE::VELOCITY || Event::TRIGGER::TRIGGERTYPE::DYNPRESSURE) {
+		if ((trig.Type == Event::TRIGGER::TRIGGERTYPE::ALTITUDE)||(trig.Type == Event::TRIGGER::TRIGGERTYPE::VELOCITY) ||(trig.Type == Event::TRIGGER::TRIGGERTYPE::DYNPRESSURE)) {
 			trig.condition = (Event::TRIGGER::CONDITION)Defs[i].condition;
 		}
-		if (trig.Type == Event::TRIGGER::TRIGGERTYPE::ALTITUDE || Event::TRIGGER::TRIGGERTYPE::MAINFUELTANK_LEVEL || Event::TRIGGER::TRIGGERTYPE::VELOCITY || Event::TRIGGER::TRIGGERTYPE::TIME || Event::TRIGGER::TRIGGERTYPE::TIME || Event::TRIGGER::TRIGGERTYPE::DYNPRESSURE) {
+		if ((trig.Type == Event::TRIGGER::TRIGGERTYPE::ALTITUDE) || (trig.Type == Event::TRIGGER::TRIGGERTYPE::MAINFUELTANK_LEVEL) || (trig.Type == Event::TRIGGER::TRIGGERTYPE::VELOCITY) || (trig.Type == Event::TRIGGER::TRIGGERTYPE::TIME) || (trig.Type == Event::TRIGGER::TRIGGERTYPE::TIME || Event::TRIGGER::TRIGGERTYPE::DYNPRESSURE)) {
 			trig.TriggerValue = Defs[i].trigger_value;
 		}
 		if (trig.Type == Event::TRIGGER::TRIGGERTYPE::OTHER_EVENT) {
@@ -3849,6 +3938,12 @@ void EventSection::ApplySection() {
 		}
 		if (trig.Type == Event::TRIGGER::TRIGGERTYPE::TIME) {
 			trig.time_mode = (Event::TRIGGER::TIME_MODE)Defs[i].time_mode;
+		}
+		if (trig.Type == Event::TRIGGER::TRIGGERTYPE::DOCK_EVENT) {
+			trig.DockingPort = Defs[i].docking_port;
+			trig.MateName = Defs[i].mate_name;
+			trig.AnyMate = Defs[i].any_mate;
+			trig.WhenDocking = Defs[i].when_docking;
 		}
 
 		Event::TYPE etp = (Event::TYPE)Defs[i].type;
@@ -3899,6 +3994,11 @@ void EventSection::ApplySection() {
 			EvMng->CreateTextureSwapEvent(Defs[i].name, trig, Defs[i].mesh, Defs[i].texidx, Defs[i].texture_name);
 			break;
 		}
+		case Event::TYPE::DELETE_ME:
+		{
+			EvMng->CreateDeleteMeEvent(Defs[i].name, trig);
+			break;
+		}
 
 		}
 
@@ -3922,6 +4022,10 @@ void EventSection::UpdateSection() {
 		d.other_event = EvMng->GetEventIdx(trig.Other_event_h);
 		d.vel_mode = (int)trig.vel_mode;
 		d.time_mode = (int)trig.time_mode;
+		d.docking_port = trig.DockingPort;
+		d.mate_name = trig.MateName;
+		d.any_mate = trig.AnyMate;
+		d.when_docking = trig.WhenDocking;
 		if (tp == Event::TYPE::CHILD_SPAWN) {
 			d.spawned_vessel_class = EvMng->GetSpawnedVesselClass(i);
 			d.spawned_vessel_name = EvMng->GetSpawnedVesselName(i);

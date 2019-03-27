@@ -63,8 +63,16 @@ void Event::EventPreStep(double simt, double simdt, double mjd) {
 	case TRIGGER::VELOCITY:
 	{
 		double ref_speed;
-		if (Trigger.vel_mode == TRIGGER::MS) {
+		if (Trigger.vel_mode == TRIGGER::GROUNDSPEED) {
 			ref_speed = VB1->GetGroundspeed();
+		}
+		else if (Trigger.vel_mode == TRIGGER::VEL_MODE::AIRSPEED) {
+			ref_speed = VB1->GetAirspeed();
+		}
+		else if (Trigger.vel_mode == TRIGGER::VEL_MODE::ORBITALSPEED) {
+			VECTOR3 r_vel;
+			VB1->GetRelativeVel(VB1->GetSurfaceRef(), r_vel);
+			ref_speed = length(r_vel);
 		}
 		else if (Trigger.vel_mode == TRIGGER::MACH) {
 			ref_speed = VB1->GetMachNumber();
@@ -147,6 +155,27 @@ void Event::ConsumeBufferedKey(DWORD key, bool down, char *kstate) {
 		
 	return;
 }
+void Event::EventDockEvent(int dock, OBJHANDLE mate) {
+	if (dock == Trigger.DockingPort) {
+		if (Trigger.WhenDocking && mate != NULL) {
+			if (Trigger.AnyMate) {
+				Trig();
+			}
+			else {
+				char matenamebuf[256] = { '\0' };
+				oapiGetObjectName(mate, matenamebuf, 256);
+				string matename(matenamebuf);
+				if (matename.compare(Trigger.MateName) == 0) {
+					Trig();
+				}
+			}
+		}
+		else if (!Trigger.WhenDocking && mate == NULL) {
+			Trig();
+		}
+	}
+	
+}
 UINT Event::GetID() {
 	return id;
 }
@@ -159,7 +188,11 @@ string Event::GetName() {
 }
 
 
-
+NullEvent::NullEvent(VesselBuilder1 *VB1) : Event(VB1){}
+NullEvent::~NullEvent(){}
+void NullEvent::ConsumeEvent() {
+	return;
+}
 
 
 
@@ -436,6 +469,12 @@ void TextureSwap::SetTextureName(string _texture) {
 string TextureSwap::GetTextureName() {
 	return texture_name;
 }
+Delete_Me::Delete_Me(VesselBuilder1* VB1) : Event(VB1) {}
+Delete_Me::~Delete_Me(){}
+void Delete_Me::ConsumeEvent() {
+	oapiDeleteVessel(VB1->GetHandle());
+	return;
+}
 
 
 
@@ -452,7 +491,10 @@ Event* EventManager::CreateGeneralVBEvent(string name, Event::TYPE type, Event::
 	Event* ev = NULL;
 	string empty;
 	empty.clear();
-	if (type == Event::CHILD_SPAWN) {
+	if (type == Event::NULL_EVENT) {
+		ev = CreateNullEvent(name, _Trigger);
+	}
+	else if (type == Event::CHILD_SPAWN) {
 		ev = CreateChildSpawnEvent(name, _Trigger, empty, empty);
 	}
 	else if (type == Event::ANIMATION_TRIGGER) {
@@ -479,6 +521,9 @@ Event* EventManager::CreateGeneralVBEvent(string name, Event::TYPE type, Event::
 	else if (type == Event::TEXTURE_SWAP) {
 		ev = CreateTextureSwapEvent(name, _Trigger, 0, 0, empty);
 	}
+	else if (type == Event::DELETE_ME) {
+		ev = CreateDeleteMeEvent(name, _Trigger);
+	}
 	/*if (ev) {
 		ev->id = id_counter;
 		id_counter++;
@@ -487,6 +532,24 @@ Event* EventManager::CreateGeneralVBEvent(string name, Event::TYPE type, Event::
 	}
 	
 	Events.push_back(ev);*/
+	return ev;
+}
+Event* EventManager::CreateNullEvent(string name, Event::TRIGGER _Trigger) {
+	Event* ev = new NullEvent(VB1);
+	ev->SetTrigger(_Trigger);
+	string evname;
+	if (name.size() <= 0) {
+		char nbuf[256] = { '\0' };
+		sprintf(nbuf, "Null Event %i", Events.size());
+		evname.assign(nbuf);
+	}
+	else {
+		evname = name;
+	}
+	ev->SetName(evname);
+	ev->id = id_counter;
+	id_counter++;
+	Events.push_back(ev);
 	return ev;
 }
 Event* EventManager::CreateChildSpawnEvent(string name, Event::TRIGGER _Trigger, string v_name, string v_class, VECTOR3 ofs, VECTOR3 vel, VECTOR3 rot_vel, int mesh_to_del) {
@@ -657,7 +720,24 @@ Event* EventManager::CreateTextureSwapEvent(string name, Event::TRIGGER _Trigger
 	Events.push_back(ev);
 	return ev;
 }
-
+Event* EventManager::CreateDeleteMeEvent(string name, Event::TRIGGER _Trigger) {
+	Event* ev = new Delete_Me(VB1);
+	ev->SetTrigger(_Trigger);
+	string evname;
+	if (name.size() <= 0) {
+		char nbuf[256] = { '\0' };
+		sprintf(nbuf, "Delete Me %i", Events.size());
+		evname.assign(nbuf);
+	}
+	else {
+		evname = name;
+	}
+	ev->SetName(evname);
+	ev->id = id_counter;
+	id_counter++;
+	Events.push_back(ev);
+	return ev;
+}
 void EventManager::DeleteEvent(Event* ev) {
 	vector<Event*>::iterator it = find(Events.begin(), Events.end(), ev);
 	if (it != Events.cend()) {
@@ -681,11 +761,22 @@ void EventManager::ConsumeBufferedKey(DWORD key, bool down, char *kstate) {
 	}
 	return;
 }
+void EventManager::DockEvent(int dock, OBJHANDLE mate) {
+	if (Events.size() <= 0) { return; }
+	for (UINT i = 0; i < Events.size(); i++) {
+		if (Events[i]->GetTriggerType() == Event::TRIGGER::TRIGGERTYPE::DOCK_EVENT) {
+			Events[i]->EventDockEvent(dock, mate);
+		}
+	}
+}
 UINT EventManager::GetEventsCount() {
 	return Events.size();
 }
 string EventManager::GetEventName(UINT idx) {
 	return Events[idx]->GetName();
+}
+Event::TRIGGER::TRIGGERTYPE EventManager::GetEventTriggerType(UINT idx) {
+	return Events[idx]->GetTriggerType();
 }
 Event::TRIGGER EventManager::GetEventTrigger(UINT idx) {
 	return Events[idx]->GetTrigger();
@@ -875,4 +966,8 @@ void EventManager::SetTextureName(UINT idx, string _texture) {
 }
 string EventManager::GetTextureName(UINT idx) {
 	return ((TextureSwap*)Events[idx])->GetTextureName();
+}
+void EventManager::SetEventTrigger(UINT idx, Event::TRIGGER _Trigger) {
+	Events[idx]->SetTrigger(_Trigger);
+	return;
 }

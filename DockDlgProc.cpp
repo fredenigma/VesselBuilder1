@@ -3,6 +3,7 @@
 #include "LaserManager.h"
 #include "DialogControl.h"
 #include "DockManager.h"
+#include "AnimationManager.h"
 #pragma comment(lib, "comctl32.lib")
 
 #define LogV(x,...) VB1->Log->Log(x,##__VA_ARGS__)
@@ -32,6 +33,28 @@ void DialogControl::UpdateDockDialog(HWND hWnd) {
 	}
 	else {
 		SendDlgItemMessage(hWnd, IDC_CHECK_HIGHLIGHT_DOCK, BM_SETCHECK, BST_UNCHECKED, 0);
+	}
+
+	SendDlgItemMessage(hWnd, IDC_COMBO_DCKSDANI, CB_RESETCONTENT, 0, 0);
+	for (UINT i = 0; i < AnimMng->GetAnimDefsCount(); i++) {
+		int index = SendDlgItemMessage(hWnd, IDC_COMBO_DCKSDANI, CB_ADDSTRING, 0, (LPARAM)AnimMng->GetAnimName(i).c_str());
+		SendDlgItemMessage(hWnd, IDC_COMBO_DCKSDANI, CB_SETITEMDATA, index, (LPARAM)i);
+	}
+	
+	
+	bool sd;
+	double sd_distance;
+	UINT sd_anim;
+	DckMng->GetSoftDockParams(CurrentSelection.idx, sd, sd_distance, sd_anim);
+	SetCheckBox(hWnd, IDC_CHECK_DCKENABLSD, sd);
+	if (sd) {
+		SetDlgItemDouble(hWnd, IDC_EDIT_DCKSDDIST, sd_distance, 3);
+		int index = ComboFindItemData(GetDlgItem(hWnd, IDC_COMBO_DCKSDANI), (void*)sd_anim);
+		SendDlgItemMessage(hWnd, IDC_COMBO_DCKSDANI, CB_SETCURSEL, index, 0);
+	}
+	else {
+		SetDlgItemText(hWnd, IDC_EDIT_DCKSDDIST, (LPCSTR)"");
+		SendDlgItemMessage(hWnd, IDC_COMBO_DCKSDANI, CB_SETCURSEL, 0, 0);
 	}
 	//if (SB1->DockBeaconsActive) {
 	//	SB1->UpdateDockBeaconsPos();
@@ -250,6 +273,22 @@ BOOL DialogControl::DockDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 			SendDlgItemMessage(hDlg, IDC_TREE1, TVM_SETITEM, 0, (LPARAM)&tvi);
 			break;
 		}
+		case IDC_BUTTON_DCKSDSET:
+		{
+			bool check = IsCheckBoxChecked(hWnd, IDC_CHECK_DCKENABLSD);
+			double dist = 0;
+			UINT anim = 0;
+			if (check) {
+				dist = GetDlgItemDouble(hWnd, IDC_EDIT_DCKSDDIST);
+				int index = SendDlgItemMessage(hWnd, IDC_COMBO_DCKSDANI, CB_GETCURSEL, 0, 0);
+				anim = SendDlgItemMessage(hWnd, IDC_COMBO_DCKSDANI, CB_GETITEMDATA, index, 0);
+			}
+
+			DckMng->SetSoftDockParams(CurrentSelection.idx, check, dist, anim);
+			break;
+		}
+
+
 		}
 		break;
 	}

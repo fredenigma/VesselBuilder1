@@ -7,18 +7,22 @@ public:
 	VesselBuilder1 *VB1;
 	string name;
 	UINT id;
-	enum TYPE{NULL_EVENT, CHILD_SPAWN,PAYLOAD_JETTISON,ANIMATION_TRIGGER,THRUSTER_FIRING,THRUSTERGROUP_LEVEL,RESET_MET,RECONFIG,TEXTURE_SWAP,SHIFT_CG};
+	enum TYPE{NULL_EVENT, CHILD_SPAWN,PAYLOAD_JETTISON,ANIMATION_TRIGGER,THRUSTER_FIRING,THRUSTERGROUP_LEVEL,RESET_MET,RECONFIG,TEXTURE_SWAP,SHIFT_CG,DELETE_ME};
 	virtual TYPE Type() const { return NULL_EVENT; }
 	
 	struct TRIGGER {
-		enum TRIGGERTYPE { NULL_TRIG, SIMSTART, KEYPRESS, ALTITUDE, MAINFUELTANK_LEVEL, VELOCITY, TIME, DYNPRESSURE,OTHER_EVENT }Type;
+		enum TRIGGERTYPE { NULL_TRIG, SIMSTART, KEYPRESS, ALTITUDE, MAINFUELTANK_LEVEL, VELOCITY, TIME, DYNPRESSURE,OTHER_EVENT,DOCK_EVENT }Type;
 		enum REPEAT_MODE{ONCE,ALWAYS}repeat_mode;
 		DWORD Key;
 		struct KEYMOD { bool Shift; bool Ctrl; bool Alt; }KeyMods;
+		int DockingPort;
+		string MateName;
+		bool AnyMate;
+		bool WhenDocking;
 		enum CONDITION{BELOW,ABOVE}condition;
 		double TriggerValue;
 		Event* Other_event_h;
-		enum VEL_MODE{MS,MACH}vel_mode;
+		enum VEL_MODE{GROUNDSPEED,AIRSPEED,MACH,ORBITALSPEED}vel_mode;
 		enum TIME_MODE{MET,MJD}time_mode;
 		TRIGGER() {
 			Type = NULL_TRIG;
@@ -29,9 +33,13 @@ public:
 			KeyMods.Alt = false;
 			condition = BELOW;
 			TriggerValue = 0;
-			vel_mode = MS;
+			vel_mode = GROUNDSPEED;
 			time_mode = MJD;
 			Other_event_h = NULL;
+			DockingPort = 0;
+			MateName.clear();
+			AnyMate = true;
+			WhenDocking = true;
 		}
 	}Trigger;
 	void SetTrigger(TRIGGER _trig);
@@ -39,6 +47,7 @@ public:
 	TRIGGER::TRIGGERTYPE GetTriggerType();
 	virtual void EventPreStep(double simt, double simdt, double mjd);
 	virtual void ConsumeBufferedKey(DWORD key, bool down, char *kstate);
+	virtual void EventDockEvent(int dock, OBJHANDLE mate);
 	virtual void Trig();
 	virtual void ConsumeEvent();
 	bool Consumed;
@@ -48,6 +57,14 @@ public:
 	void SetName(string newname);
 	string GetName();
 	TRIGGER GetTrigger() { return Trigger; }
+};
+
+class NullEvent : public Event {
+public:
+	NullEvent(VesselBuilder1 *VB1);
+	~NullEvent();
+	TYPE Type() const { return NULL_EVENT; }
+	void ConsumeEvent();
 };
 
 class Child_Spawn :public Event {
@@ -187,6 +204,15 @@ public:
 
 	
 };
+
+class Delete_Me : public Event {
+public:
+	Delete_Me(VesselBuilder1* VB1);
+	~Delete_Me();
+	TYPE Type() const { return DELETE_ME; }
+	void ConsumeEvent();
+};
+
 class EventManager {
 public:
 	EventManager(VesselBuilder1 *_VB1);
@@ -194,6 +220,7 @@ public:
 	VesselBuilder1 *VB1;
 	vector<Event*>Events;
 	Event* CreateGeneralVBEvent(string name,Event::TYPE type,Event::TRIGGER _Trigger);
+	Event* CreateNullEvent(string name, Event::TRIGGER _Trigger);
 	Event* CreateChildSpawnEvent(string name, Event::TRIGGER _Trigger, string v_name, string v_class, VECTOR3 ofs = _V(0, 0, 0), VECTOR3 vel = _V(0, 0, 0), VECTOR3 rot_vel = _V(0, 0, 0), int mesh_to_del = -1);
 	Event* CreateAnimTriggerEvent(string name, Event::TRIGGER _Trigger, UINT _anim_idx, bool _forward);
 	Event* CreateThrusterFireEvent(string name, Event::TRIGGER _Trigger, THRUSTER_HANDLE th, double level = 1);
@@ -203,13 +230,17 @@ public:
 	Event* CreateReconfigurationEvent(string name, Event::TRIGGER _Trigger,UINT newconfig = 0);
 	Event* CreateShiftCGEvent(string name, Event::TRIGGER _Trigger, VECTOR3 shift = _V(0,0,0));
 	Event* CreateTextureSwapEvent(string name, Event::TRIGGER _Trigger, UINT mesh, DWORD texidx, string texture_name);
+	Event* CreateDeleteMeEvent(string name, Event::TRIGGER _Trigger);
+	void SetEventTrigger(UINT idx, Event::TRIGGER _Trigger);
 	void DeleteEvent(Event* ev);
 	void PreStep(double simt, double simdt, double mjd);
 	void ConsumeBufferedKey(DWORD key, bool down, char *kstate);
+	void DockEvent(int dock, OBJHANDLE mate);
 	UINT id_counter;
 	UINT GetEventsCount();
 	string GetEventName(UINT idx);
 	void SetEventName(UINT idx, string newname);
+	Event::TRIGGER::TRIGGERTYPE GetEventTriggerType(UINT idx);
 	Event::TRIGGER GetEventTrigger(UINT idx);
 	Event* GetEventH(UINT idx);
 	UINT GetEventIdx(Event* ev);

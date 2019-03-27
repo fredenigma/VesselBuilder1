@@ -113,12 +113,18 @@ public:
 		VECTOR3 dir;
 		VECTOR3 rot;
 		bool jettisonable;
+		bool softdock;
+		double sd_distance;
+		UINT sd_anim;
 		Definitions() {
 			name.clear();
 			pos = _V(0, 0, 0);
 			dir = _V(0, 0, 1);
 			rot = _V(0, 1, 0);
 			jettisonable = false;
+			softdock = false;
+			sd_distance = 0;
+			sd_anim = 0;
 		}
 	};
 	vector<Definitions> Defs;
@@ -660,6 +666,10 @@ public:
 		int repeat_mode;
 		DWORD key;
 		int keymod; //1 shift, 2 ctrl, 4 alt, 3 shift + ctrl, 5 shift + alt, 6 ctrl + alt, 7 shift + ctrl + alt
+		int docking_port;
+		string mate_name;
+		bool any_mate;
+		bool when_docking;
 		int condition;
 		double trigger_value;
 		int other_event;
