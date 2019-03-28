@@ -413,6 +413,8 @@ void DialogControl::InitDialog(HWND hWnd) {
 	SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_SETITEMDATA, index, (LPARAM)Event::TYPE::SHIFT_CG);
 	index = SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_ADDSTRING, 0, (LPARAM)"DELETE ME");
 	SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_SETITEMDATA, index, (LPARAM)Event::TYPE::DELETE_ME);
+	index = SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_ADDSTRING, 0, (LPARAM)"PLAY SOUND");
+	SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_SETITEMDATA, index, (LPARAM)Event::TYPE::PLAYSOUND);
 	SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_SETCURSEL, 0, 0);
 	ShowWindow(GetDlgItem(hWnd, IDC_COMBO_EVENTTYPE), SW_HIDE);
 

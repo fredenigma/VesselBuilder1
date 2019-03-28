@@ -3,6 +3,8 @@
 #include "DockManager.h"
 #include "AnimationManager.h"
 
+#define LogV(x,...) VB1->Log->Log(x,##__VA_ARGS__)
+
 SoftDock::SoftDock(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;
 	DckMng = VB1->DckMng;
@@ -11,6 +13,7 @@ SoftDock::SoftDock(VesselBuilder1 *_VB1) {
 	my_dh = NULL;
 	SDSystemEnabled = false;
 	Active = false;
+	note_sd = oapiCreateAnnotation(true, 0.5, _V(0.6, 0.6, 0.6));
 }
 SoftDock::~SoftDock() {
 	VB1 = NULL;
@@ -27,15 +30,42 @@ void SoftDock::SetSoftDockParams(def_idx d_idx) {
 	return;
 
 }
+bool SoftDock::IsOBJinVector(OBJHANDLE h_obj, vector<OBJHANDLE>vh) {
+	for (UINT i = 0; i < vh.size(); i++) {
+		if (h_obj == vh[i]) {
+			return true;
+		}
+	}
+	return false;
+}
 bool SoftDock::ChooseDock(def_idx &d_idx,OBJHANDLE &hvessel) {
 	//DOCKHANDLE dh_candidate = NULL;
 	int idx = -1;
 	OBJHANDLE h_ves_candidate = NULL;
+	vector<OBJHANDLE>linked;
+	linked.clear();
+	UINT dck_count = VB1->DockCount();
+	DWORD att_count = VB1->AttachmentCount(false);
+	for (UINT d = 0; d < dck_count; d++) {
+		DOCKHANDLE dh = VB1->GetDockHandle(d);
+		OBJHANDLE hd = VB1->GetDockStatus(dh);
+		if (hd != NULL) {
+			linked.push_back(hd);
+		}
+	}
+	for (DWORD a = 0; a < att_count; a++) {
+		ATTACHMENTHANDLE ah = VB1->GetAttachmentHandle(false, a);
+		OBJHANDLE ha = VB1->GetAttachmentStatus(ah);
+		if (ha != NULL) {
+			linked.push_back(ha);
+		}
+	}
 	for (UINT i = 0; i < DckMng->GetDockCount(); i++) {
 		bool SD;
 		double sd_distance;
 		UINT anim;
 		DckMng->GetSoftDockParams(i, SD, sd_distance, anim);
+		
 		if (!SD) { continue; }
 		VECTOR3 dpos, ddir, drot;
 		DckMng->GetDockParams(i, dpos, ddir, drot);
@@ -46,13 +76,16 @@ bool SoftDock::ChooseDock(def_idx &d_idx,OBJHANDLE &hvessel) {
 		for (DWORD j = 0; j < oapiGetVesselCount(); j++) {
 			OBJHANDLE h_ves = oapiGetVesselByIndex(j);
 			if (h_ves == VB1->GetHandle()) { continue; }
+			if (IsOBJinVector(h_ves, linked)) { continue; }
 			VECTOR3 grpos;
 			VB1->GetRelativePos(h_ves, grpos);
 			double vessel_distance = length(grpos);
-			if ((vessel_distance < 2 * oapiGetSize(h_ves)) && ((vessel_distance < v_dist))) {
+			if ((vessel_distance < (20 * oapiGetSize(h_ves))) && ((vessel_distance < v_dist))) {
 				v_dist = vessel_distance;
+				
 				//dh_candidate = DckMng->GetDH(i);
 				idx =(int)i;
+				
 				h_ves_candidate = h_ves;
 			}
 		}
@@ -101,7 +134,7 @@ bool SoftDock::SoftDockCheck(OBJHANDLE &hves,DOCKHANDLE &hdock) {
 			VECTOR3 his_gpos;
 			v->GetGlobalPos(his_gpos);
 			double my_dock_his_ves_distance = dist(dgpos, his_gpos);
-			if ((docks_distance < 0.5)&&((my_dock_his_ves_distance)<=his_dock_ves_distance)) { //we are there, now check alignment
+			if ((docks_distance < (0.75*soft_dock_distance))&&((my_dock_his_ves_distance)<=his_dock_ves_distance)) { //we are there, now check alignment
 				MATRIX3 his_rm, my_rm;
 				v->GetRotationMatrix(his_rm);
 				VB1->GetRotationMatrix(my_rm);
@@ -134,12 +167,17 @@ bool SoftDock::SoftDockCheck(OBJHANDLE &hves,DOCKHANDLE &hdock) {
 void SoftDock::EnableSoftDock(bool enable) {
 	Active = enable;
 	if (enable == false) {
-		sprintf(oapiDebugString(), "");
+		//sprintf(oapiDebugString(), "");
+		oapiAnnotationSetText(note_sd, "");
 	}
 }
 void SoftDock::PreStep() {
-	if (!IsSDSysEnabled()) { sprintf(oapiDebugString(), ""); return; }
-	sprintf(oapiDebugString(), "SoftDock System Active");
+	if (!IsSDSysEnabled()) { //sprintf(oapiDebugString(), ""); 
+		oapiAnnotationSetText(note_sd, ""); 
+		return; 
+	}
+	//sprintf(oapiDebugString(), "SoftDock System Active");
+	oapiAnnotationSetText(note_sd, "SoftDock System Active");
 	if (!SoftDockActive()) {
 		if (SoftDockCheck(hvessel, h_dock)) {
 			EnableSoftDock(true);
@@ -152,7 +190,10 @@ void SoftDock::PreStep() {
 	return;
 }
 void SoftDock::StationKeeping() {
-	if (VB1->GetDockStatus(my_dh) != NULL) { sprintf(oapiDebugString(), "HARD DOCK"); return; }
+	if (VB1->GetDockStatus(my_dh) != NULL) { //sprintf(oapiDebugString(), "HARD DOCK"); 
+	oapiAnnotationSetText(note_sd, "HARD DOCK"); 
+	return; 
+	}
 	VESSEL* v = oapiGetVesselInterface(hvessel);
 	VESSELSTATUS2 vs2;
 	memset(&vs2, 0, sizeof(vs2));
@@ -187,7 +228,8 @@ void SoftDock::StationKeeping() {
 	vs2.arot.z = atan2(finalrm.m12, finalrm.m11);
 
 	VB1->DefSetStateEx(&vs2);
-	sprintf(oapiDebugString(), "SOFT DOCK");
+	//sprintf(oapiDebugString(), "SOFT DOCK");
+	oapiAnnotationSetText(note_sd, "SOFT DOCK");
 }
 void SoftDock::ConsumeSoftDockKey(DWORD key, bool down, char *kstate) {
 	//if (!IsSDSysEnabled()) { return; }

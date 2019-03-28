@@ -51,6 +51,7 @@
 #include <iostream>
 #include <bitset>
 #include "Log.h"
+#include "VBVector.h"
 using namespace std;
 
 typedef UINT anim_idx;

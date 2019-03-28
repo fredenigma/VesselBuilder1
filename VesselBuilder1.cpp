@@ -35,6 +35,7 @@
 #include "ConfigurationManager.h"
 #include "SoftDock.h"
 
+
 #define LogV(x,...) Log->Log(x,##__VA_ARGS__)
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -123,6 +124,7 @@ VesselBuilder1::VesselBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
 
 VesselBuilder1::~VesselBuilder1(){
 	LogV("Destructor Started");
+	if (Dlg->IsOpen()) { Dlg->Close(); }
 	delete Dlg;
 	Dlg = NULL;
 	delete FMDlg;
@@ -683,7 +685,33 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 		else { return 0; }
 	}
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == OAPI_KEY_K) {
-	
+		
+		
+		VBVector<UINT> vbv;
+		for (UINT i = 0; i < 120; i++) {
+			vbv.push_back(i);
+		}
+		LogV("vbv size:%i", vbv.size());
+		VBVector<UINT> vbv2 = vbv;
+		LogV("vbv2 size:%i", vbv2.size());
+		for (VBVector<UINT>::iterator it = vbv.begin(); it != vbv.end(); it++) {
+			
+		}
+
+		LogV("vbv back:%i", vbv.back());
+		int id;
+		bool test = vbv.VBFind(45, id);
+		LogV("test:%i id:%i", test, id);
+		test = vbv2.VBFind(54, id);
+		LogV("test:%i id:%i", test, id);
+
+		LogV("vbv [10] : %i", vbv[10]);
+		vbv.erase(10);
+		LogV("vbv [10] : %i", vbv[10]);
+
+		vbv.clear();
+		LogV("vbv size :%i vbv2 size:%i", vbv.size(), vbv2.size());
+		//LogV("vbv[%i]:%i vbv[%i] %i", 1, vbv[1], 24, vbv[24]);
 	//	soft_dock_distance -= 0.1;
 	//	ConfigMng->ApplyConfiguration(1);
 		//Met->SetMJD0(oapiGetSimMJD() + 0.01);
@@ -810,7 +838,7 @@ void VesselBuilder1::clbkPreStep(double simt, double simdt, double mjd) {
 	DckMng->DockPreStep(simt, simdt, mjd);
 	EvMng->PreStep(simt, simdt, mjd);
 	
-
+	
 /*	if ((Met->Enabled()) && (SetMng->GetShowMet() == GeneralSettingsManager::SHOWMET::NOTE)) {
 		char METbuff[256] = { '\0' };
 		int sign, hrs, mins, secs;

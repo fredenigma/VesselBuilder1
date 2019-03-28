@@ -693,6 +693,31 @@ void DialogControl::SetEventsDialog(HWND hWnd, int event_type) {
 
 		break;
 	}
+	case Event::TYPE::PLAYSOUND:
+	{
+		ShowWindow(hWnd_ChildSpawn, SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_COMBO_EVMAIN), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_CHECK_EVNEXT), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_STATIC_EVMAIN), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_STATIC_EVLVL), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_SLIDER_EVLVL), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_EDIT_EVLVL), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_STATIC_EVTEXTURES), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_COMBO_EVTEXTURES), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_STATIC_EVNEWMJD0), SW_SHOW);
+		ShowWindow(GetDlgItem(hWnd, IDC_EDIT_EVNEWMJD0), SW_SHOW);
+		ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_EVMJDSET), SW_SHOW);
+		ShowWindow(GetDlgItem(hWnd, IDC_CHECK_EVRSTATEV), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_STATIC_EVSHIFT), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_EDIT_EVX), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_EDIT_EVY), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_EDIT_EVZ), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_EVSHIFTSET), SW_HIDE);
+
+		SetDlgItemText(hWnd, IDC_STATIC_EVNEWMJD0, "Sound File");
+
+		break;
+	}
 	default:
 	{
 		ShowWindow(hWnd_ChildSpawn, SW_HIDE);

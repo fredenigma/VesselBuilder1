@@ -5,6 +5,8 @@
 #include "AnimationManager.h"
 #include "MET.h"
 #include "ConfigurationManager.h"
+#include <Windows.h>
+#pragma comment (lib, "winmm.lib")
 
 Event::Event(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;
@@ -475,7 +477,20 @@ void Delete_Me::ConsumeEvent() {
 	oapiDeleteVessel(VB1->GetHandle());
 	return;
 }
+PlaySoundEvent::PlaySoundEvent(VesselBuilder1* VB1, string _soundfile) :Event(VB1) {
+	soundfile = _soundfile;
+}
+PlaySoundEvent::~PlaySoundEvent(){}
 
+void PlaySoundEvent::ConsumeEvent() {
+	PlaySound(soundfile.c_str(), NULL, SND_FILENAME | SND_ASYNC | SND_NODEFAULT);
+}
+void PlaySoundEvent::SetSoundFile(string filename) {
+	soundfile = filename;
+}
+string PlaySoundEvent::GetSoundFile() {
+	return soundfile;
+}
 
 
 
@@ -523,6 +538,9 @@ Event* EventManager::CreateGeneralVBEvent(string name, Event::TYPE type, Event::
 	}
 	else if (type == Event::DELETE_ME) {
 		ev = CreateDeleteMeEvent(name, _Trigger);
+	}
+	else if (type == Event::PLAYSOUND) {
+		ev = CreatePlaySoundEvent(name, _Trigger, empty);
 	}
 	/*if (ev) {
 		ev->id = id_counter;
@@ -738,6 +756,25 @@ Event* EventManager::CreateDeleteMeEvent(string name, Event::TRIGGER _Trigger) {
 	Events.push_back(ev);
 	return ev;
 }
+Event* EventManager::CreatePlaySoundEvent(string name, Event::TRIGGER _Trigger, string _soundfile) {
+	Event* ev = new PlaySoundEvent(VB1, _soundfile);
+	ev->SetTrigger(_Trigger);
+	string evname;
+	if (name.size() <= 0) {
+		char nbuf[256] = { '\0' };
+		sprintf(nbuf, "PlaySound %i", Events.size());
+		evname.assign(nbuf);
+	}
+	else {
+		evname = name;
+	}
+	ev->SetName(evname);
+	ev->id = id_counter;
+	id_counter++;
+	Events.push_back(ev);
+	return ev;
+}
+
 void EventManager::DeleteEvent(Event* ev) {
 	vector<Event*>::iterator it = find(Events.begin(), Events.end(), ev);
 	if (it != Events.cend()) {
@@ -967,6 +1004,16 @@ void EventManager::SetTextureName(UINT idx, string _texture) {
 string EventManager::GetTextureName(UINT idx) {
 	return ((TextureSwap*)Events[idx])->GetTextureName();
 }
+void EventManager::SetSoundFile(UINT idx, string filename) {
+	((PlaySoundEvent*)Events[idx])->SetSoundFile(filename);
+	return;
+}
+string EventManager::GetSoundFile(UINT idx) {
+	return ((PlaySoundEvent*)Events[idx])->GetSoundFile();
+}
+
+
+
 void EventManager::SetEventTrigger(UINT idx, Event::TRIGGER _Trigger) {
 	Events[idx]->SetTrigger(_Trigger);
 	return;

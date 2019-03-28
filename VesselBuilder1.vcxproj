@@ -156,6 +156,7 @@
     <ClInclude Include="SoftDock.h" />
     <ClInclude Include="TextReaderDlg.h" />
     <ClInclude Include="VariableDragManager.h" />
+    <ClInclude Include="VBVector.h" />
     <ClInclude Include="VCManager.h" />
     <ClInclude Include="VesselBuilder1.h" />
     <ClInclude Include="ThrusterManager.h" />
@@ -202,6 +203,7 @@
     <ClCompile Include="TextReaderDlg.cpp" />
     <ClCompile Include="VariableDragDlgProc.cpp" />
     <ClCompile Include="VariableDragManager.cpp" />
+    <ClCompile Include="VBVector.cpp" />
     <ClCompile Include="VCHUDDlgProc.cpp" />
     <ClCompile Include="VCManager.cpp" />
     <ClCompile Include="VCMFDDlgProc.cpp" />

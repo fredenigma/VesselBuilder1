@@ -7,7 +7,7 @@ public:
 	VesselBuilder1 *VB1;
 	string name;
 	UINT id;
-	enum TYPE{NULL_EVENT, CHILD_SPAWN,PAYLOAD_JETTISON,ANIMATION_TRIGGER,THRUSTER_FIRING,THRUSTERGROUP_LEVEL,RESET_MET,RECONFIG,TEXTURE_SWAP,SHIFT_CG,DELETE_ME};
+	enum TYPE{NULL_EVENT, CHILD_SPAWN,PAYLOAD_JETTISON,ANIMATION_TRIGGER,THRUSTER_FIRING,THRUSTERGROUP_LEVEL,RESET_MET,RECONFIG,TEXTURE_SWAP,SHIFT_CG,DELETE_ME,PLAYSOUND,ENABLE_EVENT};
 	virtual TYPE Type() const { return NULL_EVENT; }
 	
 	struct TRIGGER {
@@ -213,6 +213,17 @@ public:
 	void ConsumeEvent();
 };
 
+class PlaySoundEvent : public Event {
+public:
+	PlaySoundEvent(VesselBuilder1* VB1, string _soundfile);
+	~PlaySoundEvent();
+	TYPE Type() const { return PLAYSOUND; }
+	void ConsumeEvent();
+	string soundfile;
+	void SetSoundFile(string filename);
+	string GetSoundFile();
+};
+
 class EventManager {
 public:
 	EventManager(VesselBuilder1 *_VB1);
@@ -231,6 +242,7 @@ public:
 	Event* CreateShiftCGEvent(string name, Event::TRIGGER _Trigger, VECTOR3 shift = _V(0,0,0));
 	Event* CreateTextureSwapEvent(string name, Event::TRIGGER _Trigger, UINT mesh, DWORD texidx, string texture_name);
 	Event* CreateDeleteMeEvent(string name, Event::TRIGGER _Trigger);
+	Event* CreatePlaySoundEvent(string name, Event::TRIGGER _Trigger, string soundfile);
 	void SetEventTrigger(UINT idx, Event::TRIGGER _Trigger);
 	void DeleteEvent(Event* ev);
 	void PreStep(double simt, double simdt, double mjd);
@@ -297,6 +309,8 @@ public:
 	void SetTextureName(UINT idx, string _texture);
 	string GetTextureName(UINT idx);
 
+	void SetSoundFile(UINT idx, string filename);
+	string GetSoundFile(UINT idx);
 
 
 	void Clear();

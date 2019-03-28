@@ -85,6 +85,9 @@
     <ClInclude Include="SoftDock.h">
       <Filter>Vessel</Filter>
     </ClInclude>
+    <ClInclude Include="VBVector.h">
+      <Filter>Vessel</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\Orbitersdk\lib\orbiter.lib">
@@ -269,6 +272,9 @@
       <Filter>Dialog</Filter>
     </ClCompile>
     <ClCompile Include="SoftDock.cpp">
+      <Filter>Vessel</Filter>
+    </ClCompile>
+    <ClCompile Include="VBVector.cpp">
       <Filter>Vessel</Filter>
     </ClCompile>
   </ItemGroup>
