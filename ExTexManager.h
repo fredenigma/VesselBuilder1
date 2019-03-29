@@ -15,7 +15,7 @@ public:
 	ExTexManager(VesselBuilder1 *_VB1);
 	~ExTexManager();
 	VesselBuilder1 *VB1;
-	vector <EXTEX_DEF> extex_defs;
+	VBVector <EXTEX_DEF> extex_defs;
 	void AddExTexDef();
 	void AddExTexDef(string texname);
 	bool StoreExTexDef(string texname, def_idx d_idx);

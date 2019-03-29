@@ -137,11 +137,11 @@ UINT AnimationManager::AddAnimCompDef(def_idx d_idx, MGROUP_TRANSFORM::TYPE type
 	int index = animcomp_defs.size();
 	sprintf(cbuf, "AnimComp_%i", index);
 	string name(cbuf);
-	vector<UINT>empty;
+	VBVector<UINT>empty;
 	empty.clear();
 	return AddAnimCompDef(d_idx, name, 0, 1, 0, 0, empty, -1, (int)type, _V(0, 0, 0), _V(0, 0, 1), _V(1, 1, 1), _V(0, 0, 0), 0);
 }
-UINT AnimationManager::AddAnimCompDef(def_idx d_idx, string name, double state0, double state1, int mesh, int ngrps, vector<UINT>grps, int parent, int type, VECTOR3 ref, VECTOR3 axis, VECTOR3 scale, VECTOR3 shift, double angle) {
+UINT AnimationManager::AddAnimCompDef(def_idx d_idx, string name, double state0, double state1, int mesh, int ngrps, VBVector<UINT>grps, int parent, int type, VECTOR3 ref, VECTOR3 axis, VECTOR3 scale, VECTOR3 shift, double angle) {
 	LogV("Adding AnimComp: name:%s",name.c_str());
 	ANIMCOMP_DEF acd = ANIMCOMP_DEF();
 	acd.name = name;
@@ -274,7 +274,7 @@ void AnimationManager::SetAnimCompDefMesh(def_idx d_idx, msh_idx m_idx) {
 msh_idx AnimationManager::GetAnimCompDefMesh(def_idx d_idx) {
 	return ((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->mesh;
 }
-void AnimationManager::AddAnimCompDefGroups(def_idx d_idx, vector<UINT>addgroups) {
+void AnimationManager::AddAnimCompDefGroups(def_idx d_idx, VBVector<UINT>addgroups) {
 	int oldngrps = ((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->ngrp;
 	int addngrps = addgroups.size();
 	int newngrps = oldngrps + addngrps;
@@ -293,12 +293,12 @@ void AnimationManager::AddAnimCompDefGroups(def_idx d_idx, vector<UINT>addgroups
 
 	return;
 }
-void AnimationManager::RemoveAnimCompDefGroups(def_idx d_idx, vector<UINT>remgroups) {
+void AnimationManager::RemoveAnimCompDefGroups(def_idx d_idx, VBVector<UINT>remgroups) {
 	int size_remgrps = remgroups.size();
 	if (size_remgrps <= 0) { return; }
 	int size_oldgrps = ((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->ngrp;
 	
-	vector<UINT>working_grps;
+	VBVector<UINT>working_grps;
 	working_grps.clear();
 	for (UINT i = 0; i < size_oldgrps; i++) {
 		working_grps.push_back(((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->grp[i]);
@@ -309,7 +309,7 @@ void AnimationManager::RemoveAnimCompDefGroups(def_idx d_idx, vector<UINT>remgro
 		}
 	}
 
-	vector<UINT>::iterator it = working_grps.begin();
+	VBVector<UINT>::iterator it = working_grps.begin();
 	while(it != working_grps.end()) {
 		if ((*it) == (UINT)-1) {
 			it = working_grps.erase(it);
@@ -332,8 +332,8 @@ void AnimationManager::RemoveAnimCompDefGroups(def_idx d_idx, vector<UINT>remgro
 
 	return;
 }
-vector<UINT> AnimationManager::GetAnimCompDefGroups(def_idx d_idx) {
-	vector<UINT> grps;
+VBVector<UINT> AnimationManager::GetAnimCompDefGroups(def_idx d_idx) {
+	VBVector<UINT> grps;
 	grps.clear();
 	int ngrps = ((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->ngrp;
 	if (((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans->mesh == LOCALVERTEXLIST) {
@@ -609,7 +609,7 @@ int AnimationManager::ConsumeAnimBufferedKey(DWORD key, bool down, char *kstate)
 
 	if (!KEYMOD_ALT(kstate) && KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == OAPI_KEY_LEFT) {
 		if (ManualArmActive()) {
-			vector<UINT> manualAnimsIdx;
+			VBVector<UINT> manualAnimsIdx;
 			manualAnimsIdx.clear();
 			for (UINT i = 0; i < anim_defs.size(); i++) {
 				if ((GetAnimKey(i) == 0) && (GetAnimCycle(i) == AnimCycleType::MANUAL)) {
@@ -619,7 +619,7 @@ int AnimationManager::ConsumeAnimBufferedKey(DWORD key, bool down, char *kstate)
 			if (manualAnimsIdx.size() <= 0) {
 				StopManualArm();
 			}
-			vector<UINT>::iterator it = find(manualAnimsIdx.begin(), manualAnimsIdx.end(), CurrentManualAnim);
+			VBVector<UINT>::iterator it = find(manualAnimsIdx.begin(), manualAnimsIdx.end(), CurrentManualAnim);
 			int index = distance(manualAnimsIdx.begin(), it);
 			if (index != 0) {
 				CurrentManualAnim = manualAnimsIdx[index - 1];
@@ -631,7 +631,7 @@ int AnimationManager::ConsumeAnimBufferedKey(DWORD key, bool down, char *kstate)
 	if (!KEYMOD_ALT(kstate) && KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == OAPI_KEY_RIGHT) {
 		if (ManualArmActive()) {
 
-			vector<UINT> manualAnimsIdx;
+			VBVector<UINT> manualAnimsIdx;
 			manualAnimsIdx.clear();
 			for (UINT i = 0; i < anim_defs.size(); i++) {
 				if ((GetAnimKey(i) == 0) && (GetAnimCycle(i) == AnimCycleType::MANUAL)) {
@@ -641,7 +641,7 @@ int AnimationManager::ConsumeAnimBufferedKey(DWORD key, bool down, char *kstate)
 			if (manualAnimsIdx.size() <= 0) {
 				StopManualArm();
 			}
-			vector<UINT>::iterator it = find(manualAnimsIdx.begin(), manualAnimsIdx.end(), CurrentManualAnim);
+			VBVector<UINT>::iterator it = find(manualAnimsIdx.begin(), manualAnimsIdx.end(), CurrentManualAnim);
 			int index = distance(manualAnimsIdx.begin(), it);
 			if (index != manualAnimsIdx.size() - 1) {
 				CurrentManualAnim = manualAnimsIdx[index + 1];
@@ -840,7 +840,7 @@ void AnimationManager::ParseCfgFile(FILEHANDLE fh) {
 		bool arm_tip;
 		double state0, state1, angle;
 		VECTOR3 ref, axis, scale, shift;
-		vector<UINT>grps;
+		VBVector<UINT>grps;
 		MGROUP_TRANSFORM::TYPE type;
 		sprintf(cbuf, "ANIMCOMP_%i_NAME", animcompdef_counter);
 		oapiReadItem_string(fh, cbuf, namebuf);
@@ -988,7 +988,7 @@ void AnimationManager::WriteCfg(FILEHANDLE fh) {
 		sprintf(cbuf, "ANIMCOMP_%i_NGRPS", animcompdef_counter);
 		int ngrps = GetAnimCompDefNGroups(i);
 		oapiWriteItem_int(fh, cbuf, ngrps);
-		vector<UINT> grps = GetAnimCompDefGroups(i);
+		VBVector<UINT> grps = GetAnimCompDefGroups(i);
 		string line = VB1->WriteVectorUINT(grps);
 		sprintf(cbuf2, "%s", line.c_str());
 		sprintf(cbuf, "ANIMCOMP_%i_GRPS", animcompdef_counter);

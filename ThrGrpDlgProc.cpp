@@ -2,6 +2,7 @@
 #include "resource.h"
 #include "DialogControl.h"
 #include "ThrusterManager.h"
+
 #pragma comment(lib, "comctl32.lib")
 
 void DialogControl::UpdateThrGrpDialog(HWND hWnd) {
@@ -83,7 +84,7 @@ void DialogControl::UpdateThrGrpDialog(HWND hWnd) {
 		break;
 	}
 	}
-	vector<THRUSTER_HANDLE> thrusters = ThrGrpMng->GetThrusters(thgt);
+	VBVector<THRUSTER_HANDLE> thrusters = ThrGrpMng->GetThrusters(thgt);
 	SendDlgItemMessage(hWnd, IDC_LIST_THGRP, LB_RESETCONTENT, 0, 0);
 	for (UINT i = 0; i < ThrMng->GetThrCount(); i++) {
 		SendDlgItemMessage(hWnd, IDC_LIST_THGRP, LB_INSERTSTRING, i, (LPARAM)ThrMng->GetThrName(i).c_str());
@@ -134,7 +135,7 @@ BOOL DialogControl::ThrGrpDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 				if (nsel <= 0) { break; }
 				THRUSTER_HANDLE *sellist = new THRUSTER_HANDLE[nsel];
 				SendDlgItemMessage(hWnd, IDC_LIST_THGRP, LB_GETSELITEMS, nsel, (LPARAM)sellist);
-				vector<THRUSTER_HANDLE>thrusters;
+				VBVector<THRUSTER_HANDLE>thrusters;
 				for (UINT i = 0; i < nsel; i++) {
 					THRUSTER_HANDLE th = (THRUSTER_HANDLE)SendDlgItemMessage(hWnd, IDC_LIST_THGRP, LB_GETITEMDATA, (WPARAM)sellist[i], 0);
 					thrusters.push_back(th);

@@ -593,6 +593,7 @@ void LightsManager::WriteCfg(FILEHANDLE fh) {
 			sprintf(cbuf, "LIGHT_%i_APERTURE", i);
 			oapiWriteItem_vec(fh, cbuf, aperture);
 		}
+
 	}
 	return;
 }
@@ -611,8 +612,8 @@ int LightsManager::ConsumeLightsBufferedKey(DWORD key, bool down, char *kstate) 
 	}
 	return 0;
 }
-vector<UINT> LightsManager::GetLightsOn() {
-	vector<UINT>on_count;
+VBVector<UINT> LightsManager::GetLightsOn() {
+	VBVector<UINT>on_count;
 	on_count.clear();
 	for (UINT i = 0; i < GetLightsCount(); i++) {
 		if (IsLightActive(i)) {
@@ -621,8 +622,8 @@ vector<UINT> LightsManager::GetLightsOn() {
 	}
 	return on_count;
 }
-vector<UINT> LightsManager::GetBeaconsOn() {
-	vector<UINT> on_count;
+VBVector<UINT> LightsManager::GetBeaconsOn() {
+	VBVector<UINT> on_count;
 	on_count.clear();
 	for (UINT i = 0; i < GetBeaconCount(); i++) {
 		if (IsBeaconActive(i)) {

@@ -30,7 +30,7 @@ public:
 	ControlSurfacesManager(VesselBuilder1 *_VB1);
 	~ControlSurfacesManager();
 	VesselBuilder1 *VB1;
-	vector<CTRLSURF_DEF>ctrlsurf_defs;
+	VBVector<CTRLSURF_DEF>ctrlsurf_defs;
 	UINT CreateUndefinedCtrlSurfDef();
 	UINT CreateUndefinedCtrlSurfDef(string name, AIRCTRL_TYPE type, double area, double dCl, VECTOR3 ref, int axis, double delay, UINT anim);
 	void DeleteCtrlSurfDef(def_idx d_idx);

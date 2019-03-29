@@ -32,7 +32,7 @@ public:
 	DockManager(VesselBuilder1 *_VB1);
 	~DockManager();
 	VesselBuilder1 *VB1;
-	vector<DCK_DEF>dock_defs;
+	VBVector<DCK_DEF>dock_defs;
 	UINT AddDockDef();
 	UINT AddDockDef(string name, VECTOR3 pos, VECTOR3 dir, VECTOR3 rot,bool dockjett,bool SoftDock = false, double SoftDockDistance=0, def_idx SoftDockAnim = 0);
 	bool DeleteDockDef(def_idx  d_idx);
@@ -58,8 +58,8 @@ public:
 	VECTOR3* GetDockAntiDirPtr(def_idx d_idx);
 	VECTOR3* GetDockAntiRotPtr(def_idx d_idx);
 	UINT GetOrbiterDockIdx(DOCKHANDLE dh);
-	vector<DOCKHANDLE>docks_to_del;
-	vector<UINT>docks_jettisoned;
+	VBVector<DOCKHANDLE>docks_to_del;
+	VBVector<UINT>docks_jettisoned;
 
 	void SetSoftDockParams(def_idx d_idx, bool enable, double distance, def_idx anim);
 	void GetSoftDockParams(def_idx d_idx, bool &enable, double &distance, def_idx &anim);

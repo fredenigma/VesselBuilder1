@@ -16,7 +16,7 @@ public:
 	CameraManager(VesselBuilder1 *_VB1);
 	~CameraManager();
 	VesselBuilder1 *VB1;
-	vector<CAM_DEF>cam_defs;
+	VBVector<CAM_DEF>cam_defs;
 	UINT AddCamDef();
 	UINT AddCamDef(string name, VECTOR3 pos, VECTOR3 dir, double tilt);
 	void SetCamName(def_idx d_idx, string newname);

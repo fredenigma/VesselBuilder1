@@ -85,11 +85,11 @@ public:
 			rot = _V(0, 1, 0);
 		}
 	};
-	vector<Definitions> Defs;
+	VBVector<Definitions> Defs;
 	MeshManager* MshMng;
 
-	vector<Definitions> GetSection();
-	void SetSection(vector<Definitions>d) { Defs = d; }
+	VBVector<Definitions> GetSection();
+	void SetSection(VBVector<Definitions>d) { Defs = d; }
 /*	int GetMeshDefCount();
 	string GetMeshName(UINT idx);
 	VECTOR3 GetMeshPos(UINT idx);
@@ -127,13 +127,13 @@ public:
 			sd_anim = 0;
 		}
 	};
-	vector<Definitions> Defs;
+	VBVector<Definitions> Defs;
 	
 	DockManager *DckMng;
 
 
-	vector<Definitions> GetSection();
-	void SetSection(vector<Definitions>d) { Defs = d; }
+	VBVector<Definitions> GetSection();
+	void SetSection(VBVector<Definitions>d) { Defs = d; }
 /*	UINT GetDockCount();
 	string GetDockName(UINT idx);
 	void GetDockParams(UINT idx, VECTOR3 &pos, VECTOR3 &dir, VECTOR3 &rot);
@@ -168,11 +168,11 @@ public:
 			idcheck_string.clear();
 		}
 	};
-	vector<Definitions> Defs;
+	VBVector<Definitions> Defs;
 	AttachmentManager *AttMng;
 
-	vector<Definitions> GetSection();
-	void SetSection(vector<Definitions>d) { Defs = d; }
+	VBVector<Definitions> GetSection();
+	void SetSection(VBVector<Definitions>d) { Defs = d; }
 /*	UINT GetAttCount();
 	bool GetIdCheck(UINT idx);
 	string GetIdCheckString(UINT idx);
@@ -212,7 +212,7 @@ public:
 		double animcomp_state1;
 		int animcomp_mesh;
 		int animcomp_ngrps;
-		vector<UINT> animcomp_grps;
+		VBVector<UINT> animcomp_grps;
 		int type;
 		VECTOR3 ref;
 		VECTOR3 axis;
@@ -240,12 +240,12 @@ public:
 			parent_idx = -1;
 		}
 	};
-	vector<AnimDefinitions>AnimDefs;
-	vector<AnimCompDefinitions>AnimCompDefs;
+	VBVector<AnimDefinitions>AnimDefs;
+	VBVector<AnimCompDefinitions>AnimCompDefs;
 	AnimationManager *AnimMng;
 
-	void GetSection(vector<AnimDefinitions> &ad, vector<AnimCompDefinitions> &acd);
-	void SetSection(vector<AnimDefinitions> ad, vector<AnimCompDefinitions> acd) { AnimDefs = ad; AnimCompDefs = acd; }
+	void GetSection(VBVector<AnimDefinitions> &ad, VBVector<AnimCompDefinitions> &acd);
+	void SetSection(VBVector<AnimDefinitions> ad, VBVector<AnimCompDefinitions> acd) { AnimDefs = ad; AnimCompDefs = acd; }
 /*	UINT GetAnimCount();
 	double GetAnimDefState(UINT idx);
 	string GetAnimName(UINT idx);
@@ -280,11 +280,11 @@ public:
 			currentmass = -1;
 		}
 	};
-	vector<Definitions> Defs;
+	VBVector<Definitions> Defs;
 	PropellantManager *PrpMng;
 
-	vector<Definitions> GetSection();
-	void SetSection(vector<Definitions>d) { Defs = d; }
+	VBVector<Definitions> GetSection();
+	void SetSection(VBVector<Definitions>d) { Defs = d; }
 };
 
 class ThrusterSection : public Section {
@@ -314,14 +314,14 @@ public:
 			VECTOR3 pos;
 			VECTOR3 dir;
 		};
-		vector<ExhaustDefs>Exhausts;
+		VBVector<ExhaustDefs>Exhausts;
 		bool hasparticle;
 		struct ParticleDefs {
 			int pss_int;
 			bool custompos;
 			VECTOR3 pos;
 		};
-		vector<ParticleDefs>Particles;
+		VBVector<ParticleDefs>Particles;
 		Definitions() {
 			name.clear();
 			pos = _V(0, 0, 0);
@@ -337,11 +337,11 @@ public:
 			Particles.clear();
 		}
 	};
-	vector<Definitions> Defs;
+	VBVector<Definitions> Defs;
 	ThrusterManager *ThrMng;
 
-	vector<Definitions> GetSection();
-	void SetSection(vector<Definitions>d) { Defs = d; }
+	VBVector<Definitions> GetSection();
+	void SetSection(VBVector<Definitions>d) { Defs = d; }
 };
 
 class ThrusterGroupSection : public Section {
@@ -354,12 +354,12 @@ public:
 	void UpdateSection();
 	void ManagerClear();
 	map<THGROUP_TYPE, bool> Defined;
-	map<THGROUP_TYPE, vector<UINT> >Thrusters;
+	map<THGROUP_TYPE, VBVector<UINT> >Thrusters;
 	
 	ThrusterGroupManager *ThrGrpMng;
 
-	void GetSection(map<THGROUP_TYPE, bool> &Def, map<THGROUP_TYPE, vector<UINT> > &thrusters);
-	void SetSection(map<THGROUP_TYPE, bool> Def, map<THGROUP_TYPE, vector<UINT> > thrusters) { Defined = Def; Thrusters = thrusters; }
+	void GetSection(map<THGROUP_TYPE, bool> &Def, map<THGROUP_TYPE, VBVector<UINT> > &thrusters);
+	void SetSection(map<THGROUP_TYPE, bool> Def, map<THGROUP_TYPE, VBVector<UINT> > thrusters) { Defined = Def; Thrusters = thrusters; }
 };
 
 class TouchDownPointSection : public Section {
@@ -385,15 +385,15 @@ public:
 			mu_lng = 1.5;
 		}
 	};
-	vector<Definitions>Set1;
-	vector<Definitions>Set2;
+	VBVector<Definitions>Set1;
+	VBVector<Definitions>Set2;
 	bool SecondSetEnabled;
 	int changeoveranim;
 
 	TouchdownPointsManager *TdpMng;
 
-	void GetSection(vector<Definitions> &set1, vector<Definitions>&set2);
-	void SetSection(vector<Definitions> set1, vector<Definitions> set2) { Set1 = set1; Set2 = set2; }
+	void GetSection(VBVector<Definitions> &set1, VBVector<Definitions>&set2);
+	void SetSection(VBVector<Definitions> set1, VBVector<Definitions> set2) { Set1 = set1; Set2 = set2; }
 
 	
 };
@@ -419,7 +419,7 @@ public:
 			double cl;
 			double cm;
 		};
-		vector<LC_Point>Points;
+		VBVector<LC_Point>Points;
 		Definitions() {
 			name.clear();
 			align = 0;
@@ -431,11 +431,11 @@ public:
 		}
 	};
 
-	vector<Definitions> Defs;
+	VBVector<Definitions> Defs;
 	AirfoilsManager *AirfoilMng;
 
-	vector<Definitions> GetSection();
-	void SetSection(vector<Definitions>d) { Defs = d; }
+	VBVector<Definitions> GetSection();
+	void SetSection(VBVector<Definitions>d) { Defs = d; }
 };
 
 class CtrlSurfaceSection : public Section {
@@ -465,10 +465,10 @@ public:
 			ref = _V(0, 0, 0);
 		}
 	};
-	vector<Definitions> Defs;
+	VBVector<Definitions> Defs;
 	ControlSurfacesManager *CtrSurfMng;
-	vector<Definitions> GetSection();
-	void SetSection(vector<Definitions>d) { Defs = d; }
+	VBVector<Definitions> GetSection();
+	void SetSection(VBVector<Definitions>d) { Defs = d; }
 };
 
 class CameraSection : public Section {
@@ -492,10 +492,10 @@ public:
 			tilt = 0;
 		}
 	};
-	vector<Definitions> Defs;
+	VBVector<Definitions> Defs;
 	CameraManager *CamMng;
-	vector<Definitions> GetSection();
-	void SetSection(vector<Definitions>d) { Defs = d; }
+	VBVector<Definitions> GetSection();
+	void SetSection(VBVector<Definitions>d) { Defs = d; }
 };
 
 class VCSection : public Section {
@@ -553,12 +553,12 @@ public:
 		}
 	}HUDDef;
 
-	vector<PosDefinitions> PosDefs;
-	vector<MFDDefinitions> MFDDefs;
+	VBVector<PosDefinitions> PosDefs;
+	VBVector<MFDDefinitions> MFDDefs;
 	VCManager *VCMng;
 
-	void GetSection(vector<PosDefinitions> &pd, vector<MFDDefinitions>&md, HUDDefinition &hd);
-	void SetSection(vector<PosDefinitions> pd, vector<MFDDefinitions>md, HUDDefinition hd) { PosDefs = pd; MFDDefs = md; HUDDef = hd; }
+	void GetSection(VBVector<PosDefinitions> &pd, VBVector<MFDDefinitions>&md, HUDDefinition &hd);
+	void SetSection(VBVector<PosDefinitions> pd, VBVector<MFDDefinitions>md, HUDDefinition hd) { PosDefs = pd; MFDDefs = md; HUDDef = hd; }
 };
 
 class LightSection : public Section {
@@ -614,12 +614,12 @@ public:
 			attachment = 0;
 		}
 	};
-	vector<BcnDefinitions> BcnDefs;
-	vector<LightDefinitions> LgtDefs;
+	VBVector<BcnDefinitions> BcnDefs;
+	VBVector<LightDefinitions> LgtDefs;
 	LightsManager *LightsMng;
 
-	void GetSection(vector<BcnDefinitions> &bd, vector<LightDefinitions>&ld);
-	void SetSection(vector<BcnDefinitions> bd, vector<LightDefinitions> ld) { BcnDefs = bd; LgtDefs = ld; }
+	void GetSection(VBVector<BcnDefinitions> &bd, VBVector<LightDefinitions>&ld);
+	void SetSection(VBVector<BcnDefinitions> bd, VBVector<LightDefinitions> ld) { BcnDefs = bd; LgtDefs = ld; }
 };
 
 class VardSection :public Section {
@@ -643,11 +643,11 @@ public:
 			anim = 0;
 		}
 	};
-	vector<Definitions> Defs;
+	VBVector<Definitions> Defs;
 	VariableDragManager *VardMng;
 
-	vector<Definitions> GetSection();
-	void SetSection(vector<Definitions>d) { Defs = d; }
+	VBVector<Definitions> GetSection();
+	void SetSection(VBVector<Definitions>d) { Defs = d; }
 };
 
 class EventSection : public Section {
@@ -698,10 +698,10 @@ public:
 		DWORD texidx;
 		string texture_name;
 	};
-	vector<Definitions> Defs;
+	VBVector<Definitions> Defs;
 	EventManager *EvMng;
-	vector<Definitions> GetSection() { return Defs; }
-	void SetSection(vector<Definitions>d) { Defs = d; }
+	VBVector<Definitions> GetSection() { return Defs; }
+	void SetSection(VBVector<Definitions>d) { Defs = d; }
 };
 
 
@@ -721,43 +721,43 @@ public:
 	bool IsSectionActive(ItemType Type);
 	void SetSectionActive(ItemType Type, bool set);
 	void UpdateValids();
-	vector<Section*>Sections;
+	VBVector<Section*>Sections;
 	void SetIndex(UINT confing_idx);
 	UINT GetIndex();
 	UINT Config_idx;
 	void Delete();
 	bool GetSettingSection(SettingSection::Definitions &d);
 	void SetSettingsSection(SettingSection::Definitions d);
-	bool GetMeshSection(vector<MeshSection::Definitions> &d);
-	void SetMeshSection(vector<MeshSection::Definitions>d);
-	bool GetDockSection(vector<DockSection::Definitions> &d);
-	void SetDockSection(vector<DockSection::Definitions>d);
-	bool GetAttachmentSection(vector<AttachmentSection::Definitions> &d);
-	void SetAttachmentSection(vector<AttachmentSection::Definitions> d);
-	bool GetAnimationSection(vector<AnimationSection::AnimDefinitions>&ad, vector<AnimationSection::AnimCompDefinitions>&acd);
-	void SetAnimationSection(vector<AnimationSection::AnimDefinitions> ad, vector<AnimationSection::AnimCompDefinitions> acd);
-	bool GetPropellantSection(vector<PropellantSection::Definitions>&d);
-	void SetPropellantSection(vector<PropellantSection::Definitions>d);
-	bool GetThrusterSection(vector<ThrusterSection::Definitions>&d);
-	void SetThrusterSection(vector<ThrusterSection::Definitions>d);
-	bool GetThrusterGroupSection(map<THGROUP_TYPE, bool> &Def, map<THGROUP_TYPE, vector<UINT> > &thrusters);
-	void SetThrusterGroupSection(map<THGROUP_TYPE, bool> Def, map<THGROUP_TYPE, vector<UINT> > thrusters);
-	bool GetTouchdownPointSection(vector<TouchDownPointSection::Definitions> &set1, vector<TouchDownPointSection::Definitions>&set2);
-	void SetTouchdownPointSection(vector<TouchDownPointSection::Definitions> set1, vector<TouchDownPointSection::Definitions> set2);
-	bool GetAirfoilSection(vector<AirfoilSection::Definitions>&d);
-	void SetAirfoilSection(vector<AirfoilSection::Definitions>d);
-	bool GetCtrlSurfSection(vector<CtrlSurfaceSection::Definitions>&d);
-	void SetCtrlSurfSection(vector<CtrlSurfaceSection::Definitions>d);
-	bool GetCameraSection(vector<CameraSection::Definitions>&d);
-	void SetCameraSection(vector<CameraSection::Definitions>d);
-	bool GetVCSection(vector<VCSection::PosDefinitions>&pd, vector<VCSection::MFDDefinitions>&md, VCSection::HUDDefinition &hd);
-	void SetVCSection(vector<VCSection::PosDefinitions>pd, vector<VCSection::MFDDefinitions>md, VCSection::HUDDefinition hd);
-	bool GetLightSection(vector<LightSection::BcnDefinitions>&bd, vector<LightSection::LightDefinitions>&ld);
-	void SetLightSection(vector<LightSection::BcnDefinitions> bd, vector<LightSection::LightDefinitions> ld);
-	bool GetVardSection(vector<VardSection::Definitions>&d);
-	void SetVardSection(vector<VardSection::Definitions>d);
-	bool GetEventSection(vector<EventSection::Definitions>&d);
-	void SetEventSection(vector<EventSection::Definitions>d);
+	bool GetMeshSection(VBVector<MeshSection::Definitions> &d);
+	void SetMeshSection(VBVector<MeshSection::Definitions>d);
+	bool GetDockSection(VBVector<DockSection::Definitions> &d);
+	void SetDockSection(VBVector<DockSection::Definitions>d);
+	bool GetAttachmentSection(VBVector<AttachmentSection::Definitions> &d);
+	void SetAttachmentSection(VBVector<AttachmentSection::Definitions> d);
+	bool GetAnimationSection(VBVector<AnimationSection::AnimDefinitions>&ad, VBVector<AnimationSection::AnimCompDefinitions>&acd);
+	void SetAnimationSection(VBVector<AnimationSection::AnimDefinitions> ad, VBVector<AnimationSection::AnimCompDefinitions> acd);
+	bool GetPropellantSection(VBVector<PropellantSection::Definitions>&d);
+	void SetPropellantSection(VBVector<PropellantSection::Definitions>d);
+	bool GetThrusterSection(VBVector<ThrusterSection::Definitions>&d);
+	void SetThrusterSection(VBVector<ThrusterSection::Definitions>d);
+	bool GetThrusterGroupSection(map<THGROUP_TYPE, bool> &Def, map<THGROUP_TYPE, VBVector<UINT> > &thrusters);
+	void SetThrusterGroupSection(map<THGROUP_TYPE, bool> Def, map<THGROUP_TYPE, VBVector<UINT> > thrusters);
+	bool GetTouchdownPointSection(VBVector<TouchDownPointSection::Definitions> &set1, VBVector<TouchDownPointSection::Definitions>&set2);
+	void SetTouchdownPointSection(VBVector<TouchDownPointSection::Definitions> set1, VBVector<TouchDownPointSection::Definitions> set2);
+	bool GetAirfoilSection(VBVector<AirfoilSection::Definitions>&d);
+	void SetAirfoilSection(VBVector<AirfoilSection::Definitions>d);
+	bool GetCtrlSurfSection(VBVector<CtrlSurfaceSection::Definitions>&d);
+	void SetCtrlSurfSection(VBVector<CtrlSurfaceSection::Definitions>d);
+	bool GetCameraSection(VBVector<CameraSection::Definitions>&d);
+	void SetCameraSection(VBVector<CameraSection::Definitions>d);
+	bool GetVCSection(VBVector<VCSection::PosDefinitions>&pd, VBVector<VCSection::MFDDefinitions>&md, VCSection::HUDDefinition &hd);
+	void SetVCSection(VBVector<VCSection::PosDefinitions>pd, VBVector<VCSection::MFDDefinitions>md, VCSection::HUDDefinition hd);
+	bool GetLightSection(VBVector<LightSection::BcnDefinitions>&bd, VBVector<LightSection::LightDefinitions>&ld);
+	void SetLightSection(VBVector<LightSection::BcnDefinitions> bd, VBVector<LightSection::LightDefinitions> ld);
+	bool GetVardSection(VBVector<VardSection::Definitions>&d);
+	void SetVardSection(VBVector<VardSection::Definitions>d);
+	bool GetEventSection(VBVector<EventSection::Definitions>&d);
+	void SetEventSection(VBVector<EventSection::Definitions>d);
 
 };
 
@@ -766,7 +766,7 @@ public:
 	ConfigurationManager(VesselBuilder1 *_VB1);
 	~ConfigurationManager();
 	VesselBuilder1* VB1;
-	vector<Configuration*>Configurations;
+	VBVector<Configuration*>Configurations;
 	UINT config_counter;
 	UINT AddConfiguration(VesselBuilder1* VB1, map<ItemType,bool>_Sections, FILEHANDLE cfg);
 	void ApplyConfiguration(UINT config, bool firstload = false);

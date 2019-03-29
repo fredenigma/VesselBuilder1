@@ -776,8 +776,8 @@ Event* EventManager::CreatePlaySoundEvent(string name, Event::TRIGGER _Trigger, 
 }
 
 void EventManager::DeleteEvent(Event* ev) {
-	vector<Event*>::iterator it = find(Events.begin(), Events.end(), ev);
-	if (it != Events.cend()) {
+	VBVector<Event*>::iterator it = find(Events.begin(), Events.end(), ev);
+	if (it != Events.end()) {
 		delete ev;
 		Events.erase(it);
 	}
@@ -826,7 +826,7 @@ Event* EventManager::GetEventH(UINT idx) {
 	return Events[idx];
 }
 void EventManager::Clear() {
-	/*vector<Event*>::iterator it = find(Events.begin(), Events.end(), ev);
+	/*aaVBVector<Event*>::iterator it = find(Events.begin(), Events.end(), ev);
 	if (it != Events.cend()) {
 		delete ev;
 		Events.erase(it);

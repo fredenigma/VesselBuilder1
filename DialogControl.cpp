@@ -21,7 +21,6 @@
 #include "LightsManager.h"
 #include "VariableDragManager.h"
 #include "EventManager.h"
-
 #pragma comment(lib, "comctl32.lib")
 
 using namespace std;
@@ -2786,6 +2785,18 @@ int DialogControl::ComboFindItemData(HWND hWnd, DWORD Data) {
 	int item_count = SendMessage(hWnd, CB_GETCOUNT, 0, 0);
 	for (int i = 0; i < item_count; i++) {
 		DWORD result = (DWORD)SendMessage(hWnd, CB_GETITEMDATA, i, 0);
+		if (result == Data) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+template<class T>
+int DialogControl::ComboFindItemData(HWND hWnd, T data) {
+	int item_count = SendMessage(hWnd, CB_GETCOUNT, 0, 0);
+	for (int i = 0; i < item_count; i++) {
+		T result = (T)SendMessage(hWnd, CB_GETITEMDATA, i, 0);
 		if (result == Data) {
 			return i;
 		}

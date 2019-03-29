@@ -120,7 +120,7 @@ UINT TouchdownPointsManager::GetSetPointsCount(UINT set) {
 		return set2.size();
 	}
 }
-vector<TOUCHDOWNVTX> TouchdownPointsManager::GetSet(UINT set) {
+VBVector<TOUCHDOWNVTX> TouchdownPointsManager::GetSet(UINT set) {
 	if (set == 1) {
 		return set1;
 	}
@@ -207,7 +207,7 @@ bool TouchdownPointsManager::IsSecondSetEnabled() {
 	return Set2Enabled;
 }
 void TouchdownPointsManager::ApplySet(UINT set) {
-	vector<TOUCHDOWNVTX> applyset;
+	VBVector<TOUCHDOWNVTX> applyset;
 	if (set == 1) {
 		applyset = set1;
 	}

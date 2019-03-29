@@ -30,7 +30,7 @@ void SoftDock::SetSoftDockParams(def_idx d_idx) {
 	return;
 
 }
-bool SoftDock::IsOBJinVector(OBJHANDLE h_obj, vector<OBJHANDLE>vh) {
+bool SoftDock::IsOBJinVector(OBJHANDLE h_obj, VBVector<OBJHANDLE>vh) {
 	for (UINT i = 0; i < vh.size(); i++) {
 		if (h_obj == vh[i]) {
 			return true;
@@ -42,7 +42,7 @@ bool SoftDock::ChooseDock(def_idx &d_idx,OBJHANDLE &hvessel) {
 	//DOCKHANDLE dh_candidate = NULL;
 	int idx = -1;
 	OBJHANDLE h_ves_candidate = NULL;
-	vector<OBJHANDLE>linked;
+	VBVector<OBJHANDLE>linked;
 	linked.clear();
 	UINT dck_count = VB1->DockCount();
 	DWORD att_count = VB1->AttachmentCount(false);

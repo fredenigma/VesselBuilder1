@@ -49,9 +49,9 @@
 #include <vector>
 #include <map>
 #include <iostream>
-#include <bitset>
 #include "Log.h"
 #include "VBVector.h"
+
 using namespace std;
 
 typedef UINT anim_idx;
@@ -161,7 +161,7 @@ public:
  void WriteCfgFile(string filename);
  void WriteBackupFile();
  
- vector<string> ReadMeshTextures(string filename);
+ VBVector<string> ReadMeshTextures(string filename);
  void ResetVehicle();
  void ParseCfgFile(FILEHANDLE cfg);
 
@@ -207,9 +207,9 @@ public:
  
  
 
- string WriteVectorUINT(vector<UINT> v,bool spaces=true);
- vector<UINT> readVectorUINT(string s);
- bool IsUintInVector(UINT u, vector<UINT>v);
+ string WriteVectorUINT(VBVector<UINT> v,bool spaces=true);
+ VBVector<UINT> readVectorUINT(string s);
+ bool IsUintInVector(UINT u, VBVector<UINT>v);
 
  bool UsingD3D9();
  bool wD3D9;
@@ -226,6 +226,8 @@ public:
  double GetMET();
  bool JettisonNextDock();
  bool JettisonDock(UINT idx);
+
+ 
 
  //EXPERIMENTAL!!!
  SoftDock *SD;

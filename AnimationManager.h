@@ -59,7 +59,7 @@ public:
 	AnimationManager(VesselBuilder1* _VB1);
 	~AnimationManager();
 	VesselBuilder1 *VB1;
-	vector<ANIM_DEF>anim_defs;
+	VBVector<ANIM_DEF>anim_defs;
 	UINT AddAnimDef();
 	UINT AddAnimDef(string name, double duration, AnimCycleType Cycle, DWORD Key,double defstate);
 	void DeleteAnimDef(def_idx d_idx);
@@ -80,9 +80,9 @@ public:
 	void SetAnimationState(def_idx d_idx, double newstate);
 	double GetAnimationState(def_idx d_idx);
 
-	vector<ANIMCOMP_DEF>animcomp_defs;
+	VBVector<ANIMCOMP_DEF>animcomp_defs;
 	UINT AddAnimCompDef(def_idx d_idx, MGROUP_TRANSFORM::TYPE type);
-	UINT AddAnimCompDef(def_idx d_idx, string name, double state0, double state1, int mesh, int ngrps, vector<UINT>grps, int parent, int type, VECTOR3 ref, VECTOR3 axis, VECTOR3 scale, VECTOR3 shift, double angle);
+	UINT AddAnimCompDef(def_idx d_idx, string name, double state0, double state1, int mesh, int ngrps, VBVector<UINT>grps, int parent, int type, VECTOR3 ref, VECTOR3 axis, VECTOR3 scale, VECTOR3 shift, double angle);
 	void DeleteAnimCompDef(def_idx d_idx);
 	bool IsAnimCompDefValid(def_idx d_idx);
 	void SetAnimCompDefName(def_idx d_idx, string newname);
@@ -103,9 +103,9 @@ public:
 	double GetAnimCompDefAngle(def_idx d_idx);
 	void SetAnimCompDefMesh(def_idx d_idx, msh_idx m_idx);
 	msh_idx GetAnimCompDefMesh(def_idx d_idx);
-	void AddAnimCompDefGroups(def_idx d_idx, vector<UINT>addgroups);
-	vector<UINT>GetAnimCompDefGroups(def_idx d_idx);
-	void RemoveAnimCompDefGroups(def_idx d_idx, vector<UINT>remgroups);
+	void AddAnimCompDefGroups(def_idx d_idx, VBVector<UINT>addgroups);
+	VBVector<UINT>GetAnimCompDefGroups(def_idx d_idx);
+	void RemoveAnimCompDefGroups(def_idx d_idx, VBVector<UINT>remgroups);
 	int GetAnimCompDefNGroups(def_idx d_idx);
 	void SetAnimCompDefParent(def_idx d_idx, ANIMATIONCOMPONENT_HANDLE parent_ach);
 	ANIMATIONCOMPONENT_HANDLE GetAnimCompDefParent(def_idx d_idx);

@@ -7,6 +7,7 @@ Logger::Logger(VESSEL *_v) {
 	sprintf(nbuf, "%s", v->GetName());
 	string nn(nbuf);
 	filename = "\\Vessels\\VesselBuilder1\\Logs\\" + nn + ".log";*/
+	
 	filename = "VesselBuilder1.log";
 }
 Logger::~Logger(){
@@ -53,43 +54,22 @@ void Logger::CloseLog(){
 	oapiCloseFile(fh, FILE_APP);
 }
 
-/*
-void ResetSBLog() {
-	FILEHANDLE logfile = oapiOpenFile("StationBuilder1.log", FILE_OUT, ROOT);
-	oapiWriteLine(logfile, "STATION BUILDER1 LOGFILE");
-	oapiWriteLine(logfile, "******************************************************************************");
-	char line[256] = { '\0' };
-	sprintf_s(line, _ARRAYSIZE(line), "StationBuilder Version: %i", SBVERSION);
-	oapiWriteLine(logfile, line);
-	oapiCloseFile(logfile, FILE_OUT);
 
+void InitVBExceptionLog() {
+	FILEHANDLE fh = oapiOpenFile("VB1_Exceptions.log", FILE_OUT, ROOT);
+	oapiWriteLine(fh,"VBVector Exceptions Log File");
+	oapiCloseFile(fh, FILE_OUT);
 	return;
 }
-void SBLog(std::string str) {
-	FILEHANDLE logfile = oapiOpenFile("StationBuilder1.log", FILE_APP, ROOT);
-	char line[1024] = { '\0' };
-	sprintf(line, str.c_str());
-	char buf2[2048] = { '\0' };
-	sprintf_s(buf2, "%.3f - %s", oapiGetSimTime(), line);
-	oapiWriteLine(logfile, buf2);
-	oapiCloseFile(logfile, FILE_APP);
-	return;
-}
-void SBLog(const char* str, ...) {
-	FILEHANDLE logfile = oapiOpenFile("StationBuilder1.log", FILE_APP, ROOT);
-	char buf[1024] = { '\0' };
+void VBExceptionLog(const char* str, ...) {
+	FILEHANDLE fh = oapiOpenFile("VB1_Exceptions.log", FILE_APP, ROOT);
+	char buf[CMAXLEN] = { '\0' };
 	va_list va;
 	va_start(va, str);
 	vsprintf(buf, str, va);
-	char buf2[2048] = { '\0' };
-	sprintf_s(buf2, "%.3f - %s", oapiGetSimTime(), buf);
-	oapiWriteLine(logfile, buf2);
-	oapiCloseFile(logfile, FILE_APP);
+	char buf2[CMAXLEN] = { '\0' };
+	sprintf(buf2, "%.3f - %s", oapiGetSimTime(), buf);
+	oapiWriteLine(fh, buf2);
+	oapiCloseFile(fh, FILE_APP);
 	return;
 }
-void CloseSBLog() {
-	FILEHANDLE logfile = oapiOpenFile("StationBuilder1.log", FILE_APP, ROOT);
-	oapiWriteLine(logfile, "Closing....");
-	oapiWriteLine(logfile, "******************************************************************************");
-	oapiCloseFile(logfile, FILE_OUT);
-}*/

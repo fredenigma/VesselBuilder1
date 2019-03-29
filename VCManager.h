@@ -38,8 +38,8 @@ public:
 	VCManager(VesselBuilder1 *_VB1);
 	~VCManager();
 	VesselBuilder1 *VB1;
-	vector<VC_POS>vc_positions;
-	vector<VC_MFD>vc_mfds;
+	VBVector<VC_POS>vc_positions;
+	VBVector<VC_MFD>vc_mfds;
 	VCHUDSPEC *vc_hud;
 	int id_counter;
 	bool LoadVC(int id);

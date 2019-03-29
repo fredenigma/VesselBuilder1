@@ -203,7 +203,6 @@
     <ClCompile Include="TextReaderDlg.cpp" />
     <ClCompile Include="VariableDragDlgProc.cpp" />
     <ClCompile Include="VariableDragManager.cpp" />
-    <ClCompile Include="VBVector.cpp" />
     <ClCompile Include="VCHUDDlgProc.cpp" />
     <ClCompile Include="VCManager.cpp" />
     <ClCompile Include="VCMFDDlgProc.cpp" />

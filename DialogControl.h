@@ -95,7 +95,7 @@ public:
 		HTREEITEM hrootEvents;
 
 	};
-	vector<CONFIGITEMS>Config_Items;
+	VBVector<CONFIGITEMS>Config_Items;
 
 	/*HTREEITEM hrootVessel;
 	HTREEITEM hrootMeshes;
@@ -157,6 +157,10 @@ public:
 	void InitOapiKeys();
 	int ComboFindItemData(HWND hWnd, DWORD Data);
 	int ComboFindItemData(HWND hWnd, void* data);
+
+	template<class T>
+	int ComboFindItemData(HWND hWnd, T data);
+
 	void UpdateAnimCompGroupLists(HWND hWnd, def_idx meshdef_idx);
 	void UpdateAirfoilFuncList(HWND hWnd);
 	void ShowAirfoilFuncGraph(HWND hWnd, bool show);

@@ -44,7 +44,7 @@ public:
 	AttachmentManager(VesselBuilder1 *_VB1);
 	~AttachmentManager();
 	VesselBuilder1 *VB1;
-	vector<ATT_DEF> att_defs;
+	VBVector<ATT_DEF> att_defs;
 	void CreateAttDef();
 	void AddAttDefNoCreate();
 	void CreateAttDef(ATT_DEF att_d);

@@ -21,7 +21,7 @@ public:
 	ParticleManager(VesselBuilder1 *_VB1);
 	~ParticleManager();
 	VesselBuilder1 *VB1;
-	vector<PARTICLE_DEF> particle_defs;
+	VBVector<PARTICLE_DEF> particle_defs;
 	void AddParticleDef();
 	void AddParticleDef(string name, PARTICLESTREAMSPEC pss);
 	void AddParticleDef(PARTICLE_DEF pdef);

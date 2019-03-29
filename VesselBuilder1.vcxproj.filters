@@ -274,9 +274,6 @@
     <ClCompile Include="SoftDock.cpp">
       <Filter>Vessel</Filter>
     </ClCompile>
-    <ClCompile Include="VBVector.cpp">
-      <Filter>Vessel</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="VesselBuilder1.rc">

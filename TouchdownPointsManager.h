@@ -5,12 +5,12 @@ public:
 	TouchdownPointsManager(VesselBuilder1 *_VB1);
 	~TouchdownPointsManager();
 	VesselBuilder1 *VB1;
-	vector<TOUCHDOWNVTX> set1;
-	vector<TOUCHDOWNVTX> set2;
+	VBVector<TOUCHDOWNVTX> set1;
+	VBVector<TOUCHDOWNVTX> set2;
 	UINT change_anim_idx;
 	double *state_chk;
 	UINT GetSetPointsCount(UINT set);
-	vector<TOUCHDOWNVTX> GetSet(UINT set);
+	VBVector<TOUCHDOWNVTX> GetSet(UINT set);
 	VECTOR3 GetPointPos(UINT set, UINT idx);
 	double GetPointStiffnes(UINT set, UINT idx);
 	double GetPointDamping(UINT set, UINT idx);

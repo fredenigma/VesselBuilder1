@@ -12,9 +12,9 @@ struct MSH_DEF {
 	VECTOR3 rot;
 	WORD visibility;
 	UINT ngrps;
-	//vector<UINT>animated_grps;
+	//VBVector<UINT>animated_grps;
 	bool Highlighted;
-	//vector<UINT>HighlightedGrps;
+	//VBVector<UINT>HighlightedGrps;
 	bool *HighlightedGrps;
 	MSH_DEF() {
 		meshname.clear();
@@ -39,7 +39,7 @@ class MeshManager {
 public:
 	MeshManager(VesselBuilder1 *_VB1);
 	~MeshManager();
-	vector<MSH_DEF> msh_defs;
+	VBVector<MSH_DEF> msh_defs;
 	VesselBuilder1 *VB1;
 	void PreLoadMeshes();
 	void AddMeshes();
@@ -65,7 +65,7 @@ public:
 	void VisualDestroyed(VISHANDLE vis, int refcount);
 	UINT GetMeshCount();
 	void WriteCfg(FILEHANDLE fh);
-	vector<MSH_DEF> GetAllDefs();
+	VBVector<MSH_DEF> GetAllDefs();
 	string GetMeshName(def_idx def_idx);
 	msh_idx IdxDef2Msh(def_idx def_idx);
 	def_idx IdxMsh2Def(msh_idx msh_idx);
@@ -80,7 +80,7 @@ public:
 	void MoveMeshDef(def_idx def_idx, VECTOR3 delta_pos);
 	void SetMeshDefDirRot(def_idx def_idx, VECTOR3 dir, VECTOR3 rot);
 	UINT GetMeshDefNGrps(def_idx def_idx);
-	vector<MSH_DEF> md_restore;
+	VBVector<MSH_DEF> md_restore;
 	bool UsingD3D9();
 //	void LoadingRearrangeMaterials(MESHHANDLE msh);
 	//MATERIAL *matred;

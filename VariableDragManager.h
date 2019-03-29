@@ -20,7 +20,7 @@ public:
 	VariableDragManager(VesselBuilder1* _VB1);
 	~VariableDragManager();
 	VesselBuilder1* VB1;
-	vector<VARD_DEF> vard_def;
+	VBVector<VARD_DEF> vard_def;
 	void AddUndefinedVardDef();
 	UINT AddVardDef(string name, UINT anim_idx, double factor, VECTOR3 ref);
 	UINT GetVardDefCount();

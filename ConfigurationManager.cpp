@@ -301,7 +301,7 @@ void MeshSection::ApplySection() {
 	MshMng->AddMeshes();
 }
 
-vector<MeshSection::Definitions> MeshSection::GetSection() {
+VBVector<MeshSection::Definitions> MeshSection::GetSection() {
 	return Defs;
 }
 /*int MeshSection::GetMeshDefCount() {
@@ -476,7 +476,7 @@ void DockSection::ApplySection() {
 	}
 }
 
-vector<DockSection::Definitions> DockSection::GetSection() {
+VBVector<DockSection::Definitions> DockSection::GetSection() {
 	return Defs;
 }
 /*UINT DockSection::GetDockCount() {
@@ -641,7 +641,7 @@ void AttachmentSection::UpdateSection() {
 		Defs.push_back(d);
 	}
 }
-vector<AttachmentSection::Definitions> AttachmentSection::GetSection() {
+VBVector<AttachmentSection::Definitions> AttachmentSection::GetSection() {
 	return Defs;
 }
 
@@ -742,7 +742,7 @@ void AnimationSection::ParseSection(FILEHANDLE fh) {
 		bool arm_tip;
 		double state0, state1, angle;
 		VECTOR3 ref, axis, scale, shift;
-		vector<UINT>grps;
+		VBVector<UINT>grps;
 		MGROUP_TRANSFORM::TYPE type;
 		sprintf(cbuf, "ANIMCOMP_%i_NAME", animcompdef_counter);
 		ConfigCheck(cbuf, Config_idx);
@@ -772,6 +772,10 @@ void AnimationSection::ParseSection(FILEHANDLE fh) {
 			oapiReadItem_string(fh, cbuf, grpsbuf);
 			string grpsbuf_s(grpsbuf);
 			grps = VB1->readVectorUINT(grpsbuf_s);
+			//LogV("GRPS SIZE:%i", grps.size());
+			for (UINT zz = 0; zz < grps.size(); zz++) {
+				//LogV("animcomp:%i grps[%i]=%i", animcompdef_counter, zz, grps[zz]);
+			}
 			if ((grps.size() == 1) && (grps[0] == -1)) {
 				mesh = LOCALVERTEXLIST;
 			}
@@ -943,7 +947,7 @@ void AnimationSection::WriteSection(FILEHANDLE fh) {
 		ConfigCheck(cbuf, Config_idx);
 		int ngrps = AnimCompDefs[i].animcomp_ngrps;
 		oapiWriteItem_int(fh, cbuf, ngrps);
-		vector<UINT> grps = AnimCompDefs[i].animcomp_grps;
+		VBVector<UINT> grps = AnimCompDefs[i].animcomp_grps;
 		string line = VB1->WriteVectorUINT(grps);
 		sprintf(cbuf2, "%s", line.c_str());
 		sprintf(cbuf, "ANIMCOMP_%i_GRPS", i);
@@ -1023,7 +1027,7 @@ void AnimationSection::UpdateSection() {
 	return;
 }
 
-void AnimationSection::GetSection(vector<AnimationSection::AnimDefinitions> &ad, vector<AnimationSection::AnimCompDefinitions> &acd) {
+void AnimationSection::GetSection(VBVector<AnimationSection::AnimDefinitions> &ad, VBVector<AnimationSection::AnimCompDefinitions> &acd) {
 	ad = AnimDefs;
 	acd = AnimCompDefs;
 	return;
@@ -1180,7 +1184,7 @@ void PropellantSection::UpdateSection() {
 	}
 	return;
 }
-vector<PropellantSection::Definitions> PropellantSection::GetSection() {
+VBVector<PropellantSection::Definitions> PropellantSection::GetSection() {
 	return Defs;
 }
 
@@ -1494,14 +1498,14 @@ void ThrusterSection::UpdateSection() {
 void ThrusterSection::ManagerClear() {
 	ThrMng->Clear();
 }
-vector<ThrusterSection::Definitions> ThrusterSection::GetSection() {
+VBVector<ThrusterSection::Definitions> ThrusterSection::GetSection() {
 	return Defs;
 }
 
 
 
 ThrusterGroupSection::ThrusterGroupSection(VesselBuilder1* VB1, UINT config, FILEHANDLE cfg) :Section(VB1, config, cfg) {
-	vector<UINT>nonum;
+	VBVector<UINT>nonum;
 	nonum.clear();
 	Defined[THGROUP_MAIN] = false;
 	Thrusters[THGROUP_MAIN] = nonum;
@@ -1560,7 +1564,7 @@ void ThrusterGroupSection::ParseSection(FILEHANDLE fh) {
 		ConfigCheck(cbuf, Config_idx);
 		oapiReadItem_string(fh, cbuf, ccbuf);
 		string idx_s(ccbuf);
-		vector<UINT> idx = VB1->readVectorUINT(idx_s);
+		VBVector<UINT> idx = VB1->readVectorUINT(idx_s);
 		Thrusters[THGROUP_MAIN] = idx;
 	}
 
@@ -1576,7 +1580,7 @@ void ThrusterGroupSection::ParseSection(FILEHANDLE fh) {
 		ConfigCheck(cbuf, Config_idx);
 		oapiReadItem_string(fh, cbuf, ccbuf);
 		string idx_s(ccbuf);
-		vector<UINT> idx = VB1->readVectorUINT(idx_s);
+		VBVector<UINT> idx = VB1->readVectorUINT(idx_s);
 		Thrusters[THGROUP_RETRO] = idx;
 	}
 
@@ -1592,7 +1596,7 @@ void ThrusterGroupSection::ParseSection(FILEHANDLE fh) {
 		ConfigCheck(cbuf, Config_idx);
 		oapiReadItem_string(fh, cbuf, ccbuf);
 		string idx_s(ccbuf);
-		vector<UINT> idx = VB1->readVectorUINT(idx_s);
+		VBVector<UINT> idx = VB1->readVectorUINT(idx_s);
 		Thrusters[THGROUP_HOVER] = idx;
 	}
 
@@ -1608,7 +1612,7 @@ void ThrusterGroupSection::ParseSection(FILEHANDLE fh) {
 		ConfigCheck(cbuf, Config_idx);
 		oapiReadItem_string(fh, cbuf, ccbuf);
 		string idx_s(ccbuf);
-		vector<UINT> idx = VB1->readVectorUINT(idx_s);
+		VBVector<UINT> idx = VB1->readVectorUINT(idx_s);
 		Thrusters[THGROUP_ATT_PITCHUP] = idx;
 	}
 
@@ -1624,7 +1628,7 @@ void ThrusterGroupSection::ParseSection(FILEHANDLE fh) {
 		ConfigCheck(cbuf, Config_idx);
 		oapiReadItem_string(fh, cbuf, ccbuf);
 		string idx_s(ccbuf);
-		vector<UINT> idx = VB1->readVectorUINT(idx_s);
+		VBVector<UINT> idx = VB1->readVectorUINT(idx_s);
 		Thrusters[THGROUP_ATT_PITCHDOWN] = idx;
 	}
 
@@ -1640,7 +1644,7 @@ void ThrusterGroupSection::ParseSection(FILEHANDLE fh) {
 		ConfigCheck(cbuf, Config_idx);
 		oapiReadItem_string(fh, cbuf, ccbuf);
 		string idx_s(ccbuf);
-		vector<UINT> idx = VB1->readVectorUINT(idx_s);
+		VBVector<UINT> idx = VB1->readVectorUINT(idx_s);
 		Thrusters[THGROUP_ATT_YAWLEFT] = idx;
 	}
 
@@ -1656,7 +1660,7 @@ void ThrusterGroupSection::ParseSection(FILEHANDLE fh) {
 		ConfigCheck(cbuf, Config_idx);
 		oapiReadItem_string(fh, cbuf, ccbuf);
 		string idx_s(ccbuf);
-		vector<UINT> idx = VB1->readVectorUINT(idx_s);
+		VBVector<UINT> idx = VB1->readVectorUINT(idx_s);
 		Thrusters[THGROUP_ATT_YAWRIGHT] = idx;
 	}
 
@@ -1672,7 +1676,7 @@ void ThrusterGroupSection::ParseSection(FILEHANDLE fh) {
 		ConfigCheck(cbuf, Config_idx);
 		oapiReadItem_string(fh, cbuf, ccbuf);
 		string idx_s(ccbuf);
-		vector<UINT> idx = VB1->readVectorUINT(idx_s);
+		VBVector<UINT> idx = VB1->readVectorUINT(idx_s);
 		Thrusters[THGROUP_ATT_BANKLEFT] = idx;
 	}
 
@@ -1688,7 +1692,7 @@ void ThrusterGroupSection::ParseSection(FILEHANDLE fh) {
 		ConfigCheck(cbuf, Config_idx);
 		oapiReadItem_string(fh, cbuf, ccbuf);
 		string idx_s(ccbuf);
-		vector<UINT> idx = VB1->readVectorUINT(idx_s);
+		VBVector<UINT> idx = VB1->readVectorUINT(idx_s);
 		Thrusters[THGROUP_ATT_BANKRIGHT] = idx;
 	}
 
@@ -1704,7 +1708,7 @@ void ThrusterGroupSection::ParseSection(FILEHANDLE fh) {
 		ConfigCheck(cbuf, Config_idx);
 		oapiReadItem_string(fh, cbuf, ccbuf);
 		string idx_s(ccbuf);
-		vector<UINT> idx = VB1->readVectorUINT(idx_s);
+		VBVector<UINT> idx = VB1->readVectorUINT(idx_s);
 		Thrusters[THGROUP_ATT_RIGHT] = idx;
 	}
 
@@ -1720,7 +1724,7 @@ void ThrusterGroupSection::ParseSection(FILEHANDLE fh) {
 		ConfigCheck(cbuf, Config_idx);
 		oapiReadItem_string(fh, cbuf, ccbuf);
 		string idx_s(ccbuf);
-		vector<UINT> idx = VB1->readVectorUINT(idx_s);
+		VBVector<UINT> idx = VB1->readVectorUINT(idx_s);
 		Thrusters[THGROUP_ATT_LEFT] = idx;
 	}
 
@@ -1736,7 +1740,7 @@ void ThrusterGroupSection::ParseSection(FILEHANDLE fh) {
 		ConfigCheck(cbuf, Config_idx);
 		oapiReadItem_string(fh, cbuf, ccbuf);
 		string idx_s(ccbuf);
-		vector<UINT> idx = VB1->readVectorUINT(idx_s);
+		VBVector<UINT> idx = VB1->readVectorUINT(idx_s);
 		Thrusters[THGROUP_ATT_UP] = idx;
 	}
 
@@ -1752,7 +1756,7 @@ void ThrusterGroupSection::ParseSection(FILEHANDLE fh) {
 		ConfigCheck(cbuf, Config_idx);
 		oapiReadItem_string(fh, cbuf, ccbuf);
 		string idx_s(ccbuf);
-		vector<UINT> idx = VB1->readVectorUINT(idx_s);
+		VBVector<UINT> idx = VB1->readVectorUINT(idx_s);
 		Thrusters[THGROUP_ATT_DOWN] = idx;
 	}
 
@@ -1768,7 +1772,7 @@ void ThrusterGroupSection::ParseSection(FILEHANDLE fh) {
 		ConfigCheck(cbuf, Config_idx);
 		oapiReadItem_string(fh, cbuf, ccbuf);
 		string idx_s(ccbuf);
-		vector<UINT> idx = VB1->readVectorUINT(idx_s);
+		VBVector<UINT> idx = VB1->readVectorUINT(idx_s);
 		Thrusters[THGROUP_ATT_FORWARD] = idx;
 	}
 
@@ -1784,7 +1788,7 @@ void ThrusterGroupSection::ParseSection(FILEHANDLE fh) {
 		ConfigCheck(cbuf, Config_idx);
 		oapiReadItem_string(fh, cbuf, ccbuf);
 		string idx_s(ccbuf);
-		vector<UINT> idx = VB1->readVectorUINT(idx_s);
+		VBVector<UINT> idx = VB1->readVectorUINT(idx_s);
 		Thrusters[THGROUP_ATT_BACK] = idx;
 	}
 
@@ -1985,7 +1989,7 @@ void ThrusterGroupSection::ApplySection() {
 		//LogV("Counter:%i", counter);
 		if (it->second) {
 			//LogV("true:%i",counter);
-			vector<THRUSTER_HANDLE>thv = ThrGrpMng->GetThrustersfromIdx(Thrusters[it->first]);
+			VBVector<THRUSTER_HANDLE>thv = ThrGrpMng->GetThrustersfromIdx(Thrusters[it->first]);
 			ThrGrpMng->DefineGroup(it->first, thv);
 		}
 		//counter++;
@@ -1995,12 +1999,12 @@ void ThrusterGroupSection::ApplySection() {
 void ThrusterGroupSection::UpdateSection() {
 	Defined = ThrGrpMng->Defined;
 	map<THGROUP_TYPE, bool>::iterator it;
-	vector<UINT>indexes;
+	VBVector<UINT>indexes;
 	indexes.clear();
 	for (it = Defined.begin(); it != Defined.end(); it++) {
 		if (it->second) {
 			indexes.clear();
-			vector<THRUSTER_HANDLE>thrusters;
+			VBVector<THRUSTER_HANDLE>thrusters;
 			thrusters = ThrGrpMng->GetThrusters(it->first);
 			for (UINT i = 0; i < thrusters.size(); i++) {
 				UINT idx = VB1->ThrMng->GetThrIdx(thrusters[i]);
@@ -2020,7 +2024,7 @@ void ThrusterGroupSection::UpdateSection() {
 void ThrusterGroupSection::ManagerClear() {
 	ThrGrpMng->ResetDefine();
 }
-void ThrusterGroupSection::GetSection(map<THGROUP_TYPE, bool> &Def, map<THGROUP_TYPE, vector<UINT> > &thrusters) {
+void ThrusterGroupSection::GetSection(map<THGROUP_TYPE, bool> &Def, map<THGROUP_TYPE, VBVector<UINT> > &thrusters) {
 	Def = Defined;
 	thrusters = Thrusters;
 	return;
@@ -2195,7 +2199,7 @@ void TouchDownPointSection::UpdateSection() {
 void TouchDownPointSection::ManagerClear() {
 	TdpMng->Clear();
 }
-void TouchDownPointSection::GetSection(vector<TouchDownPointSection::Definitions> &set1, vector<TouchDownPointSection::Definitions>&set2) {
+void TouchDownPointSection::GetSection(VBVector<TouchDownPointSection::Definitions> &set1, VBVector<TouchDownPointSection::Definitions>&set2) {
 	set1 = Set1;
 	set2 = Set2;
 }
@@ -2369,7 +2373,7 @@ void AirfoilSection::UpdateSection() {
 void AirfoilSection::ManagerClear() {
 	AirfoilMng->Clear();
 }
-vector<AirfoilSection::Definitions> AirfoilSection::GetSection() {
+VBVector<AirfoilSection::Definitions> AirfoilSection::GetSection() {
 	return Defs;
 }
 
@@ -2526,7 +2530,7 @@ void CtrlSurfaceSection::UpdateSection() {
 void CtrlSurfaceSection::ManagerClear() {
 	CtrSurfMng->Clear();
 }
-vector<CtrlSurfaceSection::Definitions> CtrlSurfaceSection::GetSection() {
+VBVector<CtrlSurfaceSection::Definitions> CtrlSurfaceSection::GetSection() {
 	return Defs;
 }
 
@@ -2624,7 +2628,7 @@ void CameraSection::UpdateSection() {
 void CameraSection::ManagerClear() {
 	CamMng->Clear();
 }
-vector<CameraSection::Definitions> CameraSection::GetSection() {
+VBVector<CameraSection::Definitions> CameraSection::GetSection() {
 	return Defs;
 }
 
@@ -2917,7 +2921,7 @@ void VCSection::UpdateSection(){
 void VCSection::ManagerClear() {
 	VCMng->Clear();
 }
-void VCSection::GetSection(vector<VCSection::PosDefinitions> &pd, vector<VCSection::MFDDefinitions>&md, VCSection::HUDDefinition &hd) {
+void VCSection::GetSection(VBVector<VCSection::PosDefinitions> &pd, VBVector<VCSection::MFDDefinitions>&md, VCSection::HUDDefinition &hd) {
 	hd = HUDDef;
 	pd = PosDefs;
 	md = MFDDefs;
@@ -3146,6 +3150,7 @@ void LightSection::WriteSection(FILEHANDLE fh) {
 	oapiWriteLine(fh, " ");
 	oapiWriteLine(fh, ";<-------------------------LIGHTS: LIGHT EMITTERS DEFINITIONS------------------------->");
 	oapiWriteLine(fh, " ");
+	LogV("lightsdefs size:%i", LgtDefs.size());
 	for (UINT i = 0; i < LgtDefs.size(); i++) {
 		char cbuf[256] = { '\0' };
 		sprintf(cbuf, "LIGHT_%i_ID", i);
@@ -3215,6 +3220,7 @@ void LightSection::WriteSection(FILEHANDLE fh) {
 			ConfigCheck(cbuf, Config_idx);
 			oapiWriteItem_vec(fh, cbuf, aperture);
 		}
+		oapiWriteLine(fh, " ");
 	}
 }
 void LightSection::ApplySection() {
@@ -3293,12 +3299,13 @@ void LightSection::UpdateSection() {
 			VECTOR3 aperture = _V(umbra, penumbra, 0);
 			ld.aperture = aperture;
 		}
+		LgtDefs.push_back(ld);
 	}
 }
 void LightSection::ManagerClear() {
 	LightsMng->Clear();
 }
-void LightSection::GetSection(vector<LightSection::BcnDefinitions> &bd, vector<LightSection::LightDefinitions>&ld) {
+void LightSection::GetSection(VBVector<LightSection::BcnDefinitions> &bd, VBVector<LightSection::LightDefinitions>&ld) {
 	bd = BcnDefs;
 	ld = LgtDefs;
 	return;
@@ -3406,7 +3413,7 @@ void VardSection::UpdateSection() {
 void VardSection::ManagerClear() {
 	VardMng->Clear();
 }
-vector<VardSection::Definitions> VardSection::GetSection() {
+VBVector<VardSection::Definitions> VardSection::GetSection() {
 	return Defs;
 }
 
@@ -4457,7 +4464,7 @@ void Configuration::SetSettingsSection(SettingSection::Definitions d) {
 	}
 	return;
 }
-bool Configuration::GetMeshSection(vector<MeshSection::Definitions> &d) {
+bool Configuration::GetMeshSection(VBVector<MeshSection::Definitions> &d) {
 	if (IsSectionValid(MESH)) {
 		d = ((MeshSection*)Sections[MESH_SECTION])->GetSection();
 		return true;
@@ -4466,13 +4473,13 @@ bool Configuration::GetMeshSection(vector<MeshSection::Definitions> &d) {
 		return false;
 	}
 }
-void Configuration::SetMeshSection(vector<MeshSection::Definitions>d) {
+void Configuration::SetMeshSection(VBVector<MeshSection::Definitions>d) {
 	if (IsSectionValid(MESH)) {
 		((MeshSection*)Sections[MESH_SECTION])->SetSection(d);
 	}
 	return;
 }
-bool Configuration::GetDockSection(vector<DockSection::Definitions> &d) {
+bool Configuration::GetDockSection(VBVector<DockSection::Definitions> &d) {
 	if (IsSectionValid(DOCK)) {
 		d = ((DockSection*)Sections[DOCK_SECTION])->GetSection();
 		return true;
@@ -4481,13 +4488,13 @@ bool Configuration::GetDockSection(vector<DockSection::Definitions> &d) {
 		return false;
 	}
 }
-void Configuration::SetDockSection(vector<DockSection::Definitions>d) {
+void Configuration::SetDockSection(VBVector<DockSection::Definitions>d) {
 	if (IsSectionValid(DOCK)) {
 		((DockSection*)Sections[DOCK_SECTION])->SetSection(d);
 	}
 	return;
 }
-bool Configuration::GetAttachmentSection(vector<AttachmentSection::Definitions> &d) {
+bool Configuration::GetAttachmentSection(VBVector<AttachmentSection::Definitions> &d) {
 	if (IsSectionValid(ATTACHMENT)) {
 		d = ((AttachmentSection*)Sections[ATT_SECTION])->GetSection();
 		return true;
@@ -4496,13 +4503,13 @@ bool Configuration::GetAttachmentSection(vector<AttachmentSection::Definitions> 
 		return false;
 	}
 }
-void Configuration::SetAttachmentSection(vector<AttachmentSection::Definitions> d) {
+void Configuration::SetAttachmentSection(VBVector<AttachmentSection::Definitions> d) {
 	if (IsSectionValid(ATTACHMENT)) {
 		((AttachmentSection*)Sections[ATT_SECTION])->SetSection(d);
 	}
 	return;
 }
-bool Configuration::GetAnimationSection(vector<AnimationSection::AnimDefinitions>&ad, vector<AnimationSection::AnimCompDefinitions>&acd) {
+bool Configuration::GetAnimationSection(VBVector<AnimationSection::AnimDefinitions>&ad, VBVector<AnimationSection::AnimCompDefinitions>&acd) {
 	if (IsSectionValid(ANIMATIONS)) {
 		((AnimationSection*)Sections[ANIM_SECTION])->GetSection(ad, acd);
 		return true;
@@ -4511,13 +4518,13 @@ bool Configuration::GetAnimationSection(vector<AnimationSection::AnimDefinitions
 		return false;
 	}
 }
-void Configuration::SetAnimationSection(vector<AnimationSection::AnimDefinitions> ad, vector<AnimationSection::AnimCompDefinitions> acd) {
+void Configuration::SetAnimationSection(VBVector<AnimationSection::AnimDefinitions> ad, VBVector<AnimationSection::AnimCompDefinitions> acd) {
 	if (IsSectionValid(ANIMATIONS)) {
 		((AnimationSection*)Sections[ANIM_SECTION])->SetSection(ad, acd);
 	}
 	return;
 }
-bool Configuration::GetPropellantSection(vector<PropellantSection::Definitions>&d) {
+bool Configuration::GetPropellantSection(VBVector<PropellantSection::Definitions>&d) {
 	if (IsSectionValid(PROPELLANT)) {
 		d = ((PropellantSection*)Sections[PROP_SECTION])->GetSection();
 		return true;
@@ -4526,13 +4533,13 @@ bool Configuration::GetPropellantSection(vector<PropellantSection::Definitions>&
 		return false;
 	}
 }
-void Configuration::SetPropellantSection(vector<PropellantSection::Definitions>d) {
+void Configuration::SetPropellantSection(VBVector<PropellantSection::Definitions>d) {
 	if (IsSectionValid(PROPELLANT)) {
 		((PropellantSection*)Sections[PROP_SECTION])->SetSection(d);
 	}
 	return;
 }
-bool Configuration::GetThrusterSection(vector<ThrusterSection::Definitions>&d) {
+bool Configuration::GetThrusterSection(VBVector<ThrusterSection::Definitions>&d) {
 	if (IsSectionValid(THRUSTERS)) {
 		d = ((ThrusterSection*)Sections[THRUST_SECTION])->GetSection();
 		return true;
@@ -4541,13 +4548,13 @@ bool Configuration::GetThrusterSection(vector<ThrusterSection::Definitions>&d) {
 		return false;
 	}
 }
-void Configuration::SetThrusterSection(vector<ThrusterSection::Definitions>d) {
+void Configuration::SetThrusterSection(VBVector<ThrusterSection::Definitions>d) {
 	if (IsSectionValid(THRUSTERS)) {
 		((ThrusterSection*)Sections[THRUST_SECTION])->SetSection(d);
 	}
 	return;
 }
-bool Configuration::GetThrusterGroupSection(map<THGROUP_TYPE, bool> &Def, map<THGROUP_TYPE, vector<UINT> > &thrusters) {
+bool Configuration::GetThrusterGroupSection(map<THGROUP_TYPE, bool> &Def, map<THGROUP_TYPE, VBVector<UINT> > &thrusters) {
 	if (IsSectionValid(THRUSTERGROUPS)) {
 		((ThrusterGroupSection*)Sections[THGROUP_SECTION])->GetSection(Def, thrusters);
 		return true;
@@ -4556,13 +4563,13 @@ bool Configuration::GetThrusterGroupSection(map<THGROUP_TYPE, bool> &Def, map<TH
 		return false;
 	}
 }
-void Configuration::SetThrusterGroupSection(map<THGROUP_TYPE, bool> Def, map<THGROUP_TYPE, vector<UINT> > thrusters) {
+void Configuration::SetThrusterGroupSection(map<THGROUP_TYPE, bool> Def, map<THGROUP_TYPE, VBVector<UINT> > thrusters) {
 	if (IsSectionValid(THRUSTERGROUPS)) {
 		((ThrusterGroupSection*)Sections[THGROUP_SECTION])->SetSection(Def, thrusters);
 	}
 	return;
 }
-bool Configuration::GetTouchdownPointSection(vector<TouchDownPointSection::Definitions> &set1, vector<TouchDownPointSection::Definitions>&set2) {
+bool Configuration::GetTouchdownPointSection(VBVector<TouchDownPointSection::Definitions> &set1, VBVector<TouchDownPointSection::Definitions>&set2) {
 	if (IsSectionValid(TOUCHDOWNPOINTS)) {
 		((TouchDownPointSection*)Sections[TDP_SECTION])->GetSection(set1, set2);
 		return true;
@@ -4571,13 +4578,13 @@ bool Configuration::GetTouchdownPointSection(vector<TouchDownPointSection::Defin
 		return false;
 	}
 }
-void Configuration::SetTouchdownPointSection(vector<TouchDownPointSection::Definitions> set1, vector<TouchDownPointSection::Definitions> set2) {
+void Configuration::SetTouchdownPointSection(VBVector<TouchDownPointSection::Definitions> set1, VBVector<TouchDownPointSection::Definitions> set2) {
 	if (IsSectionValid(TOUCHDOWNPOINTS)) {
 		((TouchDownPointSection*)Sections[TDP_SECTION])->SetSection(set1, set2);
 	}
 	return;
 }
-bool Configuration::GetAirfoilSection(vector<AirfoilSection::Definitions>&d) {
+bool Configuration::GetAirfoilSection(VBVector<AirfoilSection::Definitions>&d) {
 	if (IsSectionValid(AIRFOILS)) {
 		d = ((AirfoilSection*)Sections[AIRFOIL_SECTION])->GetSection();
 		return true;
@@ -4586,13 +4593,13 @@ bool Configuration::GetAirfoilSection(vector<AirfoilSection::Definitions>&d) {
 		return false;
 	}
 }
-void Configuration::SetAirfoilSection(vector<AirfoilSection::Definitions>d) {
+void Configuration::SetAirfoilSection(VBVector<AirfoilSection::Definitions>d) {
 	if (IsSectionValid(AIRFOILS)) {
 		((AirfoilSection*)Sections[AIRFOIL_SECTION])->SetSection(d);
 	}
 	return;
 }
-bool Configuration::GetCtrlSurfSection(vector<CtrlSurfaceSection::Definitions>&d) {
+bool Configuration::GetCtrlSurfSection(VBVector<CtrlSurfaceSection::Definitions>&d) {
 	if (IsSectionValid(CTRLSURFACES)) {
 		d = ((CtrlSurfaceSection*)Sections[CTRLSURF_SECTION])->GetSection();
 		return true;
@@ -4601,13 +4608,13 @@ bool Configuration::GetCtrlSurfSection(vector<CtrlSurfaceSection::Definitions>&d
 		return false;
 	}
 }
-void Configuration::SetCtrlSurfSection(vector<CtrlSurfaceSection::Definitions>d) {
+void Configuration::SetCtrlSurfSection(VBVector<CtrlSurfaceSection::Definitions>d) {
 	if (IsSectionValid(CTRLSURFACES)) {
 		((CtrlSurfaceSection*)Sections[CTRLSURF_SECTION])->SetSection(d);
 	}
 	return;
 }
-bool Configuration::GetCameraSection(vector<CameraSection::Definitions>&d) {
+bool Configuration::GetCameraSection(VBVector<CameraSection::Definitions>&d) {
 	if (IsSectionValid(CAMERA)) {
 		d = ((CameraSection*)Sections[CAMERAS_SECTION])->GetSection();
 		return true;
@@ -4616,13 +4623,13 @@ bool Configuration::GetCameraSection(vector<CameraSection::Definitions>&d) {
 		return false;
 	}
 }
-void Configuration::SetCameraSection(vector<CameraSection::Definitions>d) {
+void Configuration::SetCameraSection(VBVector<CameraSection::Definitions>d) {
 	if (IsSectionValid(CAMERA)) {
 		((CameraSection*)Sections[CAMERAS_SECTION])->SetSection(d);
 	}
 	return;
 }
-bool Configuration::GetVCSection(vector<VCSection::PosDefinitions>&pd, vector<VCSection::MFDDefinitions>&md, VCSection::HUDDefinition &hd) {
+bool Configuration::GetVCSection(VBVector<VCSection::PosDefinitions>&pd, VBVector<VCSection::MFDDefinitions>&md, VCSection::HUDDefinition &hd) {
 	if (IsSectionValid(VC)) {
 		((VCSection*)Sections[VC_SECTION])->GetSection(pd, md, hd);
 		return true;
@@ -4631,13 +4638,13 @@ bool Configuration::GetVCSection(vector<VCSection::PosDefinitions>&pd, vector<VC
 		return false;
 	}
 }
-void Configuration::SetVCSection(vector<VCSection::PosDefinitions>pd, vector<VCSection::MFDDefinitions>md, VCSection::HUDDefinition hd) {
+void Configuration::SetVCSection(VBVector<VCSection::PosDefinitions>pd, VBVector<VCSection::MFDDefinitions>md, VCSection::HUDDefinition hd) {
 	if (IsSectionValid(VC)) {
 		((VCSection*)Sections[VC_SECTION])->SetSection(pd, md, hd);
 	}
 	return;
 }
-bool Configuration::GetLightSection(vector<LightSection::BcnDefinitions>&bd, vector<LightSection::LightDefinitions>&ld) {
+bool Configuration::GetLightSection(VBVector<LightSection::BcnDefinitions>&bd, VBVector<LightSection::LightDefinitions>&ld) {
 	if (IsSectionValid(LIGHTS)) {
 		((LightSection*)Sections[LIGHTS_SECTION])->GetSection(bd, ld);
 		return true;
@@ -4646,13 +4653,13 @@ bool Configuration::GetLightSection(vector<LightSection::BcnDefinitions>&bd, vec
 		return false;
 	}
 }
-void Configuration::SetLightSection(vector<LightSection::BcnDefinitions> bd, vector<LightSection::LightDefinitions> ld) {
+void Configuration::SetLightSection(VBVector<LightSection::BcnDefinitions> bd, VBVector<LightSection::LightDefinitions> ld) {
 	if (IsSectionValid(LIGHTS)) {
 		((LightSection*)Sections[LIGHTS_SECTION])->SetSection(bd, ld);
 	}
 	return;
 }
-bool Configuration::GetVardSection(vector<VardSection::Definitions>&d) {
+bool Configuration::GetVardSection(VBVector<VardSection::Definitions>&d) {
 	if (IsSectionValid(VARIABLEDRAG)) {
 		d = ((VardSection*)Sections[VARDRAG_SECTION])->GetSection();
 		return true;
@@ -4661,13 +4668,13 @@ bool Configuration::GetVardSection(vector<VardSection::Definitions>&d) {
 		return false;
 	}
 }
-void Configuration::SetVardSection(vector<VardSection::Definitions>d) {
+void Configuration::SetVardSection(VBVector<VardSection::Definitions>d) {
 	if (IsSectionValid(VARIABLEDRAG)) {
 		((VardSection*)Sections[VARDRAG_SECTION])->SetSection(d);
 	}
 	return;
 }
-bool Configuration::GetEventSection(vector<EventSection::Definitions>&d) {
+bool Configuration::GetEventSection(VBVector<EventSection::Definitions>&d) {
 	if (IsSectionValid(EVENTS)) {
 		d = ((EventSection*)Sections[EVENTS_SECTION])->GetSection();
 		return true;
@@ -4676,7 +4683,7 @@ bool Configuration::GetEventSection(vector<EventSection::Definitions>&d) {
 		return false;
 	}
 }
-void Configuration::SetEventSection(vector<EventSection::Definitions>d) {
+void Configuration::SetEventSection(VBVector<EventSection::Definitions>d) {
 	if (IsSectionValid(EVENTS)) {
 		((EventSection*)Sections[EVENTS_SECTION])->SetSection(d);
 	}
@@ -4791,7 +4798,7 @@ void ConfigurationManager::ParseCfgFile(FILEHANDLE fh) {
 			sprintf(cbuf, "CONFIGURATION_%i_SECTIONS", i);
 			oapiReadItem_string(fh, cbuf, Sections_c);
 			string Sections_s(Sections_c);
-			vector<UINT>Sections_n = VB1->readVectorUINT(Sections_s);
+			VBVector<UINT>Sections_n = VB1->readVectorUINT(Sections_s);
 			VB1->IsUintInVector(SETTINGS_SECTION, Sections_n) ? Sects[SETTINGS] = true : Sects[SETTINGS] = false;
 			VB1->IsUintInVector(MESH_SECTION, Sections_n) ? Sects[MESH] = true : Sects[MESH] = false;
 			VB1->IsUintInVector(DOCK_SECTION, Sections_n) ? Sects[DOCK] = true : Sects[DOCK] = false;
@@ -4822,7 +4829,7 @@ void ConfigurationManager::WriteCfg(FILEHANDLE fh) {
 			char cbuf[256] = { '\0' };
 			char Sections_c[256] = { '\0' };
 			sprintf(cbuf, "CONFIGURATION_%i_SECTIONS", i);
-			vector<UINT> Sections_n;
+			VBVector<UINT> Sections_n;
 			Sections_n.clear();
 			if (IsSectionValid(i, SETTINGS)) { Sections_n.push_back(SETTINGS_SECTION); }
 			if (IsSectionValid(i, MESH)) { Sections_n.push_back(MESH_SECTION); }
@@ -4903,7 +4910,7 @@ void ConfigurationManager::CopyConfigurationSection(UINT config_src, UINT config
 	}
 	case MESH:
 	{
-		vector<MeshSection::Definitions> d;
+		VBVector<MeshSection::Definitions> d;
 		if (Configurations[config_src]->GetMeshSection(d)) {
 			Configurations[config_dest]->SetMeshSection(d);
 		}
@@ -4911,7 +4918,7 @@ void ConfigurationManager::CopyConfigurationSection(UINT config_src, UINT config
 	}
 	case DOCK:
 	{
-		vector<DockSection::Definitions>d;
+		VBVector<DockSection::Definitions>d;
 		if (Configurations[config_src]->GetDockSection(d)) {
 			Configurations[config_dest]->SetDockSection(d);
 		}
@@ -4919,7 +4926,7 @@ void ConfigurationManager::CopyConfigurationSection(UINT config_src, UINT config
 	}
 	case ATTACHMENT:
 	{
-		vector<AttachmentSection::Definitions>d;
+		VBVector<AttachmentSection::Definitions>d;
 		if (Configurations[config_src]->GetAttachmentSection(d)) {
 			Configurations[config_dest]->SetAttachmentSection(d);
 		}
@@ -4927,8 +4934,8 @@ void ConfigurationManager::CopyConfigurationSection(UINT config_src, UINT config
 	}
 	case ANIMATIONS:
 	{
-		vector<AnimationSection::AnimDefinitions> ad;
-		vector<AnimationSection::AnimCompDefinitions> acd;
+		VBVector<AnimationSection::AnimDefinitions> ad;
+		VBVector<AnimationSection::AnimCompDefinitions> acd;
 		if (Configurations[config_src]->GetAnimationSection(ad, acd)) {
 			Configurations[config_dest]->SetAnimationSection(ad, acd);
 		}
@@ -4936,7 +4943,7 @@ void ConfigurationManager::CopyConfigurationSection(UINT config_src, UINT config
 	}
 	case PROPELLANT:
 	{
-		vector<PropellantSection::Definitions> d;
+		VBVector<PropellantSection::Definitions> d;
 		if (Configurations[config_src]->GetPropellantSection(d)) {
 			Configurations[config_dest]->SetPropellantSection(d);
 		}
@@ -4944,8 +4951,8 @@ void ConfigurationManager::CopyConfigurationSection(UINT config_src, UINT config
 	}
 	case TOUCHDOWNPOINTS:
 	{
-		vector<TouchDownPointSection::Definitions> set1;
-		vector<TouchDownPointSection::Definitions> set2;
+		VBVector<TouchDownPointSection::Definitions> set1;
+		VBVector<TouchDownPointSection::Definitions> set2;
 		if (Configurations[config_src]->GetTouchdownPointSection(set1, set2)) {
 			Configurations[config_dest]->SetTouchdownPointSection(set1, set2);
 		}
@@ -4953,7 +4960,7 @@ void ConfigurationManager::CopyConfigurationSection(UINT config_src, UINT config
 	}
 	case AIRFOILS:
 	{
-		vector<AirfoilSection::Definitions>d;
+		VBVector<AirfoilSection::Definitions>d;
 		if (Configurations[config_src]->GetAirfoilSection(d)) {
 			Configurations[config_dest]->SetAirfoilSection(d);
 		}
@@ -4961,7 +4968,7 @@ void ConfigurationManager::CopyConfigurationSection(UINT config_src, UINT config
 	}
 	case CAMERA:
 	{
-		vector<CameraSection::Definitions>d;
+		VBVector<CameraSection::Definitions>d;
 		if (Configurations[config_src]->GetCameraSection(d)) {
 			Configurations[config_dest]->SetCameraSection(d);
 		}
@@ -4969,8 +4976,8 @@ void ConfigurationManager::CopyConfigurationSection(UINT config_src, UINT config
 	}
 	case VC:
 	{
-		vector<VCSection::PosDefinitions>pd;
-		vector<VCSection::MFDDefinitions>md;
+		VBVector<VCSection::PosDefinitions>pd;
+		VBVector<VCSection::MFDDefinitions>md;
 		VCSection::HUDDefinition hd;
 		if (Configurations[config_src]->GetVCSection(pd, md, hd)) {
 			Configurations[config_dest]->SetVCSection(pd, md, hd);
@@ -4979,8 +4986,8 @@ void ConfigurationManager::CopyConfigurationSection(UINT config_src, UINT config
 	}
 	case LIGHTS:
 	{
-		vector<LightSection::BcnDefinitions>bd;
-		vector<LightSection::LightDefinitions>ld;
+		VBVector<LightSection::BcnDefinitions>bd;
+		VBVector<LightSection::LightDefinitions>ld;
 		if (Configurations[config_src]->GetLightSection(bd, ld)) {
 			Configurations[config_dest]->SetLightSection(bd, ld);
 		}
@@ -4988,7 +4995,7 @@ void ConfigurationManager::CopyConfigurationSection(UINT config_src, UINT config
 	}
 	case VARIABLEDRAG:
 	{
-		vector<VardSection::Definitions>d;
+		VBVector<VardSection::Definitions>d;
 		if (Configurations[config_src]->GetVardSection(d)) {
 			Configurations[config_dest]->SetVardSection(d);
 		}
@@ -4996,7 +5003,7 @@ void ConfigurationManager::CopyConfigurationSection(UINT config_src, UINT config
 	}
 	case EVENTS:
 	{
-		vector<EventSection::Definitions>d;
+		VBVector<EventSection::Definitions>d;
 		if (Configurations[config_src]->GetEventSection(d)) {
 			Configurations[config_dest]->SetEventSection(d);
 		}

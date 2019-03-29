@@ -214,8 +214,8 @@ void ThrusterManager::GetThrParticleParams(def_idx d_idx, def_idx part_idx, UINT
 UINT ThrusterManager::GetThrParticlesCount(def_idx d_idx) {
 	return thr_defs[d_idx].particles_def.size();
 }
-vector<UINT> ThrusterManager::GetThrParticlesIDs(def_idx d_idx) {
-	vector<UINT> p_ids;
+VBVector<UINT> ThrusterManager::GetThrParticlesIDs(def_idx d_idx) {
+	VBVector<UINT> p_ids;
 	p_ids.clear();
 	for (UINT i = 0; i < thr_defs[d_idx].particles_def.size(); i++) {
 		p_ids.push_back(thr_defs[d_idx].particles_def[i].pss_idx);
@@ -433,13 +433,13 @@ UINT ThrusterManager::GetThrIdx(THRUSTER_HANDLE th) {
 /*UINT ThrusterManager::GetThrParticlesCount(def_idx d_idx) {
 	return thr_defs[d_idx].particles_id.size();
 }
-vector<UINT> ThrusterManager::GetThrParticlesIDs(def_idx d_idx) {
+VBVector<UINT> ThrusterManager::GetThrParticlesIDs(def_idx d_idx) {
 	return thr_defs[d_idx].particles_id;
 }
-vector<PSTREAM_HANDLE> ThrusterManager::GetThrParticlesH(def_idx d_idx) {
+VBVector<PSTREAM_HANDLE> ThrusterManager::GetThrParticlesH(def_idx d_idx) {
 	return thr_defs[d_idx].particles_h;
 }
-void ThrusterManager::SetThrParticles(def_idx d_idx, vector<UINT> _ids) {
+void ThrusterManager::SetThrParticles(def_idx d_idx, VBVector<UINT> _ids) {
 	thr_defs[d_idx].particles_id = _ids;
 	for (UINT i = 0; i < _ids.size(); i++) {
 		def_idx d = VB1->PartMng->IdxID2Def(_ids[i]);
@@ -501,7 +501,7 @@ ThrusterGroupManager::ThrusterGroupManager(VesselBuilder1 *_VB1) {
 	return;
 }
 ThrusterGroupManager::~ThrusterGroupManager() {}
-void ThrusterGroupManager::DefineGroup(THGROUP_TYPE thgt, vector<THRUSTER_HANDLE>thrusters) {
+void ThrusterGroupManager::DefineGroup(THGROUP_TYPE thgt, VBVector<THRUSTER_HANDLE>thrusters) {
 	Defined[thgt] = true;
 	Thrusters[thgt] = thrusters;
 	THRUSTER_HANDLE* th = new THRUSTER_HANDLE[thrusters.size()];
@@ -521,11 +521,11 @@ void ThrusterGroupManager::UndefineGroup(THGROUP_TYPE thgt) {
 bool ThrusterGroupManager::IsGroupDefined(THGROUP_TYPE thgt) {
 	return Defined[thgt];
 }
-vector<THRUSTER_HANDLE> ThrusterGroupManager::GetThrusters(THGROUP_TYPE thgt) {
+VBVector<THRUSTER_HANDLE> ThrusterGroupManager::GetThrusters(THGROUP_TYPE thgt) {
 	return Thrusters[thgt];
 }
-vector<THRUSTER_HANDLE> ThrusterGroupManager::GetThrustersfromIdx(vector<UINT> idx) {
-	vector<THRUSTER_HANDLE> thv;
+VBVector<THRUSTER_HANDLE> ThrusterGroupManager::GetThrustersfromIdx(VBVector<UINT> idx) {
+	VBVector<THRUSTER_HANDLE> thv;
 	thv.clear();
 	for (UINT i = 0; i < idx.size(); i++) {
 		THRUSTER_HANDLE th = VB1->ThrMng->GetThrTH(idx[i]);
@@ -544,8 +544,8 @@ void ThrusterGroupManager::ParseCfgFile(FILEHANDLE fh) {
 		char cbuf[256] = { '\0' };
 		oapiReadItem_string(fh, "THGROUP_MAIN_THRUSTERS", cbuf);
 		string idx_s(cbuf);
-		vector<UINT> idx = VB1->readVectorUINT(idx_s);
-		vector<THRUSTER_HANDLE> thv = GetThrustersfromIdx(idx);
+		VBVector<UINT> idx = VB1->readVectorUINT(idx_s);
+		VBVector<THRUSTER_HANDLE> thv = GetThrustersfromIdx(idx);
 		DefineGroup(THGROUP_MAIN, thv);
 	}
 	
@@ -556,8 +556,8 @@ void ThrusterGroupManager::ParseCfgFile(FILEHANDLE fh) {
 		char cbuf[256] = { '\0' };
 		oapiReadItem_string(fh, "THGROUP_RETRO_THRUSTERS", cbuf);
 		string idx_s(cbuf);
-		vector<UINT> idx = VB1->readVectorUINT(idx_s);
-		vector<THRUSTER_HANDLE> thv = GetThrustersfromIdx(idx);
+		VBVector<UINT> idx = VB1->readVectorUINT(idx_s);
+		VBVector<THRUSTER_HANDLE> thv = GetThrustersfromIdx(idx);
 		DefineGroup(THGROUP_RETRO, thv);
 	}
 
@@ -568,8 +568,8 @@ void ThrusterGroupManager::ParseCfgFile(FILEHANDLE fh) {
 		char cbuf[256] = { '\0' };
 		oapiReadItem_string(fh, "THGROUP_HOVER_THRUSTERS", cbuf);
 		string idx_s(cbuf);
-		vector<UINT> idx = VB1->readVectorUINT(idx_s);
-		vector<THRUSTER_HANDLE> thv = GetThrustersfromIdx(idx);
+		VBVector<UINT> idx = VB1->readVectorUINT(idx_s);
+		VBVector<THRUSTER_HANDLE> thv = GetThrustersfromIdx(idx);
 		DefineGroup(THGROUP_HOVER, thv);
 	}
 
@@ -580,8 +580,8 @@ void ThrusterGroupManager::ParseCfgFile(FILEHANDLE fh) {
 		char cbuf[256] = { '\0' };
 		oapiReadItem_string(fh, "THGROUP_ATT_PITCHUP_THRUSTERS", cbuf);
 		string idx_s(cbuf);
-		vector<UINT> idx = VB1->readVectorUINT(idx_s);
-		vector<THRUSTER_HANDLE> thv = GetThrustersfromIdx(idx);
+		VBVector<UINT> idx = VB1->readVectorUINT(idx_s);
+		VBVector<THRUSTER_HANDLE> thv = GetThrustersfromIdx(idx);
 		DefineGroup(THGROUP_ATT_PITCHUP, thv);
 	}
 
@@ -592,8 +592,8 @@ void ThrusterGroupManager::ParseCfgFile(FILEHANDLE fh) {
 		char cbuf[256] = { '\0' };
 		oapiReadItem_string(fh, "THGROUP_ATT_PITCHDOWN_THRUSTERS", cbuf);
 		string idx_s(cbuf);
-		vector<UINT> idx = VB1->readVectorUINT(idx_s);
-		vector<THRUSTER_HANDLE> thv = GetThrustersfromIdx(idx);
+		VBVector<UINT> idx = VB1->readVectorUINT(idx_s);
+		VBVector<THRUSTER_HANDLE> thv = GetThrustersfromIdx(idx);
 		DefineGroup(THGROUP_ATT_PITCHDOWN, thv);
 	}
 
@@ -604,8 +604,8 @@ void ThrusterGroupManager::ParseCfgFile(FILEHANDLE fh) {
 		char cbuf[256] = { '\0' };
 		oapiReadItem_string(fh, "THGROUP_ATT_YAWLEFT_THRUSTERS", cbuf);
 		string idx_s(cbuf);
-		vector<UINT> idx = VB1->readVectorUINT(idx_s);
-		vector<THRUSTER_HANDLE> thv = GetThrustersfromIdx(idx);
+		VBVector<UINT> idx = VB1->readVectorUINT(idx_s);
+		VBVector<THRUSTER_HANDLE> thv = GetThrustersfromIdx(idx);
 		DefineGroup(THGROUP_ATT_YAWLEFT, thv);
 	}
 
@@ -616,8 +616,8 @@ void ThrusterGroupManager::ParseCfgFile(FILEHANDLE fh) {
 		char cbuf[256] = { '\0' };
 		oapiReadItem_string(fh, "THGROUP_ATT_YAWRIGHT_THRUSTERS", cbuf);
 		string idx_s(cbuf);
-		vector<UINT> idx = VB1->readVectorUINT(idx_s);
-		vector<THRUSTER_HANDLE> thv = GetThrustersfromIdx(idx);
+		VBVector<UINT> idx = VB1->readVectorUINT(idx_s);
+		VBVector<THRUSTER_HANDLE> thv = GetThrustersfromIdx(idx);
 		DefineGroup(THGROUP_ATT_YAWRIGHT, thv);
 	}
 
@@ -628,8 +628,8 @@ void ThrusterGroupManager::ParseCfgFile(FILEHANDLE fh) {
 		char cbuf[256] = { '\0' };
 		oapiReadItem_string(fh, "THGROUP_ATT_BANKLEFT_THRUSTERS", cbuf);
 		string idx_s(cbuf);
-		vector<UINT> idx = VB1->readVectorUINT(idx_s);
-		vector<THRUSTER_HANDLE> thv = GetThrustersfromIdx(idx);
+		VBVector<UINT> idx = VB1->readVectorUINT(idx_s);
+		VBVector<THRUSTER_HANDLE> thv = GetThrustersfromIdx(idx);
 		DefineGroup(THGROUP_ATT_BANKLEFT, thv);
 	}
 
@@ -640,8 +640,8 @@ void ThrusterGroupManager::ParseCfgFile(FILEHANDLE fh) {
 		char cbuf[256] = { '\0' };
 		oapiReadItem_string(fh, "THGROUP_ATT_BANKRIGHT_THRUSTERS", cbuf);
 		string idx_s(cbuf);
-		vector<UINT> idx = VB1->readVectorUINT(idx_s);
-		vector<THRUSTER_HANDLE> thv = GetThrustersfromIdx(idx);
+		VBVector<UINT> idx = VB1->readVectorUINT(idx_s);
+		VBVector<THRUSTER_HANDLE> thv = GetThrustersfromIdx(idx);
 		DefineGroup(THGROUP_ATT_BANKRIGHT, thv);
 	}
 
@@ -652,8 +652,8 @@ void ThrusterGroupManager::ParseCfgFile(FILEHANDLE fh) {
 		char cbuf[256] = { '\0' };
 		oapiReadItem_string(fh, "THGROUP_ATT_RIGHT_THRUSTERS", cbuf);
 		string idx_s(cbuf);
-		vector<UINT> idx = VB1->readVectorUINT(idx_s);
-		vector<THRUSTER_HANDLE> thv = GetThrustersfromIdx(idx);
+		VBVector<UINT> idx = VB1->readVectorUINT(idx_s);
+		VBVector<THRUSTER_HANDLE> thv = GetThrustersfromIdx(idx);
 		DefineGroup(THGROUP_ATT_RIGHT, thv);
 	}
 
@@ -664,8 +664,8 @@ void ThrusterGroupManager::ParseCfgFile(FILEHANDLE fh) {
 		char cbuf[256] = { '\0' };
 		oapiReadItem_string(fh, "THGROUP_ATT_LEFT_THRUSTERS", cbuf);
 		string idx_s(cbuf);
-		vector<UINT> idx = VB1->readVectorUINT(idx_s);
-		vector<THRUSTER_HANDLE> thv = GetThrustersfromIdx(idx);
+		VBVector<UINT> idx = VB1->readVectorUINT(idx_s);
+		VBVector<THRUSTER_HANDLE> thv = GetThrustersfromIdx(idx);
 		DefineGroup(THGROUP_ATT_LEFT, thv);
 	}
 
@@ -676,8 +676,8 @@ void ThrusterGroupManager::ParseCfgFile(FILEHANDLE fh) {
 		char cbuf[256] = { '\0' };
 		oapiReadItem_string(fh, "THGROUP_ATT_UP_THRUSTERS", cbuf);
 		string idx_s(cbuf);
-		vector<UINT> idx = VB1->readVectorUINT(idx_s);
-		vector<THRUSTER_HANDLE> thv = GetThrustersfromIdx(idx);
+		VBVector<UINT> idx = VB1->readVectorUINT(idx_s);
+		VBVector<THRUSTER_HANDLE> thv = GetThrustersfromIdx(idx);
 		DefineGroup(THGROUP_ATT_UP, thv);
 	}
 
@@ -688,8 +688,8 @@ void ThrusterGroupManager::ParseCfgFile(FILEHANDLE fh) {
 		char cbuf[256] = { '\0' };
 		oapiReadItem_string(fh, "THGROUP_ATT_DOWN_THRUSTERS", cbuf);
 		string idx_s(cbuf);
-		vector<UINT> idx = VB1->readVectorUINT(idx_s);
-		vector<THRUSTER_HANDLE> thv = GetThrustersfromIdx(idx);
+		VBVector<UINT> idx = VB1->readVectorUINT(idx_s);
+		VBVector<THRUSTER_HANDLE> thv = GetThrustersfromIdx(idx);
 		DefineGroup(THGROUP_ATT_DOWN, thv);
 	}
 
@@ -700,8 +700,8 @@ void ThrusterGroupManager::ParseCfgFile(FILEHANDLE fh) {
 		char cbuf[256] = { '\0' };
 		oapiReadItem_string(fh, "THGROUP_ATT_FORWARD_THRUSTERS", cbuf);
 		string idx_s(cbuf);
-		vector<UINT> idx = VB1->readVectorUINT(idx_s);
-		vector<THRUSTER_HANDLE> thv = GetThrustersfromIdx(idx);
+		VBVector<UINT> idx = VB1->readVectorUINT(idx_s);
+		VBVector<THRUSTER_HANDLE> thv = GetThrustersfromIdx(idx);
 		DefineGroup(THGROUP_ATT_FORWARD, thv);
 	}
 
@@ -712,8 +712,8 @@ void ThrusterGroupManager::ParseCfgFile(FILEHANDLE fh) {
 		char cbuf[256] = { '\0' };
 		oapiReadItem_string(fh, "THGROUP_ATT_BACK_THRUSTERS", cbuf);
 		string idx_s(cbuf);
-		vector<UINT> idx = VB1->readVectorUINT(idx_s);
-		vector<THRUSTER_HANDLE> thv = GetThrustersfromIdx(idx);
+		VBVector<UINT> idx = VB1->readVectorUINT(idx_s);
+		VBVector<THRUSTER_HANDLE> thv = GetThrustersfromIdx(idx);
 		DefineGroup(THGROUP_ATT_BACK, thv);
 	}
 
@@ -724,8 +724,8 @@ void ThrusterGroupManager::WriteCfg(FILEHANDLE fh) {
 	oapiWriteLine(fh, ";<-------------------------THRUSTER GROUPS DEFINITIONS------------------------->");
 	oapiWriteLine(fh, " ");
 	char cbuf[256] = { '\0' };
-	vector<THRUSTER_HANDLE>thrusters;
-	vector<UINT>indexes;
+	VBVector<THRUSTER_HANDLE>thrusters;
+	VBVector<UINT>indexes;
 	thrusters.clear();
 	indexes.clear();
 	string thr_s;

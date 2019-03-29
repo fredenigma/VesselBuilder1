@@ -24,5 +24,5 @@ public:
 	void SetSDSystemEnabled(bool set) { SDSystemEnabled = set; }
 	bool ChooseDock(def_idx &d_idx,OBJHANDLE &hvessel);
 	NOTEHANDLE note_sd;
-	bool IsOBJinVector(OBJHANDLE h_obj, vector<OBJHANDLE>vh);
+	bool IsOBJinVector(OBJHANDLE h_obj, VBVector<OBJHANDLE>vh);
 };

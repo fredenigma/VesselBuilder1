@@ -15,3 +15,5 @@ public:
 	std::string filename;
 	VESSEL *v;
 };
+void InitVBExceptionLog();
+void VBExceptionLog(const char* str, ...);

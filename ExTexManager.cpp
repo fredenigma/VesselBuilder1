@@ -2,6 +2,7 @@
 #include "DialogControl.h"
 #include "ExTexManager.h"
 
+
 #define LogV(x,...) VB1->Log->Log(x,##__VA_ARGS__)
 
 ExTexManager::ExTexManager(VesselBuilder1 *_VB1) {

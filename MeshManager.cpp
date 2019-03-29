@@ -545,7 +545,7 @@ void MeshManager::WriteCfg(FILEHANDLE fh) {
 	}
 	return;
 }
-vector<MSH_DEF> MeshManager::GetAllDefs() {
+VBVector<MSH_DEF> MeshManager::GetAllDefs() {
 	return msh_defs;
 }
 

@@ -269,7 +269,7 @@ BOOL DialogControl::AnimCompDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 			if (nsel <= 0) { break; }
 			UINT *sellist = new UINT[nsel];
 			SendDlgItemMessage(hWnd, IDC_LIST_ANIMCOMPGRPSTOPICK, LB_GETSELITEMS, nsel, (LPARAM)sellist);
-			vector<UINT>grpstopass;
+			VBVector<UINT>grpstopass;
 			for (UINT i = 0; i < nsel; i++) {
 				int groupnumber = SendDlgItemMessage(hWnd, IDC_LIST_ANIMCOMPGRPSTOPICK, LB_GETITEMDATA, sellist[i], 0);
 				grpstopass.push_back(groupnumber);
@@ -289,7 +289,7 @@ BOOL DialogControl::AnimCompDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 			if (nsel <= 0) { break; }
 			UINT *sellist = new UINT[nsel];
 			SendDlgItemMessage(hWnd, IDC_LIST_ANIMCOMPGRPSINANIM, LB_GETSELITEMS, nsel, (LPARAM)sellist);
-			vector<UINT>grpstopass;
+			VBVector<UINT>grpstopass;
 			for (UINT i = 0; i < nsel; i++) {
 				int groupnumber = SendDlgItemMessage(hWnd, IDC_LIST_ANIMCOMPGRPSINANIM, LB_GETITEMDATA, sellist[i], 0);
 				grpstopass.push_back(groupnumber);

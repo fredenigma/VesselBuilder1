@@ -15,7 +15,7 @@ public:
 	~Laser();
 	void Delete();
 	VesselBuilder1* VB1;
-	vector<UINT> ID;
+	VBVector<UINT> ID;
 };
 
 class LaserManager {

@@ -34,7 +34,7 @@ public:
 	LightsManager(VesselBuilder1 *_VB1);
 	~LightsManager();
 	VesselBuilder1 *VB1;
-	vector<BEACONS_DEF>beacons_def;
+	VBVector<BEACONS_DEF>beacons_def;
 	UINT AddBeaconDef();
 	UINT AddBeaconDef(string name, DWORD shape, VECTOR3 pos, VECTOR3 col, double size, double falloff, double period, double duration, double tofs);
 	void DeleteBeaconDef(def_idx d_idx);
@@ -67,7 +67,7 @@ public:
 	UINT GetBeaconCount();
 	void ClearBeaconsDefs();
 	
-	vector<LIGHTS_DEF> lights_def;
+	VBVector<LIGHTS_DEF> lights_def;
 	UINT AddLightDef(LightEmitter::TYPE type);
 	UINT AddLightDef(LightEmitter::TYPE type, COLOUR4 diffuse, COLOUR4 specular, COLOUR4 ambient);
 	UINT AddLightDef(LightEmitter::TYPE type, string name, VECTOR3 position, LightEmitter::VISIBILITY vis, VECTOR3 direction, VECTOR3 attenuation, double range, double umbra, double penumbra, COLOUR4 diffuse, COLOUR4 specular, COLOUR4 ambient);
@@ -103,7 +103,7 @@ public:
 	void ParseCfgFile(FILEHANDLE fh);
 	void WriteCfg(FILEHANDLE fh);
 	UINT CurrentLight;
-	vector<UINT>GetLightsOn();
-	vector<UINT>GetBeaconsOn();
+	VBVector<UINT>GetLightsOn();
+	VBVector<UINT>GetBeaconsOn();
 	void Clear();
 };

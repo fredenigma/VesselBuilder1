@@ -15,7 +15,7 @@ public:
 	PropellantManager(VesselBuilder1 *_VB1);
 	~PropellantManager();
 	VesselBuilder1 *VB1;
-	vector<PRP_DEF> tanks;
+	VBVector<PRP_DEF> tanks;
 	void AddTankDef();
 	void AddTankDef(string name, double MaxMass, double efficiency, double currentMass);
 	void DelTankDef(def_idx d_idx);

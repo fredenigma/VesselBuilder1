@@ -229,7 +229,7 @@ public:
 	EventManager(VesselBuilder1 *_VB1);
 	~EventManager();
 	VesselBuilder1 *VB1;
-	vector<Event*>Events;
+	VBVector<Event*>Events;
 	Event* CreateGeneralVBEvent(string name,Event::TYPE type,Event::TRIGGER _Trigger);
 	Event* CreateNullEvent(string name, Event::TRIGGER _Trigger);
 	Event* CreateChildSpawnEvent(string name, Event::TRIGGER _Trigger, string v_name, string v_class, VECTOR3 ofs = _V(0, 0, 0), VECTOR3 vel = _V(0, 0, 0), VECTOR3 rot_vel = _V(0, 0, 0), int mesh_to_del = -1);

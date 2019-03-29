@@ -50,6 +50,7 @@ VesselBuilder1::VesselBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
 	if (IamFirst) {
 		IamFirst = false;
 		Log->InitLog();
+		InitVBExceptionLog();
 		//oapiWriteLogV("First : %s", GetName());
 	}
 	
@@ -301,7 +302,7 @@ void VesselBuilder1::clbkLoadStateEx(FILEHANDLE scn,void *vs)
 		else if (!_strnicmp(line, "ANIM_", 5)) {
 			UINT seq = 0;
 			sscanf(line + 5, "%i", &seq);
-			LogV("anim:%i", seq);
+			//LogV("anim:%i", seq);
 			if (seq >= AnimMng->GetAnimDefsCount()) { continue; }
 			UINT c = 1;
 			if ((seq > 9)&&(seq<100)) { c = 2; }
@@ -310,7 +311,7 @@ void VesselBuilder1::clbkLoadStateEx(FILEHANDLE scn,void *vs)
 			double state;
 			int status;
 			sscanf(line + 5 + 1 + c, "%lf %d", &state, &status);
-			LogV("state:%.3f status:%i", state, status);
+		//	LogV("state:%.3f status:%i", state, status);
 			AnimMng->SetAnimationState(seq, state);
 			if (status == 1) {
 				AnimMng->StartAnimation(seq);
@@ -339,7 +340,7 @@ void VesselBuilder1::clbkLoadStateEx(FILEHANDLE scn,void *vs)
 			char bcn_ons[256] = { '\0' };
 			sscanf(line + 7, "%s", bcn_ons);
 			string bnc(bcn_ons);
-			vector<UINT> bc = readVectorUINT(bnc);
+			VBVector<UINT> bc = readVectorUINT(bnc);
 			for (UINT i = 0; i < bc.size(); i++) {
 				LightsMng->ActivateBeacon(bc[i], true);
 			}
@@ -356,7 +357,7 @@ void VesselBuilder1::clbkLoadStateEx(FILEHANDLE scn,void *vs)
 			char lgt_on[256] = { '\0' };
 			sscanf(line + 6, "%s", lgt_on);
 			string lnc(lgt_on);
-			vector<UINT>lc = readVectorUINT(lnc);
+			VBVector<UINT>lc = readVectorUINT(lnc);
 			for (UINT i = 0; i < lc.size(); i++) {
 				LightsMng->ActivateLight(lc[i], true);
 			}
@@ -416,7 +417,7 @@ void VesselBuilder1::clbkSaveState(FILEHANDLE scn)
 	if (LightsMng->GetBeaconCount() > 0) {
 		char cbuf[256] = { '\0' };
 		sprintf(cbuf, "BEACONS");
-		vector<UINT> v_bon = LightsMng->GetBeaconsOn();
+		VBVector<UINT> v_bon = LightsMng->GetBeaconsOn();
 		if (v_bon.size() > 0) {
 			string bcn_on = WriteVectorUINT(v_bon, false);
 			char lbuf[256] = { '\0' };
@@ -429,7 +430,7 @@ void VesselBuilder1::clbkSaveState(FILEHANDLE scn)
 	if (LightsMng->GetLightsCount() > 0) {
 		char cbuf[256] = { '\0' };
 		sprintf(cbuf, "LIGHTS");
-		vector<UINT> v_lon = LightsMng->GetLightsOn();
+		VBVector<UINT> v_lon = LightsMng->GetLightsOn();
 		if (v_lon.size() > 0) {
 			string lights_on = WriteVectorUINT(v_lon, false);
 			char lbuf[256] = { '\0' };
@@ -686,65 +687,6 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 	}
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && !KEYMOD_CONTROL(kstate) && key == OAPI_KEY_K) {
 		
-		
-		VBVector<UINT> vbv;
-		for (UINT i = 0; i < 120; i++) {
-			vbv.push_back(i);
-		}
-		LogV("vbv size:%i", vbv.size());
-		VBVector<UINT> vbv2 = vbv;
-		LogV("vbv2 size:%i", vbv2.size());
-		for (VBVector<UINT>::iterator it = vbv.begin(); it != vbv.end(); it++) {
-			
-		}
-
-		LogV("vbv back:%i", vbv.back());
-		int id;
-		bool test = vbv.VBFind(45, id);
-		LogV("test:%i id:%i", test, id);
-		test = vbv2.VBFind(54, id);
-		LogV("test:%i id:%i", test, id);
-
-		LogV("vbv [10] : %i", vbv[10]);
-		vbv.erase(10);
-		LogV("vbv [10] : %i", vbv[10]);
-
-		vbv.clear();
-		LogV("vbv size :%i vbv2 size:%i", vbv.size(), vbv2.size());
-		//LogV("vbv[%i]:%i vbv[%i] %i", 1, vbv[1], 24, vbv[24]);
-	//	soft_dock_distance -= 0.1;
-	//	ConfigMng->ApplyConfiguration(1);
-		//Met->SetMJD0(oapiGetSimMJD() + 0.01);
-	/*	DWORD td_count = this->GetTouchdownPointCount();
-		for (UINT i = 0; i < td_count; i++) {
-			oapiWriteLogV("td:%i", i);
-			TOUCHDOWNVTX tdvtx;
-			this->GetTouchdownPoint(tdvtx, i);
-			oapiWriteLogV("pos:%.3f %.3f %.3f", tdvtx.pos.x, tdvtx.pos.y, tdvtx.pos.z);
-			oapiWriteLogV("stiffness: %.6f damping:%.6f", tdvtx.stiffness, tdvtx.damping);
-			oapiWriteLogV("Mu:%.3f Mu_lng:%.3f", tdvtx.mu, tdvtx.mu_lng);
-		}
-		*/
-	/*	LightEmitter *LE = new LightEmitter();
-		COLOUR4 col_d, col_s, col_a;
-		col_d = LE->GetDiffuseColour();
-		col_s = LE->GetSpecularColour();
-		col_a = LE->GetAmbientColour();
-		LightEmitter::VISIBILITY vis = LE->GetVisibility();
-		VECTOR3 pos = LE->GetPosition();
-		VECTOR3 dir = LE->GetDirection();
-		LightEmitter::TYPE type = LE->GetType();
-
-		oapiWriteLogV("LIGHT EMITTER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-
-		oapiWriteLogV("Diffuse : %.3f %.3f %.3f %.3f", col_d.r, col_d.g, col_d.b, col_d.a);
-		oapiWriteLogV("Specular : %.3f %.3f %.3f %.3f", col_s.r, col_s.g, col_s.b, col_s.a);
-		oapiWriteLogV("Ambient : %.3f %.3f %.3f %.3f", col_a.r, col_a.g, col_a.b, col_a.a);
-		oapiWriteLogV("Visibility:%i", (int)vis);
-		oapiWriteLogV("Position: %.3f %.3f %.3f", pos.x, pos.y, pos.z);
-		oapiWriteLogV("Direction: %.3f %.3f %.3f", dir.x, dir.y, dir.z);
-		oapiWriteLogV("Type: %i", (int)type);
-		oapiWriteLogV("END LIGHT EMITTER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");*/
 		return 1;
 	}
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && KEYMOD_CONTROL(kstate) && key == OAPI_KEY_K) {
@@ -1284,8 +1226,8 @@ void VesselBuilder1::AddDefaultRCS() {
 
 	LogV("Vessel Mass: %.1f Target Ang Acc:3 deg/s2 Target Linear Acc:0.15 m/s2 Torque Needed: %.3f %.3f %.3f Force Needed:%.3f", mass, force_needed.x, force_needed.y, force_needed.z, lin_force_needed.x);
 
-	vector<UINT>th_idx;
-	vector<THRUSTER_HANDLE>th_h;
+	VBVector<UINT>th_idx;
+	VBVector<THRUSTER_HANDLE>th_h;
 
 
 	if (!ThrGrpMng->IsGroupDefined(THGROUP_ATT_PITCHUP)) {
@@ -1442,7 +1384,7 @@ bool VesselBuilder1::AreVector3Equal(VECTOR3 v1, VECTOR3 v2) {
 	}
 
 }
-string VesselBuilder1::WriteVectorUINT(vector<UINT> v,bool spaces) {
+string VesselBuilder1::WriteVectorUINT(VBVector<UINT> v,bool spaces) {
 	string line;
 	line.clear();
 	if (v.size() > 0) {
@@ -1472,8 +1414,8 @@ string VesselBuilder1::WriteVectorUINT(vector<UINT> v,bool spaces) {
 	
 	return line;
 }
-vector<UINT> VesselBuilder1::readVectorUINT(string s) {
-	vector<UINT>r;
+VBVector<UINT> VesselBuilder1::readVectorUINT(string s) {
+	VBVector<UINT>r;
 	r.clear();
 	if (s.size() <= 0) { return r; }
 	string delimiter = ",";
@@ -1487,7 +1429,7 @@ vector<UINT> VesselBuilder1::readVectorUINT(string s) {
 	}
 	return r;
 }
-bool VesselBuilder1::IsUintInVector(UINT u, vector<UINT>v) {
+bool VesselBuilder1::IsUintInVector(UINT u, VBVector<UINT>v) {
 	for (UINT i = 0; i < v.size(); i++) {
 		if (u == v[i]) {
 			return true;
@@ -1512,12 +1454,12 @@ bool VesselBuilder1::IsUintInVector(UINT u, vector<UINT>v) {
 			}
 		}*/
 
-vector <string> VesselBuilder1::ReadMeshTextures(string filename) {
+VBVector <string> VesselBuilder1::ReadMeshTextures(string filename) {
 	string folder("//Meshes//");
 	string ext(".msh");
 	//string fn = folder + filename;
 	//FILEHANDLE mh_f = oapiOpenFile(fn.c_str(), FILE_IN_ZEROONFAIL, ROOT);
-	vector<string> texture_names;
+	VBVector<string> texture_names;
 	texture_names.clear();
 
 	char OR[1024] = { '\0' };
@@ -1544,6 +1486,8 @@ vector <string> VesselBuilder1::ReadMeshTextures(string filename) {
 	return texture_names;
 	//oapiCloseFile(mh_f, FILE_IN_ZEROONFAIL);
 }
+
+
 /*void StationBuilder1::WriteUniqueMeshFile(string filename) {
 	FILEHANDLE fh = oapiOpenFile(filename.c_str(), FILE_OUT, ROOT);
 	char line[1024] = { '\0' };
@@ -1568,9 +1512,9 @@ vector <string> VesselBuilder1::ReadMeshTextures(string filename) {
 	oapiWriteLine(fh, line);
 	int material_offset = 0;
 	int texture_offset = 0;
-	vector<MATERIAL*> mats;
+	VBVector<MATERIAL*> mats;
 	mats.clear();
-	vector<string> tex_names;
+	VBVector<string> tex_names;
 	tex_names.clear();
 
 	for (UINT i = 0; i < mesh_definitions.size(); i++) {
@@ -1619,7 +1563,7 @@ vector <string> VesselBuilder1::ReadMeshTextures(string filename) {
 		texture_offset += texn;
 
 		if (texn > 0) {
-			vector<string> meshtexnames = ReadMeshTextures(mesh_definitions[i].meshname.c_str());
+			VBVector<string> meshtexnames = ReadMeshTextures(mesh_definitions[i].meshname.c_str());
 			if (meshtexnames.size() <= 0) {
 				for (UINT t = 0; t < texn; t++) {
 					char tname[256] = { '\0' };
@@ -1694,8 +1638,8 @@ void StationBuilder1::DefineAnimations() {
 	}
 }
 
-void StationBuilder1::ClearDelete(vector<MGROUP_ROTATE*>vmgr) {
-	for (std::vector< MGROUP_ROTATE* >::iterator it = vmgr.begin(); it != vmgr.end(); ++it)
+void StationBuilder1::ClearDelete(VBVector<MGROUP_ROTATE*>vmgr) {
+	for (std::VBVector< MGROUP_ROTATE* >::iterator it = vmgr.begin(); it != vmgr.end(); ++it)
 	{
 		delete (*it);
 	}

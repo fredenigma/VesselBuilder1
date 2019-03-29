@@ -5,9 +5,9 @@ class LiftCoeffDef {
 public:
 	LiftCoeffDef();
 	~LiftCoeffDef();
-	vector<double>AOA;
-	vector<double>CL;
-	vector<double>CM;
+	VBVector<double>AOA;
+	VBVector<double>CL;
+	VBVector<double>CM;
 	
 	AIRFOILS_DEFAULTS def_Model;
 	double A;
@@ -28,24 +28,24 @@ public:
 	void SetDefModel(AIRFOILS_DEFAULTS ad);
 	AIRFOILS_DEFAULTS GetDefModel();
 	void InitDefModels();
-	vector<double>AOA_DGV;
-	vector<double>CL_DGV;
-	vector<double>CM_DGV;
-	vector<double>AOA_DGH;
-	vector<double>CL_DGH;
-	vector<double>CM_DGH;
-	vector<double>AOA_SHV;
-	vector<double>CL_SHV;
-	vector<double>CM_SHV;
-	vector<double>AOA_SHH;
-	vector<double>CL_SHH;
-	vector<double>CM_SHH;
-	vector<double>AOA_CAPV;
-	vector<double>CL_CAPV;
-	vector<double>CM_CAPV;
-	vector<double>AOA_CAPH;
-	vector<double>CL_CAPH;
-	vector<double>CM_CAPH;
+	VBVector<double>AOA_DGV;
+	VBVector<double>CL_DGV;
+	VBVector<double>CM_DGV;
+	VBVector<double>AOA_DGH;
+	VBVector<double>CL_DGH;
+	VBVector<double>CM_DGH;
+	VBVector<double>AOA_SHV;
+	VBVector<double>CL_SHV;
+	VBVector<double>CM_SHV;
+	VBVector<double>AOA_SHH;
+	VBVector<double>CL_SHH;
+	VBVector<double>CM_SHH;
+	VBVector<double>AOA_CAPV;
+	VBVector<double>CL_CAPV;
+	VBVector<double>CM_CAPV;
+	VBVector<double>AOA_CAPH;
+	VBVector<double>CL_CAPH;
+	VBVector<double>CM_CAPH;
 };
 struct AIRFOIL_DEFS {
 	string name;
@@ -62,7 +62,7 @@ public:
 	AirfoilsManager(VesselBuilder1* _VB1);
 	~AirfoilsManager();
 	VesselBuilder1 *VB1;
-	vector<AIRFOIL_DEFS> airfoil_defs;
+	VBVector<AIRFOIL_DEFS> airfoil_defs;
 	UINT CreateAirfoilDef(string name,AIRFOIL_ORIENTATION align,VECTOR3 ref,double c, double S, double A);
 	UINT CreateAirfoilDef(AIRFOIL_ORIENTATION align);
 	void SetAirfoilDefName(def_idx d_idx, string newname);

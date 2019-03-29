@@ -9,7 +9,7 @@
 void DialogControl::UpdateTdpDialog(HWND hWnd) {
 	UINT set = CurrentSelection.idx;
 	if ((set < 1) || (set > 2)) { return; }
-	vector<TOUCHDOWNVTX> curset;
+	VBVector<TOUCHDOWNVTX> curset;
 	if (set == 1) {
 		curset = TdpMng->GetSet(1);
 		ShowWindow(GetDlgItem(hWnd, IDC_COMBO_TDPCHANGEOVERANIM), SW_HIDE);
