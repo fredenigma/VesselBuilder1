@@ -2792,7 +2792,7 @@ int DialogControl::ComboFindItemData(HWND hWnd, DWORD Data) {
 	return -1;
 }
 
-template<class T>
+/*template<class T>
 int DialogControl::ComboFindItemData(HWND hWnd, T data) {
 	int item_count = SendMessage(hWnd, CB_GETCOUNT, 0, 0);
 	for (int i = 0; i < item_count; i++) {
@@ -2802,7 +2802,7 @@ int DialogControl::ComboFindItemData(HWND hWnd, T data) {
 		}
 	}
 	return -1;
-}
+}*/
 
 
 double DialogControl::GetDlgItemDouble(HWND hWnd, int control_id) {

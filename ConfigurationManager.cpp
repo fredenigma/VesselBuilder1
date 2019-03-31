@@ -1280,7 +1280,7 @@ void ThrusterSection::ParseSection(FILEHANDLE fh) {
 				oapiReadItem_int(fh, cbuf, extex);
 				sprintf(cbuf, "THR_%i_EX_%i_CUSTOMPOSDIR", thr_counter, ex_counter);
 				ConfigCheck(cbuf, Config_idx);
-				oapiReadItem_bool(fh, cbuf, customposdir);
+				if (!oapiReadItem_bool(fh, cbuf, customposdir)) { customposdir = false; }
 				if (customposdir) {
 					sprintf(cbuf, "THR_%i_EX_%i_POS", thr_counter, ex_counter);
 					ConfigCheck(cbuf, Config_idx);
@@ -1326,7 +1326,7 @@ void ThrusterSection::ParseSection(FILEHANDLE fh) {
 				pss_index = (UINT)pss_int;
 				sprintf(cbuf, "THR_%i_PART_%i_CUSTOMPOS", thr_counter, part_counter);
 				ConfigCheck(cbuf, Config_idx);
-				oapiReadItem_bool(fh, cbuf, custompos);
+				if (!oapiReadItem_bool(fh, cbuf, custompos)) { custompos = false; }
 				if (custompos) {
 					sprintf(cbuf, "THR_%i_PART_%i_POS", thr_counter, part_counter);
 					ConfigCheck(cbuf, Config_idx);
@@ -3478,7 +3478,9 @@ void EventSection::ParseSection(FILEHANDLE fh) {
 		int texidx;
 		string texture_name;
 		string sound_file;
-
+		bool disabled;
+		int other_event_to_enable;
+		bool other_event_enable;
 
 		sprintf(cbuf, "EVENT_%i_NAME", event_counter);
 		ConfigCheck(cbuf, Config_idx);
@@ -3487,6 +3489,9 @@ void EventSection::ParseSection(FILEHANDLE fh) {
 		sprintf(cbuf, "EVENT_%i_TYPE", event_counter);
 		ConfigCheck(cbuf, Config_idx);
 		oapiReadItem_int(fh, cbuf, type);
+		sprintf(cbuf, "EVENT_%i_DISABLED", event_counter);
+		ConfigCheck(cbuf, Config_idx);
+		if (!oapiReadItem_bool(fh, cbuf, disabled)) { disabled = false; }
 		sprintf(cbuf, "EVENT_%i_TRIGGERTYPE", event_counter);
 		ConfigCheck(cbuf, Config_idx);
 		oapiReadItem_int(fh, cbuf, trigger_type);
@@ -3644,6 +3649,14 @@ void EventSection::ParseSection(FILEHANDLE fh) {
 			oapiReadItem_string(fh, cbuf, sndbf);
 			sound_file.assign(sndbf);
 		}
+		if (type == (int)Event::TYPE::ENABLE_EVENT) {
+			sprintf(cbuf, "EVENT_%i_OTHERTOENABLE", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_int(fh, cbuf, other_event_to_enable);
+			sprintf(cbuf, "EVENT_%i_OTHERENABLE", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			if (!oapiReadItem_bool(fh, cbuf, other_event_enable)) { other_event_enable = false; }
+		}
 		Definitions d;
 		d.name = name;
 		d.type = type;
@@ -3682,6 +3695,9 @@ void EventSection::ParseSection(FILEHANDLE fh) {
 		d.texidx = texidx;
 		d.texture_name = texture_name;
 		d.sound_file = sound_file;
+		d.disabled = disabled;
+		d.other_event_to_enable = other_event_to_enable;
+		d.other_event_enable = other_event_enable;
 		Defs.push_back(d);
 		event_counter++;
 		sprintf(cbuf, "EVENT_%i_ID", event_counter);
@@ -3707,6 +3723,11 @@ void EventSection::WriteSection(FILEHANDLE fh) {
 		sprintf(cbuf, "EVENT_%i_TYPE", i);
 		ConfigCheck(cbuf, Config_idx);
 		oapiWriteItem_int(fh, cbuf, Defs[i].type);
+		if (Defs[i].disabled) {
+			sprintf(cbuf, "EVENT_%i_DISABLED", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_bool(fh, cbuf, Defs[i].disabled);
+		}
 		sprintf(cbuf, "EVENT_%i_TRIGGERTYPE", i);
 		ConfigCheck(cbuf, Config_idx);
 		oapiWriteItem_int(fh, cbuf, Defs[i].trigger_type);
@@ -3863,6 +3884,14 @@ void EventSection::WriteSection(FILEHANDLE fh) {
 			sprintf(sndbf, "%s", Defs[i].sound_file.c_str());
 			oapiWriteItem_string(fh, cbuf, sndbf);
 		}
+		if (Defs[i].type == (int)Event::TYPE::ENABLE_EVENT) {
+			sprintf(cbuf, "EVENT_%i_OTHERTOENABLE", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_int(fh, cbuf, Defs[i].other_event_to_enable);
+			sprintf(cbuf, "EVENT_%i_OTHERENABLE", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_bool(fh, cbuf, Defs[i].other_event_enable);
+		}
 		oapiWriteLine(fh, " ");
 	}
 	return;
@@ -3970,64 +3999,71 @@ void EventSection::ApplySection() {
 		}
 
 		Event::TYPE etp = (Event::TYPE)Defs[i].type;
+		Event* ev;
 		switch (etp) {
 		case Event::TYPE::CHILD_SPAWN:
 		{
-			EvMng->CreateChildSpawnEvent(Defs[i].name, trig, Defs[i].spawned_vessel_name, Defs[i].spawned_vessel_class, Defs[i].ofs, Defs[i].vel, Defs[i].rot_vel, Defs[i].mesh_to_del);
+			ev = EvMng->CreateChildSpawnEvent(Defs[i].name, trig, Defs[i].spawned_vessel_name, Defs[i].spawned_vessel_class, Defs[i].ofs, Defs[i].vel, Defs[i].rot_vel, Defs[i].mesh_to_del);
 			break;
 		}
 		case Event::TYPE::ANIMATION_TRIGGER:
 		{
-			EvMng->CreateAnimTriggerEvent(Defs[i].name, trig, Defs[i].anim_idx, Defs[i].forward);
+			ev = EvMng->CreateAnimTriggerEvent(Defs[i].name, trig, Defs[i].anim_idx, Defs[i].forward);
 			break;
 		}
 		case Event::TYPE::THRUSTER_FIRING:
 		{
 			THRUSTER_HANDLE th = VB1->ThrMng->GetThrTH(Defs[i].thruster);
-			EvMng->CreateThrusterFireEvent(Defs[i].name, trig, th, Defs[i].thlevel);
+			ev = EvMng->CreateThrusterFireEvent(Defs[i].name, trig, th, Defs[i].thlevel);
 			break;
 		}
 		case Event::TYPE::THRUSTERGROUP_LEVEL:
 		{
-			EvMng->CreateThrusterGroupLevelEvent(Defs[i].name, trig, Defs[i].group, Defs[i].thglevel);
+			ev = EvMng->CreateThrusterGroupLevelEvent(Defs[i].name, trig, Defs[i].group, Defs[i].thglevel);
 			break;
 		}
 		case Event::TYPE::PAYLOAD_JETTISON:
 		{
-			EvMng->CreatePayloadJettisonEvent(Defs[i].name, trig, Defs[i].next, Defs[i].dock_idx);
+			ev = EvMng->CreatePayloadJettisonEvent(Defs[i].name, trig, Defs[i].next, Defs[i].dock_idx);
 			break;
 		}
 		case Event::TYPE::RESET_MET:
 		{
-			EvMng->CreateResetMetEvent(Defs[i].name, trig, Defs[i].now, Defs[i].newmjd0);
+			ev = EvMng->CreateResetMetEvent(Defs[i].name, trig, Defs[i].now, Defs[i].newmjd0);
 			break;
 		}
 		case Event::TYPE::RECONFIG:
 		{
-			EvMng->CreateReconfigurationEvent(Defs[i].name, trig, Defs[i].newconfig);
+			ev = EvMng->CreateReconfigurationEvent(Defs[i].name, trig, Defs[i].newconfig);
 			break;
 		}
 		case Event::TYPE::SHIFT_CG:
 		{
-			EvMng->CreateShiftCGEvent(Defs[i].name, trig, Defs[i].shiftcg);
+			ev = EvMng->CreateShiftCGEvent(Defs[i].name, trig, Defs[i].shiftcg);
 			break;
 		}
 		case Event::TYPE::TEXTURE_SWAP:
 		{
-			EvMng->CreateTextureSwapEvent(Defs[i].name, trig, Defs[i].mesh, Defs[i].texidx, Defs[i].texture_name);
+			ev = EvMng->CreateTextureSwapEvent(Defs[i].name, trig, Defs[i].mesh, Defs[i].texidx, Defs[i].texture_name);
 			break;
 		}
 		case Event::TYPE::DELETE_ME:
 		{
-			EvMng->CreateDeleteMeEvent(Defs[i].name, trig);
+			ev = EvMng->CreateDeleteMeEvent(Defs[i].name, trig);
 			break;
 		}
 		case Event::TYPE::PLAYSOUND:
 		{
-			EvMng->CreatePlaySoundEvent(Defs[i].name, trig, Defs[i].sound_file);
+			ev = EvMng->CreatePlaySoundEvent(Defs[i].name, trig, Defs[i].sound_file);
 			break;
 		}
-
+		case Event::TYPE::ENABLE_EVENT:
+		{
+			Event* ev_to_enable = EvMng->GetEventH(Defs[i].other_event_enable);
+			ev = EvMng->CreateEnableEvent(Defs[i].name, trig, ev_to_enable, Defs[i].other_event_enable);
+			break;
+		}
+		ev->Enable(!Defs[i].disabled);
 		}
 
 	}
@@ -4040,6 +4076,7 @@ void EventSection::UpdateSection() {
 		d.name = EvMng->GetEventName(i);
 		Event::TYPE tp = EvMng->GetEventType(i);
 		d.type = (int)tp;
+		d.disabled = !EvMng->IsEventEnabled(i);
 		Event::TRIGGER trig = EvMng->GetEventTrigger(i);
 		d.trigger_type = (int)trig.Type;
 		d.repeat_mode = (int)trig.repeat_mode;
@@ -4095,6 +4132,10 @@ void EventSection::UpdateSection() {
 		}
 		else if (tp == Event::TYPE::PLAYSOUND) {
 			d.sound_file = EvMng->GetSoundFile(i);
+		}
+		else if (tp == Event::TYPE::ENABLE_EVENT) {
+			d.other_event_enable = EvMng->GetToEnable(i);
+			d.other_event_to_enable = EvMng->GetEventIdx(EvMng->GetEventToEnable(i));
 		}
 		Defs.push_back(d);
 	}

@@ -145,7 +145,7 @@ void AttachmentManager::ParseCfgFile(FILEHANDLE fh) {
 		oapiReadItem_string(fh, cbuf, idbuf);
 		string id(idbuf);
 		sprintf(cbuf, "ATT_%i_TOPARENT", att_counter);
-		oapiReadItem_bool(fh, cbuf, toparent);
+		if (!oapiReadItem_bool(fh, cbuf, toparent)) { toparent = false; }
 
 		bool id_check;
 		string id_check_string;

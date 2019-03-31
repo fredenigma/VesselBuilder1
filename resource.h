@@ -666,8 +666,9 @@
 #define IDC_COMBO_DCKSDANI              1590
 #define IDC_BUTTON_DCKSDSET             1591
 #define IDC_CHECK_EVNEXT                1592
-#define IDC_BUTTON1                     1593
 #define IDC_BUTTON_CSUSEMSHOFS          1593
+#define IDC_CHECK1                      1594
+#define IDC_CHECK_EVDISABLE             1594
 
 // Next default values for new objects
 // 
@@ -675,7 +676,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1594
+#define _APS_NEXT_CONTROL_VALUE         1595
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

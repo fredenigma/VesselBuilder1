@@ -57,6 +57,9 @@ public:
 	void SetName(string newname);
 	string GetName();
 	TRIGGER GetTrigger() { return Trigger; }
+	bool Enabled;
+	void Enable(bool set) { Enabled = set; }
+	bool IsEnabled() { return Enabled; }
 };
 
 class NullEvent : public Event {
@@ -224,6 +227,20 @@ public:
 	string GetSoundFile();
 };
 
+class EnableEvent : public Event {
+public:
+	EnableEvent(VesselBuilder1* VB1, Event* _ev,bool _enable);
+	~EnableEvent();
+	TYPE Type() const { return ENABLE_EVENT; }
+	void ConsumeEvent();
+	bool enable;
+	Event* ev;
+	void SetEnable(bool set) { enable = set; }
+	void SetEvent(Event* _ev) { ev = _ev; }
+	Event* GetEvent() { return ev; }
+	bool GetEnable() { return enable; }
+};
+
 class EventManager {
 public:
 	EventManager(VesselBuilder1 *_VB1);
@@ -243,6 +260,7 @@ public:
 	Event* CreateTextureSwapEvent(string name, Event::TRIGGER _Trigger, UINT mesh, DWORD texidx, string texture_name);
 	Event* CreateDeleteMeEvent(string name, Event::TRIGGER _Trigger);
 	Event* CreatePlaySoundEvent(string name, Event::TRIGGER _Trigger, string soundfile);
+	Event* CreateEnableEvent(string name, Event::TRIGGER _Trigger, Event* _ev, bool _enable);
 	void SetEventTrigger(UINT idx, Event::TRIGGER _Trigger);
 	void DeleteEvent(Event* ev);
 	void PreStep(double simt, double simdt, double mjd);
@@ -257,6 +275,8 @@ public:
 	Event* GetEventH(UINT idx);
 	UINT GetEventIdx(Event* ev);
 	Event::TYPE GetEventType(UINT idx);
+	bool IsEventEnabled(UINT idx);
+	void SetEnableEvent(UINT idx, bool set);
 
 	void SetSpawnedVesselName(UINT idx, string newName);
 	void SetSpawnedVesselClass(UINT idx, string newClass);
@@ -311,6 +331,11 @@ public:
 
 	void SetSoundFile(UINT idx, string filename);
 	string GetSoundFile(UINT idx);
+
+	void SetToEnable(UINT idx, bool set);
+	void SetEventToEnable(UINT idx, Event* _ev);
+	Event* GetEventToEnable(UINT idx);
+	bool GetToEnable(UINT idx);
 
 
 	void Clear();

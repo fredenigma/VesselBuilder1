@@ -159,7 +159,16 @@ public:
 	int ComboFindItemData(HWND hWnd, void* data);
 
 	template<class T>
-	int ComboFindItemData(HWND hWnd, T data);
+	int ComboFindItemData(HWND hWnd, T data) {
+		int item_count = SendMessage(hWnd, CB_GETCOUNT, 0, 0);
+		for (int i = 0; i < item_count; i++) {
+			T result = (T)SendMessage(hWnd, CB_GETITEMDATA, i, 0);
+			if (result == data) {
+				return i;
+			}
+		}
+		return -1;
+	}
 
 	void UpdateAnimCompGroupLists(HWND hWnd, def_idx meshdef_idx);
 	void UpdateAirfoilFuncList(HWND hWnd);

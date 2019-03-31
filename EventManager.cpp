@@ -12,6 +12,7 @@ Event::Event(VesselBuilder1 *_VB1) {
 	VB1 = _VB1;
 	Trigger.Type = TRIGGER::TRIGGERTYPE::NULL_TRIG;
 	Consumed = false;
+	Enabled = true;
 	return;
 }
 Event::~Event() {}
@@ -491,7 +492,15 @@ void PlaySoundEvent::SetSoundFile(string filename) {
 string PlaySoundEvent::GetSoundFile() {
 	return soundfile;
 }
-
+EnableEvent::EnableEvent(VesselBuilder1* VB1, Event* _ev, bool _enable) :Event(VB1) {
+	ev = _ev;
+	enable = _enable;
+	return;
+}
+EnableEvent::~EnableEvent(){}
+void EnableEvent::ConsumeEvent() {
+	ev->Enable(enable);
+}
 
 
 EventManager::EventManager(VesselBuilder1 *_VB1) {
@@ -541,6 +550,9 @@ Event* EventManager::CreateGeneralVBEvent(string name, Event::TYPE type, Event::
 	}
 	else if (type == Event::PLAYSOUND) {
 		ev = CreatePlaySoundEvent(name, _Trigger, empty);
+	}
+	else if (type == Event::ENABLE_EVENT) {
+		ev = CreateEnableEvent(name, _Trigger, NULL, true);
 	}
 	/*if (ev) {
 		ev->id = id_counter;
@@ -774,6 +786,24 @@ Event* EventManager::CreatePlaySoundEvent(string name, Event::TRIGGER _Trigger, 
 	Events.push_back(ev);
 	return ev;
 }
+Event* EventManager::CreateEnableEvent(string name, Event::TRIGGER _Trigger, Event* _ev, bool _enable) {
+	Event* ev = new EnableEvent(VB1, _ev, _enable);
+	ev->SetTrigger(_Trigger);
+	string evname;
+	if (name.size() <= 0) {
+		char nbuf[256] = { '\0' };
+		sprintf(nbuf, "Enable %i", Events.size());
+		evname.assign(nbuf);
+	}
+	else {
+		evname = name;
+	}
+	ev->SetName(evname);
+	ev->id = id_counter;
+	id_counter++;
+	Events.push_back(ev);
+	return ev;
+}
 
 void EventManager::DeleteEvent(Event* ev) {
 	VBVector<Event*>::iterator it = find(Events.begin(), Events.end(), ev);
@@ -785,6 +815,7 @@ void EventManager::DeleteEvent(Event* ev) {
 }
 void EventManager::PreStep(double simt, double simdt, double mjd) {
 	for (UINT i = 0; i < Events.size(); i++) {
+		if (!Events[i]->IsEnabled()) { continue; }
 		Events[i]->EventPreStep(simt, simdt, mjd);
 	}
 	return;
@@ -792,6 +823,7 @@ void EventManager::PreStep(double simt, double simdt, double mjd) {
 void EventManager::ConsumeBufferedKey(DWORD key, bool down, char *kstate) {
 	if (Events.size() <= 0) { return; }
 	for (UINT i = 0; i < Events.size(); i++) {
+		if (!Events[i]->IsEnabled()) { continue; }
 		if (Events[i]->GetTriggerType()==Event::TRIGGER::TRIGGERTYPE::KEYPRESS){
 			Events[i]->ConsumeBufferedKey(key, down, kstate);
 		}
@@ -801,6 +833,7 @@ void EventManager::ConsumeBufferedKey(DWORD key, bool down, char *kstate) {
 void EventManager::DockEvent(int dock, OBJHANDLE mate) {
 	if (Events.size() <= 0) { return; }
 	for (UINT i = 0; i < Events.size(); i++) {
+		if (!Events[i]->IsEnabled()) { continue; }
 		if (Events[i]->GetTriggerType() == Event::TRIGGER::TRIGGERTYPE::DOCK_EVENT) {
 			Events[i]->EventDockEvent(dock, mate);
 		}
@@ -841,6 +874,8 @@ Event::TYPE EventManager::GetEventType(UINT idx) {
 	return Events[idx]->Type();
 }
 UINT EventManager::GetEventIdx(Event* ev) {
+	//int idx;
+	//Events.VBFind(ev, idx);
 	for (UINT i = 0; i < Events.size(); i++) {
 		if (Events[i] == ev) {
 			return i;
@@ -1011,10 +1046,30 @@ void EventManager::SetSoundFile(UINT idx, string filename) {
 string EventManager::GetSoundFile(UINT idx) {
 	return ((PlaySoundEvent*)Events[idx])->GetSoundFile();
 }
-
+void EventManager::SetToEnable(UINT idx, bool set) {
+	((EnableEvent*)Events[idx])->SetEnable(set);
+	return;
+}
+void EventManager::SetEventToEnable(UINT idx, Event* _ev) {
+	((EnableEvent*)Events[idx])->SetEvent(_ev);
+	return;
+}
+Event* EventManager::GetEventToEnable(UINT idx) {
+	return ((EnableEvent*)Events[idx])->GetEvent();
+}
+bool EventManager::GetToEnable(UINT idx) {
+	return ((EnableEvent*)Events[idx])->GetEnable();
+}
 
 
 void EventManager::SetEventTrigger(UINT idx, Event::TRIGGER _Trigger) {
 	Events[idx]->SetTrigger(_Trigger);
+	return;
+}
+bool EventManager::IsEventEnabled(UINT idx) {
+	return Events[idx]->IsEnabled();
+}
+void EventManager::SetEnableEvent(UINT idx, bool set) {
+	Events[idx]->Enable(set);
 	return;
 }

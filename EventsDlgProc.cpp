@@ -718,6 +718,41 @@ void DialogControl::SetEventsDialog(HWND hWnd, int event_type) {
 
 		break;
 	}
+	case Event::TYPE::ENABLE_EVENT:
+	{
+		ShowWindow(hWnd_ChildSpawn, SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_COMBO_EVMAIN), SW_SHOW);
+		ShowWindow(GetDlgItem(hWnd, IDC_CHECK_EVNEXT), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_STATIC_EVMAIN), SW_SHOW);
+		ShowWindow(GetDlgItem(hWnd, IDC_STATIC_EVLVL), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_SLIDER_EVLVL), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_EDIT_EVLVL), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_STATIC_EVTEXTURES), SW_SHOW);
+		ShowWindow(GetDlgItem(hWnd, IDC_COMBO_EVTEXTURES), SW_SHOW);
+		ShowWindow(GetDlgItem(hWnd, IDC_STATIC_EVNEWMJD0), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_EDIT_EVNEWMJD0), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_EVMJDSET), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_CHECK_EVRSTATEV), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_STATIC_EVSHIFT), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_EDIT_EVX), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_EDIT_EVY), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_EDIT_EVZ), SW_HIDE);
+		ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_EVSHIFTSET), SW_HIDE);
+
+		SetDlgItemText(hWnd, IDC_STATIC_EVMAIN, "Events");
+		SetDlgItemText(hWnd, IDC_STATIC_EVTEXTURES, "Enable?");
+		SendDlgItemMessage(hWnd, IDC_COMBO_EVMAIN, CB_RESETCONTENT, 0, 0);
+		for (UINT i = 0; i < CurrentSelection.idx; i++) { //EvMng->GetEventsCount(); i++) {
+			int index = SendDlgItemMessage(hWnd, IDC_COMBO_EVMAIN, CB_ADDSTRING, 0, (LPARAM)EvMng->GetEventName(i).c_str());
+			SendDlgItemMessage(hWnd, IDC_COMBO_EVMAIN, CB_SETITEMDATA, index, (LPARAM)EvMng->GetEventH(i));
+		}
+		SendDlgItemMessage(hWnd, IDC_COMBO_EVTEXTURES, CB_RESETCONTENT, 0, 0);
+		int index = SendDlgItemMessage(hWnd, IDC_COMBO_EVTEXTURES, CB_ADDSTRING, 0, (LPARAM)"ENABLE");
+		SendDlgItemMessage(hWnd, IDC_COMBO_EVTEXTURES, CB_SETITEMDATA, index, (LPARAM)true);
+		index = SendDlgItemMessage(hWnd, IDC_COMBO_EVTEXTURES, CB_ADDSTRING, 0, (LPARAM)"DISABLE");
+		SendDlgItemMessage(hWnd, IDC_COMBO_EVTEXTURES, CB_SETITEMDATA, index, (LPARAM)false);
+		break;
+	}
 	default:
 	{
 		ShowWindow(hWnd_ChildSpawn, SW_HIDE);
@@ -753,6 +788,7 @@ void DialogControl::UpdateEventsDialog(HWND hWnd) {
 	sprintf(namebuf,"%s", EvMng->GetEventName(idx).c_str());
 	SetDlgItemText(hWnd, IDC_EDIT_EVNAME, namebuf);
 	UpdateTriggerDialog(hWnd, idx);
+	SetCheckBox(hWnd, IDC_CHECK_EVDISABLE, !EvMng->IsEventEnabled(idx));
 	Event::TYPE type = EvMng->GetEventType(idx);
 	int etp = (int)type;
 	SetEventsDialog(hWnd, etp);
@@ -876,6 +912,20 @@ void DialogControl::UpdateEventsDialog(HWND hWnd) {
 		NEWCHAR(cbuf);
 		sprintf(cbuf, "%s", EvMng->GetSoundFile(idx).c_str());
 		SetDlgItemText(hWnd, IDC_EDIT_EVNEWMJD0, (LPCSTR)cbuf);
+		break;
+	}
+	case Event::TYPE::ENABLE_EVENT:
+	{
+		Event* evtoe = EvMng->GetEventToEnable(idx);
+		int index = ComboFindItemData(GetDlgItem(hWnd, IDC_COMBO_EVMAIN), evtoe);
+		if (index != -1) {
+			SendDlgItemMessage(hWnd, IDC_COMBO_EVMAIN, CB_SETCURSEL, index, 0);
+		}
+		index = ComboFindItemData(GetDlgItem(hWnd, IDC_COMBO_EVTEXTURES), EvMng->GetToEnable(idx));
+		if (index != -1) {
+			SendDlgItemMessage(hWnd, IDC_COMBO_EVTEXTURES, CB_SETCURSEL, index, 0);
+		}
+
 		break;
 	}
 	}
@@ -1126,17 +1176,20 @@ BOOL DialogControl::EventsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 		{
 			if (HIWORD(wParam) == CBN_SELCHANGE) {
 				Event::TYPE tp = EvMng->GetEventType(idx);
+				int index = SendDlgItemMessage(hWnd, IDC_COMBO_EVTEXTURES, CB_GETCURSEL, 0, 0);
 				if (tp == Event::TYPE::ANIMATION_TRIGGER) {
-					int index = SendDlgItemMessage(hWnd, IDC_COMBO_EVTEXTURES, CB_GETCURSEL, 0, 0);
 					bool forward = (bool)SendDlgItemMessage(hWnd, IDC_COMBO_EVTEXTURES, CB_GETITEMDATA, index, 0);
 					EvMng->SetForward(idx, forward);
 				}
 				else if (tp == Event::TYPE::TEXTURE_SWAP) {
-					int index = SendDlgItemMessage(hWnd, IDC_COMBO_EVTEXTURES, CB_GETCURSEL, 0, 0);
 					int texidx = SendDlgItemMessage(hWnd, IDC_COMBO_EVTEXTURES, CB_GETITEMDATA, index, 0);
 					if (texidx >= 0) {
 						EvMng->SetTexIdx(idx, texidx);
 					}
+				}
+				else if (tp == Event::TYPE::ENABLE_EVENT) {
+					bool enable = (bool)SendDlgItemMessage(hWnd, IDC_COMBO_EVTEXTURES, CB_GETITEMDATA, index, 0);
+					EvMng->SetToEnable(idx, enable);
 				}
 			}
 			break;
@@ -1201,11 +1254,26 @@ BOOL DialogControl::EventsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 
 				break;
 			}
-
+			case Event::TYPE::ENABLE_EVENT:
+			{
+				Event* evtoe = (Event*)SendDlgItemMessage(hWnd, IDC_COMBO_EVMAIN, CB_GETITEMDATA, index, 0);
+				EvMng->SetEventToEnable(idx, evtoe);
+				break;
+			}
 
 			}
 			break;
 		}
+		case IDC_CHECK_EVDISABLE:
+		{
+			if (HIWORD(wParam) == BN_CLICKED) {
+				bool check = IsCheckBoxChecked(hWnd, IDC_CHECK_EVDISABLE);
+				EvMng->SetEnableEvent(idx, !check);
+			}
+			break;
+		}
+
+
 
 		}
 		break;
