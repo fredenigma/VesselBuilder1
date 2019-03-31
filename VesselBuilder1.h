@@ -25,6 +25,8 @@
 
 #define CMAXLEN 2048
 
+#define NEWCHAR(x) char x[256]={'\0'}
+//#define RESETCHAR(x,length) for(UINT i = 0;i<length;i++){x[i]='\0';}
 
 #define SETTINGS_SECTION 0
 #define MESH_SECTION 1

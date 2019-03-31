@@ -3477,6 +3477,7 @@ void EventSection::ParseSection(FILEHANDLE fh) {
 		int mesh;
 		int texidx;
 		string texture_name;
+		string sound_file;
 
 
 		sprintf(cbuf, "EVENT_%i_NAME", event_counter);
@@ -3636,6 +3637,13 @@ void EventSection::ParseSection(FILEHANDLE fh) {
 			oapiReadItem_string(fh, cbuf, ccbuf);
 			texture_name.assign(ccbuf);
 		}
+		if (type == (int)Event::TYPE::PLAYSOUND) {
+			char sndbf[256] = { '\0' };
+			sprintf(cbuf, "EVENT_%i_SNDFILE", event_counter);
+			ConfigCheck(cbuf, Config_idx);
+			oapiReadItem_string(fh, cbuf, sndbf);
+			sound_file.assign(sndbf);
+		}
 		Definitions d;
 		d.name = name;
 		d.type = type;
@@ -3673,6 +3681,7 @@ void EventSection::ParseSection(FILEHANDLE fh) {
 		d.mesh = mesh;
 		d.texidx = texidx;
 		d.texture_name = texture_name;
+		d.sound_file = sound_file;
 		Defs.push_back(d);
 		event_counter++;
 		sprintf(cbuf, "EVENT_%i_ID", event_counter);
@@ -3847,6 +3856,13 @@ void EventSection::WriteSection(FILEHANDLE fh) {
 			sprintf(ccbuf, "%s", Defs[i].texture_name.c_str());
 			oapiWriteItem_string(fh, cbuf, ccbuf);
 		}
+		if (Defs[i].type == (int)Event::TYPE::PLAYSOUND) {
+			char sndbf[256] = { '\0' };
+			sprintf(cbuf, "EVENT_%i_SNDFILE", i);
+			ConfigCheck(cbuf, Config_idx);
+			sprintf(sndbf, "%s", Defs[i].sound_file.c_str());
+			oapiWriteItem_string(fh, cbuf, sndbf);
+		}
 		oapiWriteLine(fh, " ");
 	}
 	return;
@@ -4006,6 +4022,11 @@ void EventSection::ApplySection() {
 			EvMng->CreateDeleteMeEvent(Defs[i].name, trig);
 			break;
 		}
+		case Event::TYPE::PLAYSOUND:
+		{
+			EvMng->CreatePlaySoundEvent(Defs[i].name, trig, Defs[i].sound_file);
+			break;
+		}
 
 		}
 
@@ -4071,6 +4092,9 @@ void EventSection::UpdateSection() {
 			d.mesh = EvMng->GetMesh(i);
 			d.texidx = EvMng->GetTexIdx(i);
 			d.texture_name = EvMng->GetTextureName(i);
+		}
+		else if (tp == Event::TYPE::PLAYSOUND) {
+			d.sound_file = EvMng->GetSoundFile(i);
 		}
 		Defs.push_back(d);
 	}
@@ -4369,7 +4393,7 @@ void Configuration::SetSectionActive(ItemType Type, bool set) {
 
 void Configuration::UpdateValids() {
 
-	for (UINT i = 0; i < 15; i++) {
+	for (UINT i = 0; i < 16; i++) {
 		Sections[i]->SetValid(false);
 	}
 

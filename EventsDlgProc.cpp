@@ -871,6 +871,13 @@ void DialogControl::UpdateEventsDialog(HWND hWnd) {
 		SetDlgItemsTextVector3(hWnd, IDC_EDIT_EVX, IDC_EDIT_EVY, IDC_EDIT_EVZ, shift);
 		break;
 	}
+	case Event::TYPE::PLAYSOUND:
+	{
+		NEWCHAR(cbuf);
+		sprintf(cbuf, "%s", EvMng->GetSoundFile(idx).c_str());
+		SetDlgItemText(hWnd, IDC_EDIT_EVNEWMJD0, (LPCSTR)cbuf);
+		break;
+	}
 	}
 	return;
 }
@@ -1076,6 +1083,34 @@ BOOL DialogControl::EventsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 				GetDlgItemText(hWnd, IDC_EDIT_EVNEWMJD0, tbuf, 256);
 				string newtexture(tbuf);
 				EvMng->SetTextureName(idx,newtexture);
+			}
+			else if (tp == Event::TYPE::PLAYSOUND) {
+				string OrbiterDir= VB1->OrbiterRoot;
+				OPENFILENAME ofn;       // common dialog box structure
+				char szFile[260] = { '\0' };       
+				ZeroMemory(&ofn, sizeof(ofn));
+				ofn.lStructSize = sizeof(ofn);
+				ofn.hwndOwner = hWnd;
+				ofn.lpstrFile = szFile;
+				ofn.lpstrFile[0] = '\0';
+				ofn.nMaxFile = sizeof(szFile);
+				ofn.lpstrFilter = "Sound Files\0*.wav\0\0";
+				ofn.nFilterIndex = 1;
+				ofn.lpstrFileTitle = NULL;
+				ofn.nMaxFileTitle = 0;
+				ofn.lpstrInitialDir = OrbiterDir.c_str();
+				ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+				char currentdir[MAX_PATH];
+
+				GetCurrentDirectory(sizeof(currentdir) / sizeof(char), currentdir);
+
+				if (GetOpenFileName(&ofn) == TRUE)
+				{
+					SetCurrentDirectory(currentdir);
+					SetWindowText(GetDlgItem(hWnd, IDC_EDIT_EVNEWMJD0), szFile);
+					string snd_file(szFile);
+					EvMng->SetSoundFile(idx, snd_file);
+				}
 			}
 			break;
 		}

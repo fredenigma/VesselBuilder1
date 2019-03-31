@@ -4,9 +4,15 @@
 #define __VBVECTOR__H
 
 #include "Log.h"
+#include <typeinfo>
+#include <iostream>
 
 
 using namespace std;
+
+extern HWND _orbiter_window;
+
+
 
 template <class T>
 class VBVector {
@@ -14,25 +20,39 @@ public:
 	typedef typename vector<T>::iterator iterator;
 	VBVector() { vec.clear();
 	}
+	VBVector(vector<T>v) {
+		vec = v;
+		return;
+	}
 	virtual ~VBVector(){
 		vec.~vector();
 	}
 	T& operator[](int idx) 
 	{
+//#ifndef DEBUG
 		if (vec.size() == 0) {
-			T value = T();
-			VBExceptionLog("WARNING: VesselBuilder1: VBVector Exception! called a vector position when size == 0 (idx:%i)",idx);
-			oapiWriteLogV("WARNING: VesselBuilder1: VBVector Exception! called a vector position when size == 0 (idx:%i)",idx);
+			char cbuf[256] = { '\0' };
+			sprintf(cbuf, "WARNING: VesselBuilder1: VBVector Exception! called a vector position when size == 0 (type:%s idx:%i)", typeid(T).name(), idx);
+			VBExceptionLog(cbuf);
+			MessageBox(_orbiter_window, cbuf, "WARNING!", MB_OK);
 			return value;
 		}
+//#endif // !DEBUG
+
+		
 		if (idx >= (int)vec.size()) {
-			VBExceptionLog("WARNING: VesselBuilder1: VBVector Exception! called a vec position greater than vector size! (idx:%i size:%i)", idx, vec.size());
-			oapiWriteLogV("WARNING: VesselBuilder1: VBVector Exception! called a vec position greater than vector size! (idx:%i size:%i)", idx, vec.size());
+			char cbuf[256] = { '\0' };
+			sprintf(cbuf, "WARNING: VesselBuilder1: VBVector Exception! called a vec position greater than vector size! (type:%s idx:%i size:%i)", typeid(T).name(), idx, vec.size());
+			VBExceptionLog(cbuf);
+			MessageBox(_orbiter_window, cbuf, "WARNING!", MB_OK);
 			return vec.back();
 		}
 		else {
 			if (idx < 0) {
-				oapiWriteLogV("WARNING: VesselBuilder1: VBVector Exception! called a vec position <0! (idx:%i size:%i)", idx, vec.size());
+				char cbuf[256] = { '\0'};
+				sprintf(cbuf, "WARNING: VesselBuilder1: VBVector Exception! called a vec position <0! (type:%s idx:%i size:%i)", typeid(T).name(), idx, vec.size());
+				VBExceptionLog(cbuf);
+				MessageBox(_orbiter_window, cbuf, "WARNING!", MB_OK);
 				return vec[0];
 			}
 			else {
@@ -72,7 +92,10 @@ public:
 	}
 	iterator erase(unsigned int position) {
 		if (position >= vec.size()) {
-			oapiWriteLogV("WARNING: VesselBuilder1: VBVector Exception! called erase on a vec position greater than vector size! (idx:%i size:%i)", position, vec.size());
+			char cbuf[256] = { '\0' };
+			sprintf(cbuf, "WARNING: VesselBuilder1: VBVector Exception! called erase on a vec position greater than vector size! (type:%s name:%s idx:%i size:%i)", typeid(T).name(), position, vec.size());
+			VBExceptionLog(cbuf);
+			MessageBox(_orbiter_window, cbuf, "WARNING!", MB_OK);
 			return 0;
 		}
 		return vec.erase(vec.begin()+position);
@@ -111,6 +134,7 @@ public:
 	}
 private:
 	vector<T>vec;
+	T value = T();
 //	T dummy0 = 0;
 
 };

@@ -200,7 +200,7 @@ void SoftDock::StationKeeping() {
 	vs2.version = 2;
 	v->GetStatusEx(&vs2);
 	VECTOR3 relative_pos;
-	VECTOR3 my_gpos, his_gpos;
+//	VECTOR3 my_gpos, his_gpos;
 	VECTOR3 dock_iss_pos, dock_iss_dir, dock_iss_rot;
 	v->GetDockParams(h_dock, dock_iss_pos, dock_iss_dir, dock_iss_rot);
 	VECTOR3 dock_my_pos, dock_my_dir, dock_my_rot;

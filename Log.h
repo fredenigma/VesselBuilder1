@@ -17,3 +17,6 @@ public:
 };
 void InitVBExceptionLog();
 void VBExceptionLog(const char* str, ...);
+
+
+

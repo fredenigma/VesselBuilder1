@@ -458,7 +458,7 @@ BOOL DialogControl::MeshDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 				//sprintf(test, szFile);
 				string result(szFile);
 				string filename = result.substr(meshdir.size()+1, ofn.nFileExtension - 2 - meshdir.size());//result.size()-meshdir.size()-
-				oapiWriteLogV("filename:%s", filename.c_str());
+				//oapiWriteLogV("filename:%s", filename.c_str());
 				SetWindowText(GetDlgItem(hWnd, IDC_EDIT_MESHNAME), filename.c_str());
 				bool changed = MshMng->ChangeMeshFile(CurrentSelection.idx, filename);
 				if (changed) {

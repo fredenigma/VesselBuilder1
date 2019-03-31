@@ -1,5 +1,6 @@
 #define ORBITER_MODULE
 
+#include <Windows.h>
 
 #include <chrono>
 #include <ctime> 
@@ -36,6 +37,7 @@
 #include "SoftDock.h"
 
 
+
 #define LogV(x,...) Log->Log(x,##__VA_ARGS__)
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -43,12 +45,33 @@
 
 HINSTANCE hDLL;
 bool IamFirst = true;
+
+using namespace std;
+
+HWND _orbiter_window;
+
+BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
+{
+
+	DWORD lpdwProcessId;
+	GetWindowThreadProcessId(hwnd, &lpdwProcessId);
+	if (lpdwProcessId == lParam)
+	{
+		_orbiter_window = hwnd;
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+
 //Creation
 VesselBuilder1::VesselBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
 	gcInitialize();
 	Log = new Logger(this);
 	if (IamFirst) {
 		IamFirst = false;
+		EnumWindows(EnumWindowsProc, GetCurrentProcessId());
 		Log->InitLog();
 		InitVBExceptionLog();
 		//oapiWriteLogV("First : %s", GetName());
@@ -690,7 +713,15 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 		return 1;
 	}
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && KEYMOD_CONTROL(kstate) && key == OAPI_KEY_K) {
-	
+		
+		VBVector<OBJHANDLE> v;
+		v.clear();
+		for (UINT i = 0; i < 10; i++) {
+			OBJHANDLE h;
+			v.push_back(h);
+		}
+		sprintf(oapiDebugString(), "VBV[15]:%i", v[15]);
+
 		//Trig.KeyMods.Alt = true;
 		//Trig.repeat_mode = Event::TRIGGER::REPEAT_MODE::ALWAYS;
 		//EvMng->CreateChildSpawnEvent("TestSpawn", Trig, "SLS\\core", "stage");

@@ -697,6 +697,7 @@ public:
 		int mesh;
 		DWORD texidx;
 		string texture_name;
+		string sound_file;
 	};
 	VBVector<Definitions> Defs;
 	EventManager *EvMng;

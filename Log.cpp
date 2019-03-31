@@ -71,5 +71,6 @@ void VBExceptionLog(const char* str, ...) {
 	sprintf(buf2, "%.3f - %s", oapiGetSimTime(), buf);
 	oapiWriteLine(fh, buf2);
 	oapiCloseFile(fh, FILE_APP);
+	
 	return;
 }
