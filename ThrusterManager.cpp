@@ -28,15 +28,15 @@ UINT ThrusterManager::AddThrDef(string name, VECTOR3 pos, VECTOR3 dir, double ma
 	thr.th = VB1->CreateThruster(pos, dir, maxth, ph, isp0, isp_ref, p_ref);
 	thr.pos = pos;
 	*thr.pos_ptr = pos;
-	thr.antidir = dir*(-1);
-	*thr.antidir_ptr = dir*(-1);
+	thr.dir = dir;
+	*thr.dir_ptr = dir;
 	thr_defs.push_back(thr);
 	return thr_defs.size()-1;
 }
 void ThrusterManager::DelThrDef(def_idx d_idx) {
 	LogV("Deleting Thruster:%i", d_idx);
 	VB1->DelThruster(thr_defs[d_idx].th);
-	delete thr_defs[d_idx].antidir_ptr;
+	delete thr_defs[d_idx].dir_ptr;
 	delete thr_defs[d_idx].pos_ptr;
 	thr_defs.erase(thr_defs.begin() + d_idx);
 	LogV("Deleted");
@@ -82,8 +82,8 @@ void ThrusterManager::SetThrPos(def_idx d_idx, VECTOR3 newpos) {
 }
 void ThrusterManager::SetThrDir(def_idx d_idx, VECTOR3 newdir) {
 	VB1->SetThrusterDir(thr_defs[d_idx].th, newdir);
-	thr_defs[d_idx].antidir = newdir*(-1);
-	*thr_defs[d_idx].antidir_ptr = newdir*(-1);
+	thr_defs[d_idx].dir = newdir;
+	*thr_defs[d_idx].dir_ptr = newdir;
 	return;
 }
 void ThrusterManager::SetThrMax0(def_idx d_idx, double newMax0) {
@@ -467,8 +467,8 @@ void ThrusterManager::AddThrParticles(def_idx d_idx, def_idx particle_idx) {
 VECTOR3* ThrusterManager::GetThrPosPtr(def_idx d_idx) {
 	return thr_defs[d_idx].pos_ptr;
 }
-VECTOR3* ThrusterManager::GetThrAntiDirPtr(def_idx d_idx) {
-	return thr_defs[d_idx].antidir_ptr;
+VECTOR3* ThrusterManager::GetThrDirPtr(def_idx d_idx) {
+	return thr_defs[d_idx].dir_ptr;
 }
 void ThrusterManager::Clear() {
 	LogV("Clearing Thrusters Section");

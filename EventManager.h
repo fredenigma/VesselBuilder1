@@ -58,8 +58,11 @@ public:
 	string GetName();
 	TRIGGER GetTrigger() { return Trigger; }
 	bool Enabled;
+	bool DefaultEnabled;
 	void Enable(bool set) { Enabled = set; }
 	bool IsEnabled() { return Enabled; }
+	bool GetDefaultEnabled() { return DefaultEnabled; }
+	void SetDefaultEnabled(bool set) { DefaultEnabled = set; }
 };
 
 class NullEvent : public Event {
@@ -277,6 +280,12 @@ public:
 	Event::TYPE GetEventType(UINT idx);
 	bool IsEventEnabled(UINT idx);
 	void SetEnableEvent(UINT idx, bool set);
+	bool GetEventDefaultEnabled(UINT idx);
+	void SetEventDefaultEnabled(UINT idx, bool set);
+	VBVector<UINT> GetEventsConsumed();
+	void SetEventConsumed(UINT idx, bool set);
+	VBVector<UINT> GetEventsToReconsume();
+	void ConsumeEvent(UINT idx);
 
 	void SetSpawnedVesselName(UINT idx, string newName);
 	void SetSpawnedVesselClass(UINT idx, string newClass);

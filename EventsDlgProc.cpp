@@ -788,7 +788,8 @@ void DialogControl::UpdateEventsDialog(HWND hWnd) {
 	sprintf(namebuf,"%s", EvMng->GetEventName(idx).c_str());
 	SetDlgItemText(hWnd, IDC_EDIT_EVNAME, namebuf);
 	UpdateTriggerDialog(hWnd, idx);
-	SetCheckBox(hWnd, IDC_CHECK_EVDISABLE, !EvMng->IsEventEnabled(idx));
+	//SetCheckBox(hWnd, IDC_CHECK_EVDISABLE, !EvMng->IsEventEnabled(idx));
+	SetCheckBox(hWnd, IDC_CHECK_EVDISABLE, !EvMng->GetEventDefaultEnabled(idx));
 	Event::TYPE type = EvMng->GetEventType(idx);
 	int etp = (int)type;
 	SetEventsDialog(hWnd, etp);
@@ -1269,6 +1270,7 @@ BOOL DialogControl::EventsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 			if (HIWORD(wParam) == BN_CLICKED) {
 				bool check = IsCheckBoxChecked(hWnd, IDC_CHECK_EVDISABLE);
 				EvMng->SetEnableEvent(idx, !check);
+				EvMng->SetEventDefaultEnabled(idx, !check);
 			}
 			break;
 		}

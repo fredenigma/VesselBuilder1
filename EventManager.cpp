@@ -2,6 +2,7 @@
 #include "DialogControl.h"
 
 #include "EventManager.h"
+#include "MeshManager.h"
 #include "AnimationManager.h"
 #include "MET.h"
 #include "ConfigurationManager.h"
@@ -228,6 +229,7 @@ void Child_Spawn::ConsumeEvent() {
 		spawend_vessel_h = oapiCreateVesselEx(spawned_vessel_name.c_str(), spawned_vessel_class.c_str(), &vs);
 		if (mesh_to_del >= 0) {
 			VB1->DelMesh(mesh_to_del);
+			VB1->MshMng->mesh_deleted.push_back(mesh_to_del);
 		}
 	}
 	return;
@@ -1071,5 +1073,44 @@ bool EventManager::IsEventEnabled(UINT idx) {
 }
 void EventManager::SetEnableEvent(UINT idx, bool set) {
 	Events[idx]->Enable(set);
+	return;
+}
+bool EventManager::GetEventDefaultEnabled(UINT idx) {
+	return Events[idx]->GetDefaultEnabled();
+}
+void EventManager::SetEventDefaultEnabled(UINT idx, bool set) {
+	Events[idx]->SetDefaultEnabled(set);
+	return;
+}
+
+VBVector<UINT> EventManager::GetEventsConsumed() {
+	VBVector<UINT> consumed;
+	consumed.clear();
+	for (UINT i = 0; i < Events.size(); i++) {
+		if (Events[i]->IsEventConsumed()) {
+			consumed.push_back(i);
+		}
+	}
+	return consumed;
+}
+void EventManager::SetEventConsumed(UINT idx, bool set) {
+	Events[idx]->SetConsumed(set);
+	return;
+}
+VBVector<UINT> EventManager::GetEventsToReconsume() {
+	VBVector<UINT> to_reconsume;
+	to_reconsume.clear();
+	for (UINT i = 0; i < Events.size(); i++) {
+		if (Events[i]->IsEventConsumed()) {
+			if ((Events[i]->Type() == Event::TYPE::TEXTURE_SWAP) || (Events[i]->Type() == Event::TYPE::ENABLE_EVENT)) {
+				to_reconsume.push_back(i);
+			}
+		}
+	}
+	return to_reconsume;
+}
+
+void EventManager::ConsumeEvent(UINT idx) {
+	Events[idx]->ConsumeEvent();
 	return;
 }

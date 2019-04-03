@@ -414,6 +414,8 @@ void DialogControl::InitDialog(HWND hWnd) {
 	SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_SETITEMDATA, index, (LPARAM)Event::TYPE::DELETE_ME);
 	index = SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_ADDSTRING, 0, (LPARAM)"PLAY SOUND");
 	SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_SETITEMDATA, index, (LPARAM)Event::TYPE::PLAYSOUND);
+	index = SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_ADDSTRING, 0, (LPARAM)"ENABLE OTHER EVENT");
+	SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_SETITEMDATA, index, (LPARAM)Event::TYPE::ENABLE_EVENT);
 	SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_SETCURSEL, 0, 0);
 	ShowWindow(GetDlgItem(hWnd, IDC_COMBO_EVENTTYPE), SW_HIDE);
 

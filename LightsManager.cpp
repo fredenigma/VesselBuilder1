@@ -229,7 +229,7 @@ UINT LightsManager::AddLightDef(LightEmitter::TYPE type, string name, VECTOR3 po
 		ld.LE->SetDirectionRef(ld.dir_ptr);
 	}
 	ld.LE->Activate(false);
-	
+	ld.LE->SetVisibility(vis);
 	
 	UINT index = lights_def.size();
 	lights_def.push_back(ld);

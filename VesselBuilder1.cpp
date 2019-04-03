@@ -354,6 +354,15 @@ void VesselBuilder1::clbkLoadStateEx(FILEHANDLE scn,void *vs)
 				DckMng->docks_to_del.push_back(DckMng->GetDH(DckMng->docks_jettisoned[i]));
 			}
 		}
+		else if (!_strnicmp(line,"MESH_DELETED",12)) {
+			NEWCHAR(meshes_gone_c);
+			sscanf(line + 12, "%s", meshes_gone_c);
+			string meshes_gone_s(meshes_gone_c);
+			MshMng->mesh_deleted = readVectorUINT(meshes_gone_s);
+			for (UINT i = 0; i < MshMng->mesh_deleted.size(); i++) {
+				DelMesh(MshMng->mesh_deleted[i], false);
+			}
+		}
 		else if (!_strnicmp(line, "CURRENT_CAM",11)) {
 			UINT cam = 0;
 			sscanf(line + 11, "%i", &cam);
@@ -392,6 +401,24 @@ void VesselBuilder1::clbkLoadStateEx(FILEHANDLE scn,void *vs)
 			Met->Enable(true);
 			Met->SetMJD0(mjd0);
 		}
+		else if (!_strnicmp(line, "EVENTS_CONSUMED", 15)) {
+			NEWCHAR(evcons_c);
+			sscanf(line + 15, "%s", evcons_c);
+			string ev_cons_s(evcons_c);
+			VBVector<UINT>events_consumed = readVectorUINT(ev_cons_s);
+			for (UINT i = 0; i < events_consumed.size(); i++) {
+				EvMng->SetEventConsumed(i, true);
+			}
+		}
+		else if (!_strnicmp(line, "EVENTS_TO_RECONSUME", 19)) {
+			NEWCHAR(ev_to_rec_c);
+			sscanf(line + 19, "%s", ev_to_rec_c);
+			string ev_to_rec_s(ev_to_rec_c);
+			VBVector<UINT>events_to_reconsume = readVectorUINT(ev_to_rec_s);
+			for (UINT i = 0; i < events_to_reconsume.size(); i++) {
+				EvMng->ConsumeEvent(i);
+			}
+		}
 		else{ 
 			ParseScenarioLineEx(line, vs); 
 		}	
@@ -412,6 +439,23 @@ void VesselBuilder1::clbkSaveState(FILEHANDLE scn)
 	if (ConfigMng->GetCurrentConfiguration() != 0) {
 		char cbuf[256] = { '\0' };
 		oapiWriteScenario_int(scn, "CONFIGURATION", ConfigMng->GetCurrentConfiguration());
+	}
+
+	if (EvMng->GetEventsCount() > 0) {
+		VBVector<UINT> ev_consumed = EvMng->GetEventsConsumed();
+		if (ev_consumed.size() > 0) {
+			NEWCHAR(cbuf);
+			string evcons = WriteVectorUINT(ev_consumed, false);
+			sprintf(cbuf, "%s", evcons.c_str());
+			oapiWriteScenario_string(scn, "EVENTS_CONSUMED", cbuf);
+		}
+		VBVector<UINT> ev_to_reconsume = EvMng->GetEventsToReconsume();
+		if (!ev_to_reconsume.empty()) {
+			NEWCHAR(cbuf);
+			string ev_torecon_s = WriteVectorUINT(ev_to_reconsume, false);
+			sprintf(cbuf, "%s", ev_torecon_s.c_str());
+			oapiWriteScenario_string(scn, "EVENTS_TO_RECONSUME", cbuf);
+		}
 	}
 
 	for (UINT i = 0; i < AnimMng->GetAnimDefsCount(); i++) {
@@ -436,6 +480,12 @@ void VesselBuilder1::clbkSaveState(FILEHANDLE scn)
 		char d_buff[256] = { '\0' };
 		sprintf(d_buff, "%s", docks_gone.c_str());
 		oapiWriteScenario_string(scn, cbuf, d_buff);
+	}
+	if (!MshMng->mesh_deleted.empty()) {
+		string meshes_gone = WriteVectorUINT(MshMng->mesh_deleted, false);
+		NEWCHAR(cbuf);
+		sprintf(cbuf, "%s", meshes_gone.c_str());
+		oapiWriteScenario_string(scn, "MESH_DELETED", cbuf);
 	}
 	if (LightsMng->GetBeaconCount() > 0) {
 		char cbuf[256] = { '\0' };

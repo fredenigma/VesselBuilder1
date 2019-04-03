@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.26430.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VesselBuilder1", "VesselBuilder1.vcxproj", "{1DA48BDD-D3DB-421C-A742-E0F2FB4CDC9E}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CamTarget", "..\CamTarget\CamTarget.vcxproj", "{A10DDA58-7257-4348-8481-454DED2DF248}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -15,6 +17,10 @@ Global
 		{1DA48BDD-D3DB-421C-A742-E0F2FB4CDC9E}.Debug|x86.Build.0 = Debug|Win32
 		{1DA48BDD-D3DB-421C-A742-E0F2FB4CDC9E}.Release|x86.ActiveCfg = Release|Win32
 		{1DA48BDD-D3DB-421C-A742-E0F2FB4CDC9E}.Release|x86.Build.0 = Release|Win32
+		{A10DDA58-7257-4348-8481-454DED2DF248}.Debug|x86.ActiveCfg = Debug|Win32
+		{A10DDA58-7257-4348-8481-454DED2DF248}.Debug|x86.Build.0 = Debug|Win32
+		{A10DDA58-7257-4348-8481-454DED2DF248}.Release|x86.ActiveCfg = Release|Win32
+		{A10DDA58-7257-4348-8481-454DED2DF248}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

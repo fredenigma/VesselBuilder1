@@ -136,6 +136,7 @@ MeshManager::MeshManager(VesselBuilder1 *_VB1) {
 	HighLightColor = HIGHLIGHTCOLORRED;
 	md_restore.clear();
 	nMeshes = 0;
+	mesh_deleted.clear();
 	//MM = this;
 //	WD3D9 = UsingD3D9();
 	return;
@@ -664,6 +665,7 @@ void MeshManager::Clear() {
 	LogV("Clearing Mesh Section");
 	VB1->ClearMeshes();
 	msh_defs.clear();
+	mesh_deleted.clear();
 	nMeshes = 0;
 	LogV("Clearing Mesh Section Completed");
 }

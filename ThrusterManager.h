@@ -30,7 +30,7 @@ struct THR_DEF {
 	double p_ref;
 	double isp_ref;
 	VECTOR3 pos;
-	VECTOR3 antidir;
+	VECTOR3 dir;
 	//UINT ExhaustID;
 	//bool HasExhaust;
 	VBVector<THEX_DEF>Exhausts_def;
@@ -39,14 +39,14 @@ struct THR_DEF {
 	//VBVector<PSTREAM_HANDLE>particles_h;
 	VBVector<THPART_DEF>particles_def;
 	VECTOR3* pos_ptr;
-	VECTOR3* antidir_ptr;
+	VECTOR3* dir_ptr;
 	THR_DEF() {
 		th = NULL;
 		name.clear();
 		p_ref = 101400;
 		isp_ref = 0;
 		pos = _V(0, 0, 0);
-		antidir = _V(0, 0, -1);
+		dir = _V(0, 0, 1);
 		//ExhaustID = (UINT)-1;
 		//HasExhaust = false;
 		Exhausts_def.clear();
@@ -54,7 +54,7 @@ struct THR_DEF {
 		//particles_id.clear();
 		//particles_h.clear();
 		pos_ptr = new VECTOR3;
-		antidir_ptr = new VECTOR3;
+		dir_ptr = new VECTOR3;
 	}
 };
 
@@ -125,7 +125,7 @@ public:
 	//void AddThrParticles(def_idx d_idx, def_idx particle_idx);
 	//void ClearThrParticles(def_idx d_idx);
 	VECTOR3* GetThrPosPtr(def_idx d_idx);
-	VECTOR3* GetThrAntiDirPtr(def_idx d_idx);
+	VECTOR3* GetThrDirPtr(def_idx d_idx);
 	void Clear();
 };
 

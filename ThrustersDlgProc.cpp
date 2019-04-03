@@ -271,7 +271,7 @@ BOOL DialogControl::ThrDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 			if (HIWORD(wParam) == BN_CLICKED) {
 				LRESULT getcheck = SendDlgItemMessage(hWnd, IDC_CHECK_THSHOW, BM_GETCHECK, 0, 0);
 				if (getcheck == BST_CHECKED) {
-					ThLaserMap[idx] = VB1->Laser->CreateLaser(ThrMng->GetThrPosPtr(idx), ThrMng->GetThrAntiDirPtr(idx), LASER_GREEN_TEX);
+					ThLaserMap[idx] = VB1->Laser->CreateLaser(ThrMng->GetThrPosPtr(idx), ThrMng->GetThrDirPtr(idx), LASER_GREEN_TEX);
 					//VB1->CreateThExhausts();
 				}
 				else {

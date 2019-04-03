@@ -32,7 +32,7 @@ public:
 //#ifndef DEBUG
 		if (vec.size() == 0) {
 			char cbuf[256] = { '\0' };
-			sprintf(cbuf, "WARNING: VesselBuilder1: VBVector Exception! called a vector position when size == 0 (type:%s idx:%i)", typeid(T).name(), idx);
+			sprintf(cbuf, "WARNING: VesselBuilder1: VBVector Exception! called a vector position when size == 0 (type:%s idx:%i ver:%i)", typeid(T).name(), idx,VBVERSION);
 			VBExceptionLog(cbuf);
 			MessageBox(_orbiter_window, cbuf, "WARNING!", MB_OK);
 			return value;
@@ -42,7 +42,7 @@ public:
 		
 		if (idx >= (int)vec.size()) {
 			char cbuf[256] = { '\0' };
-			sprintf(cbuf, "WARNING: VesselBuilder1: VBVector Exception! called a vec position greater than vector size! (type:%s idx:%i size:%i)", typeid(T).name(), idx, vec.size());
+			sprintf(cbuf, "WARNING: VesselBuilder1: VBVector Exception! called a vec position greater than vector size! (type: %s idx:%i size:%i ver:%i)", typeid(T).name(), idx, vec.size(),VBVERSION);
 			VBExceptionLog(cbuf);
 			MessageBox(_orbiter_window, cbuf, "WARNING!", MB_OK);
 			return vec.back();
@@ -50,7 +50,7 @@ public:
 		else {
 			if (idx < 0) {
 				char cbuf[256] = { '\0'};
-				sprintf(cbuf, "WARNING: VesselBuilder1: VBVector Exception! called a vec position <0! (type:%s idx:%i size:%i)", typeid(T).name(), idx, vec.size());
+				sprintf(cbuf, "WARNING: VesselBuilder1: VBVector Exception! called a vec position <0! (type: %s idx:%i size:%i ver:%i)", typeid(T).name(), idx, vec.size(),VBVERSION);
 				VBExceptionLog(cbuf);
 				MessageBox(_orbiter_window, cbuf, "WARNING!", MB_OK);
 				return vec[0];
@@ -93,7 +93,7 @@ public:
 	iterator erase(unsigned int position) {
 		if (position >= vec.size()) {
 			char cbuf[256] = { '\0' };
-			sprintf(cbuf, "WARNING: VesselBuilder1: VBVector Exception! called erase on a vec position greater than vector size! (type:%s name:%s idx:%i size:%i)", typeid(T).name(), position, vec.size());
+			sprintf(cbuf, "WARNING: VesselBuilder1: VBVector Exception! called erase on a vec position greater than vector size! (type: %s name:%s idx:%i size:%i ver:%i)", typeid(T).name(), position, vec.size(),VBVERSION);
 			VBExceptionLog(cbuf);
 			MessageBox(_orbiter_window, cbuf, "WARNING!", MB_OK);
 			return 0;
@@ -130,7 +130,7 @@ public:
 		return;
 	}
 	bool empty() {
-		return vec.size() == 0 ? true : false;
+		return vec.size() > 0 ? false : true;
 	}
 private:
 	vector<T>vec;

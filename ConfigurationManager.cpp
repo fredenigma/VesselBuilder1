@@ -73,22 +73,22 @@ void SettingSection::ParseSection(FILEHANDLE fh) {
 	char cbuf[256] = { '\0' };
 	sprintf(cbuf, "EMPTY_MASS");
 	ConfigCheck(cbuf, Config_idx);
-	oapiReadItem_float(fh, cbuf, Def.EmptyMass);
+	if (!oapiReadItem_float(fh, cbuf, Def.EmptyMass)) { Def.EmptyMass = 1000; }
 	sprintf(cbuf, "VSIZE");
 	ConfigCheck(cbuf, Config_idx);
-	oapiReadItem_float(fh, cbuf, Def.Size);
+	if (!oapiReadItem_float(fh, cbuf, Def.Size)) { Def.Size = 10; }
 	sprintf(cbuf, "PMI");
 	ConfigCheck(cbuf, Config_idx);
-	oapiReadItem_vec(fh, cbuf, Def.PMI);
+	if (!oapiReadItem_vec(fh, cbuf, Def.PMI)) { Def.PMI = _V(20, 20, 10); }
 	sprintf(cbuf, "CSECTIONS");
 	ConfigCheck(cbuf, Config_idx);
-	oapiReadItem_vec(fh, cbuf, Def.CrossSections);
+	if (!oapiReadItem_vec(fh, cbuf, Def.CrossSections)) { Def.CrossSections = _V(20, 20, 20); }
 	sprintf(cbuf, "GRAVITYGDAMP");
 	ConfigCheck(cbuf, Config_idx);
-	oapiReadItem_float(fh, cbuf, Def.GravityGradientDamping);
+	if (!oapiReadItem_float(fh, cbuf, Def.GravityGradientDamping)) { Def.GravityGradientDamping = 0; }
 	sprintf(cbuf, "ROTDRAG");
 	ConfigCheck(cbuf, Config_idx);
-	oapiReadItem_vec(fh, cbuf, Def.RotDrag);
+	if (!oapiReadItem_vec(fh, cbuf, Def.RotDrag)) { Def.RotDrag = _V(0.01, 0.01, 0.01); }
 	sprintf(cbuf, "MET_ENABLED");
 	ConfigCheck(cbuf, Config_idx);
 	if (!oapiReadItem_bool(fh, cbuf, Def.met_enabled)) { Def.met_enabled = false; }
@@ -3999,7 +3999,7 @@ void EventSection::ApplySection() {
 		}
 
 		Event::TYPE etp = (Event::TYPE)Defs[i].type;
-		Event* ev;
+		Event* ev = NULL;
 		switch (etp) {
 		case Event::TYPE::CHILD_SPAWN:
 		{
@@ -4059,13 +4059,17 @@ void EventSection::ApplySection() {
 		}
 		case Event::TYPE::ENABLE_EVENT:
 		{
-			Event* ev_to_enable = EvMng->GetEventH(Defs[i].other_event_enable);
+			Event* ev_to_enable = EvMng->GetEventH(Defs[i].other_event_to_enable);
 			ev = EvMng->CreateEnableEvent(Defs[i].name, trig, ev_to_enable, Defs[i].other_event_enable);
 			break;
 		}
-		ev->Enable(!Defs[i].disabled);
+		
 		}
-
+		if (ev) {
+			ev->SetDefaultEnabled(!Defs[i].disabled);
+			ev->Enable(!Defs[i].disabled);
+		}
+		
 	}
 	return;
 }
@@ -4076,7 +4080,8 @@ void EventSection::UpdateSection() {
 		d.name = EvMng->GetEventName(i);
 		Event::TYPE tp = EvMng->GetEventType(i);
 		d.type = (int)tp;
-		d.disabled = !EvMng->IsEventEnabled(i);
+		//bool enabled = EvMng->IsEventEnabled(i);
+		d.disabled = !EvMng->GetEventDefaultEnabled(i);
 		Event::TRIGGER trig = EvMng->GetEventTrigger(i);
 		d.trigger_type = (int)trig.Type;
 		d.repeat_mode = (int)trig.repeat_mode;

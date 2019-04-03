@@ -94,5 +94,6 @@ public:
 	WORD GetMeshVisibility(def_idx d_idx);
 	void SetMeshVisibility(def_idx d_idx, WORD visibility);
 	void PreLoadMesh(string meshname,VECTOR3 dir, VECTOR3 rot);
+	VBVector<UINT> mesh_deleted;
 	void Clear();
 };
