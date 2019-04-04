@@ -1964,6 +1964,7 @@ void ThrusterGroupSection::WriteSection(FILEHANDLE fh) {
 		thr_s = VB1->WriteVectorUINT(Thrusters[THGROUP_ATT_FORWARD]);
 		sprintf(ccbuf, "%s", thr_s.c_str());
 		sprintf(cbuf, "THGROUP_ATT_FORWARD_THRUSTERS");
+		ConfigCheck(cbuf, Config_idx);
 		oapiWriteItem_string(fh, cbuf, ccbuf);
 		ConfigCheck(cbuf, Config_idx);
 		thr_s.clear();
@@ -4792,12 +4793,16 @@ UINT ConfigurationManager::AddConfiguration(VesselBuilder1* VB1, map<ItemType, b
 
 
 void ConfigurationManager::ApplyConfiguration(UINT config, bool firstload) {
+	LogV("Applying Configuration:%i", config);
 	if (config >= Configurations.size()) {
 		return;
 	}
-	if ((!firstload)&&(VB1->DlgOpened)) { // Update non va fatto anche se non apro la dialog
+	if (!firstload) { 
 		UINT old_config = CurrentConfiguration;
-		Configurations[old_config]->Update();
+		if (VB1->DlgOpened) {// Update non va fatto anche se non apro la dialog
+			Configurations[old_config]->Update();
+		}
+		
 		map<ItemType, bool>newSects = Configurations[config]->GetSections();
 		map<ItemType, bool>::iterator it;
 		for (it = newSects.begin(); it != newSects.end(); it++) {
@@ -5085,101 +5090,3 @@ void ConfigurationManager::CopyConfigurationSection(UINT config_src, UINT config
 }
 
 
-/*
-double ConfigurationManager::GetEmptyMass(UINT config) {
-	if (config == GetCurrentConfiguration()) {
-		return VB1->SetMng->GetEmptyMass();
-	}
-	else {
-		return ((SettingSection*)Configurations[config]->Sections[SETTINGS_SECTION])->GetEmptyMass();
-	}	
-}
-double ConfigurationManager::GetSize(UINT config) {
-	return config == GetCurrentConfiguration() ? VB1->SetMng->GetSize() : ((SettingSection*)Configurations[config]->Sections[SETTINGS_SECTION])->GetSize();
-}
-VECTOR3 ConfigurationManager::GetPMI(UINT config) {
-	return config == GetCurrentConfiguration() ? VB1->SetMng->GetPMI() : ((SettingSection*)Configurations[config]->Sections[SETTINGS_SECTION])->GetPMI();
-}
-VECTOR3 ConfigurationManager::GetCrossSections(UINT config) {
-	return config == GetCurrentConfiguration() ? VB1->SetMng->GetCrossSections() : ((SettingSection*)Configurations[config]->Sections[SETTINGS_SECTION])->GetCrossSections();
-}
-double ConfigurationManager::GetGravityGradientDamping(UINT config) {
-	return config == GetCurrentConfiguration() ? VB1->SetMng->GetGravityGradientDamping() : ((SettingSection*)Configurations[config]->Sections[SETTINGS_SECTION])->GetGravityGradientDamping();
-}
-VECTOR3 ConfigurationManager::GetRotDrag(UINT config) {
-	return config == GetCurrentConfiguration() ? VB1->SetMng->GetRotDrag() : ((SettingSection*)Configurations[config]->Sections[SETTINGS_SECTION])->GetRotDrag();
-}
-
-int ConfigurationManager::GetMeshDefCount(UINT config) {
-	return config == GetCurrentConfiguration() ? VB1->MshMng->GetMeshCount() : ((MeshSection*)Configurations[config]->Sections[MESH_SECTION])->GetMeshDefCount();
-}
-string ConfigurationManager::GetMeshName(UINT config, UINT idx) {
-	return config == GetCurrentConfiguration() ? VB1->MshMng->GetMeshDefName(idx) : ((MeshSection*)Configurations[config]->Sections[MESH_SECTION])->GetMeshName(idx);
-}
-VECTOR3 ConfigurationManager::GetMeshPos(UINT config, UINT idx) {
-	return config == GetCurrentConfiguration() ? VB1->MshMng->GetMeshDefPos(idx) : ((MeshSection*)Configurations[config]->Sections[MESH_SECTION])->GetMeshPos(idx);
-}
-VECTOR3 ConfigurationManager::GetMeshDir(UINT config, UINT idx) {
-	return config == GetCurrentConfiguration() ? VB1->MshMng->GetMeshDefDir(idx) : ((MeshSection*)Configurations[config]->Sections[MESH_SECTION])->GetMeshDir(idx);
-}
-VECTOR3 ConfigurationManager::GetMeshRot(UINT config, UINT idx) {
-	return config == GetCurrentConfiguration() ? VB1->MshMng->GetMEshDefRot(idx) : ((MeshSection*)Configurations[config]->Sections[MESH_SECTION])->GetMeshRot(idx);
-}
-WORD ConfigurationManager::GetMeshVisibility(UINT config, UINT idx) {
-	return config == GetCurrentConfiguration() ? VB1->MshMng->GetMeshVisibility(idx) : ((MeshSection*)Configurations[config]->Sections[MESH_SECTION])->GetMeshVisibility(idx);
-}
-UINT ConfigurationManager::GetDockCount(UINT config) {
-	return config == GetCurrentConfiguration() ? VB1->DckMng->GetDockCount() : ((DockSection*)Configurations[config]->Sections[DOCK_SECTION])->GetDockCount();
-}
-string ConfigurationManager::GetDockName(UINT config, UINT idx) {
-	return config == GetCurrentConfiguration() ? VB1->DckMng->GetDockName(idx) : ((DockSection*)Configurations[config]->Sections[DOCK_SECTION])->GetDockName(idx);
-}
-void ConfigurationManager::GetDockParams(UINT config, UINT idx, VECTOR3 &pos, VECTOR3 &dir, VECTOR3 &rot) {
-	return config == GetCurrentConfiguration() ?  VB1->DckMng->GetDockParams(idx, pos, dir, rot) : ((DockSection*)Configurations[config]->Sections[DOCK_SECTION])->GetDockParams(idx, pos, dir, rot);
-}
-bool ConfigurationManager::IsDockJettisonable(UINT config, UINT idx) {
-	return config == GetCurrentConfiguration() ? VB1->DckMng->IsDockJettisonable(idx) : ((DockSection*)Configurations[config]->Sections[DOCK_SECTION])->IsDockJettisonable(idx);
-}
-UINT ConfigurationManager::GetAttCount(UINT config) {
-	return config == GetCurrentConfiguration() ? VB1->AttMng->GetAttCount() : ((AttachmentSection*)Configurations[config]->Sections[ATT_SECTION])->GetAttCount();
-}
-bool ConfigurationManager::GetIdCheck(UINT config, UINT idx) {
-	return config == GetCurrentConfiguration() ? VB1->AttMng->AttToParent(idx) : ((AttachmentSection*)Configurations[config]->Sections[ATT_SECTION])->AttToParent(idx);
-}
-string ConfigurationManager::GetIdCheckString(UINT config, UINT idx) {
-	return config == GetCurrentConfiguration() ? VB1->AttMng->GetIdCheckString(idx) : ((AttachmentSection*)Configurations[config]->Sections[ATT_SECTION])->GetIdCheckString(idx);
-}
-string ConfigurationManager::GetAttID(UINT config, UINT idx) {
-	return config == GetCurrentConfiguration() ? VB1->AttMng->GetAttDefId(idx) : ((AttachmentSection*)Configurations[config]->Sections[ATT_SECTION])->GetAttID(idx);
-}
-bool ConfigurationManager::AttToParent(UINT config, UINT idx) {
-	return config == GetCurrentConfiguration() ? VB1->AttMng->AttToParent(idx) : ((AttachmentSection*)Configurations[config]->Sections[ATT_SECTION])->AttToParent(idx);
-}
-void ConfigurationManager::GetAttPosDirRot(UINT config, UINT idx, VECTOR3 &pos, VECTOR3 &dir, VECTOR3 &rot) {
-	return config == GetCurrentConfiguration() ? VB1->AttMng->GetAttDefPosDirRot(idx, pos, dir, rot) : ((AttachmentSection*)Configurations[config]->Sections[ATT_SECTION])->GetAttPosDirRot(idx, pos, dir, rot);
-}
-double ConfigurationManager::GetAttRange(UINT config, UINT idx) {
-	return config == GetCurrentConfiguration() ? VB1->AttMng->GetAttDefRange(idx) : ((AttachmentSection*)Configurations[config]->Sections[ATT_SECTION])->GetAttRange(idx);
-}
-
-UINT ConfigurationManager::GetAnimCount(UINT config) {
-	return config == GetCurrentConfiguration() ? VB1->AnimMng->GetAnimDefsCount() : ((AnimationSection*)Configurations[config]->Sections[ANIM_SECTION])->GetAnimCount();
-}
-double ConfigurationManager::GetAnimDefState(UINT config, UINT idx) {
-	return config == GetCurrentConfiguration() ? VB1->AnimMng->GetAnimDefState(idx) : ((AnimationSection*)Configurations[config]->Sections[ANIM_SECTION])->GetAnimDefState(idx);
-}
-string ConfigurationManager::GetAnimName(UINT config, UINT idx) {
-	return config == GetCurrentConfiguration() ? VB1->AnimMng->GetAnimName(idx) : ((AnimationSection*)Configurations[config]->Sections[ANIM_SECTION])->GetAnimName(idx);
-}
-UINT ConfigurationManager::GetAnimNComps(UINT config, UINT idx) {
-	return config == GetCurrentConfiguration() ? VB1->AnimMng->GetAnimNComps(idx) : ((AnimationSection*)Configurations[config]->Sections[ANIM_SECTION])->GetAnimNComps(idx);
-}
-DWORD ConfigurationManager::GetAnimKey(UINT config, UINT idx) {
-	return config == GetCurrentConfiguration() ? VB1->AnimMng->GetAnimKey(idx) : ((AnimationSection*)Configurations[config]->Sections[ANIM_SECTION])->GetAnimKey(idx);
-}
-double ConfigurationManager::GetAnimDuration(UINT config, UINT idx) {
-	return config == GetCurrentConfiguration() ? VB1->AnimMng->GetAnimDuration(idx) : ((AnimationSection*)Configurations[config]->Sections[ANIM_SECTION])->GetAnimDuration(idx);
-}
-AnimCycleType ConfigurationManager::GetAnimCycle(UINT config, UINT idx) {
-	return config == GetCurrentConfiguration() ? VB1->AnimMng->GetAnimCycle(idx) : ((AnimationSection*)Configurations[config]->Sections[ANIM_SECTION])->GetAnimCycle(idx);
-}*/

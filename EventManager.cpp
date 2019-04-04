@@ -14,6 +14,7 @@ Event::Event(VesselBuilder1 *_VB1) {
 	Trigger.Type = TRIGGER::TRIGGERTYPE::NULL_TRIG;
 	Consumed = false;
 	Enabled = true;
+	DefaultEnabled = true;
 	return;
 }
 Event::~Event() {}
@@ -556,6 +557,7 @@ Event* EventManager::CreateGeneralVBEvent(string name, Event::TYPE type, Event::
 	else if (type == Event::ENABLE_EVENT) {
 		ev = CreateEnableEvent(name, _Trigger, NULL, true);
 	}
+	
 	/*if (ev) {
 		ev->id = id_counter;
 		id_counter++;

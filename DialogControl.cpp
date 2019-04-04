@@ -379,7 +379,7 @@ void DialogControl::InitDialog(HWND hWnd) {
 	ShowWindow(hWnd_Reconfig, SW_HIDE);
 	SetWindowPos(hWnd_Events, NULL, 255, 10, 0, 0, SWP_NOSIZE);
 	ShowWindow(hWnd_Events, SW_HIDE);
-	SetWindowPos(hWnd_ChildSpawn, NULL, 0, 0, 0, 0, SWP_NOSIZE);
+	SetWindowPos(hWnd_ChildSpawn, NULL, 0, 20, 0, 0, SWP_NOSIZE);
 	ShowWindow(hWnd_ChildSpawn, SW_HIDE);
 
 
@@ -2330,6 +2330,7 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 				UpdateTree(hWnd, VARIABLEDRAG, ConfigMng->GetSectionActiveConfig(VARIABLEDRAG));
 			}
 			else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(EVENTS)].hrootEvents) {
+				
 				int index = SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_GETCURSEL, 0, 0);
 				if (index > 0) {
 					Event::TYPE tp = (Event::TYPE)SendDlgItemMessage(hWnd, IDC_COMBO_EVENTTYPE, CB_GETITEMDATA, index, 0);
@@ -2526,6 +2527,7 @@ BOOL CALLBACK DialogControl::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 						SetWindowText(GetDlgItem(hWnd, IDC_BUTTON_ADD), (LPCSTR)"ADD VARIABLE DRAG ELEMENT");
 					}
 					else if (CurrentSelection.hitem == Config_Items[ConfigMng->GetSectionActiveConfig(EVENTS)].hrootEvents) {
+						
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD), SW_SHOW);
 						ShowWindow(GetDlgItem(hWnd, IDC_BUTTON_ADD2), SW_HIDE);
 						ShowWindow(GetDlgItem(hWnd, IDC_COMBO_EVENTTYPE), SW_SHOW);
