@@ -21,7 +21,7 @@ UINT ControlSurfacesManager::CreateUndefinedCtrlSurfDef() {
 	string name(nbuf);
 	return CreateUndefinedCtrlSurfDef(name, AIRCTRL_AILERON, 1, 1.5, _V(0, 0, 0), AIRCTRL_AXIS_AUTO, 1, (UINT)-1);
 }
-UINT ControlSurfacesManager::CreateUndefinedCtrlSurfDef(string name, AIRCTRL_TYPE type, double area, double dCl, VECTOR3 ref, int axis, double delay, UINT anim) {
+UINT ControlSurfacesManager::CreateUndefinedCtrlSurfDef(string name, AIRCTRL_TYPE type, double area, double dCl, VECTOR3 ref, int axis, double delay, int anim) {
 	CTRLSURF_DEF ctrsd = CTRLSURF_DEF();
 	ctrsd.name = name;
 	ctrsd.type = type;
@@ -35,7 +35,7 @@ UINT ControlSurfacesManager::CreateUndefinedCtrlSurfDef(string name, AIRCTRL_TYP
 	ctrlsurf_defs.push_back(ctrsd);
 	return index;
 }
-void ControlSurfacesManager::SetCtrlSurfDefParams(def_idx d_idx, AIRCTRL_TYPE type, double area, double dCl, VECTOR3 ref, int axis, double delay, UINT anim) {
+void ControlSurfacesManager::SetCtrlSurfDefParams(def_idx d_idx, AIRCTRL_TYPE type, double area, double dCl, VECTOR3 ref, int axis, double delay, int anim) {
 	ctrlsurf_defs[d_idx].type = type;
 	ctrlsurf_defs[d_idx].area = area;
 	ctrlsurf_defs[d_idx].dCl = dCl;
@@ -47,13 +47,20 @@ void ControlSurfacesManager::SetCtrlSurfDefParams(def_idx d_idx, AIRCTRL_TYPE ty
 }
 void ControlSurfacesManager::DefineCtrlSurface(def_idx d_idx) {
 	LogV("Defining CtrlSurface:%i", d_idx);
-	anim_idx a_idx = VB1->AnimMng->GetAnimIdx(ctrlsurf_defs[d_idx].anim);
-	ctrlsurf_defs[d_idx].csfh = VB1->CreateControlSurface3(ctrlsurf_defs[d_idx].type, ctrlsurf_defs[d_idx].area, ctrlsurf_defs[d_idx].dCl, ctrlsurf_defs[d_idx].ref, ctrlsurf_defs[d_idx].axis, ctrlsurf_defs[d_idx].delay, a_idx);// ctrlsurf_defs[d_idx].anim);
+	
+	if (ctrlsurf_defs[d_idx].anim < 0) {
+		ctrlsurf_defs[d_idx].csfh = VB1->CreateControlSurface3(ctrlsurf_defs[d_idx].type, ctrlsurf_defs[d_idx].area, ctrlsurf_defs[d_idx].dCl, ctrlsurf_defs[d_idx].ref, ctrlsurf_defs[d_idx].axis, ctrlsurf_defs[d_idx].delay);
+	}
+	else {
+		anim_idx a_idx = VB1->AnimMng->GetAnimIdx(ctrlsurf_defs[d_idx].anim);
+		ctrlsurf_defs[d_idx].csfh = VB1->CreateControlSurface3(ctrlsurf_defs[d_idx].type, ctrlsurf_defs[d_idx].area, ctrlsurf_defs[d_idx].dCl, ctrlsurf_defs[d_idx].ref, ctrlsurf_defs[d_idx].axis, ctrlsurf_defs[d_idx].delay, a_idx);
+	}
+	//ctrlsurf_defs[d_idx].csfh = VB1->CreateControlSurface3(ctrlsurf_defs[d_idx].type, ctrlsurf_defs[d_idx].area, ctrlsurf_defs[d_idx].dCl, ctrlsurf_defs[d_idx].ref, ctrlsurf_defs[d_idx].axis, ctrlsurf_defs[d_idx].delay, a_idx);// ctrlsurf_defs[d_idx].anim);
 	ctrlsurf_defs[d_idx].defined = true;
 	return;
 }
 void ControlSurfacesManager::UndefineCtrlSurface(def_idx d_idx) {
-	-VB1->DelControlSurface(ctrlsurf_defs[d_idx].csfh);
+	VB1->DelControlSurface(ctrlsurf_defs[d_idx].csfh);
 	ctrlsurf_defs[d_idx].csfh = NULL;
 	ctrlsurf_defs[d_idx].defined = false;
 	return;
@@ -78,7 +85,7 @@ void ControlSurfacesManager::SetCtrlSurfDefName(def_idx d_idx, string newname) {
 	ctrlsurf_defs[d_idx].name = newname;
 	return;
 }
-void ControlSurfacesManager::GetCtrlSurfDefParams(def_idx d_idx, AIRCTRL_TYPE &type, double &area, double &dCl, VECTOR3 &ref, int &axis, double &delay, UINT &anim) {
+void ControlSurfacesManager::GetCtrlSurfDefParams(def_idx d_idx, AIRCTRL_TYPE &type, double &area, double &dCl, VECTOR3 &ref, int &axis, double &delay, int &anim) {
 	type = ctrlsurf_defs[d_idx].type;
 	area = ctrlsurf_defs[d_idx].area;
 	dCl = ctrlsurf_defs[d_idx].dCl;
@@ -153,7 +160,7 @@ void ControlSurfacesManager::WriteCfg(FILEHANDLE fh) {
 			AIRCTRL_TYPE type;
 			double area, dcl, delay;
 			int axis;
-			UINT anim;
+			int anim;
 			VECTOR3 ref;
 			GetCtrlSurfDefParams(i, type, area, dcl, ref, axis, delay, anim);
 			sprintf(cbuf, "CTRL_SURFACES_%i_TYPE", ctr_counter);

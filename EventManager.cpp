@@ -557,6 +557,9 @@ Event* EventManager::CreateGeneralVBEvent(string name, Event::TYPE type, Event::
 	else if (type == Event::ENABLE_EVENT) {
 		ev = CreateEnableEvent(name, _Trigger, NULL, true);
 	}
+	if (ev) {
+		ev->SetDefaultEnabled(true);
+	}
 	
 	/*if (ev) {
 		ev->id = id_counter;

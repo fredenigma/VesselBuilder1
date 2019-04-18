@@ -115,6 +115,7 @@
       <ProgramDataBaseFileName>.\Release/</ProgramDataBaseFileName>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -126,6 +127,7 @@
       <TargetMachine>MachineX86</TargetMachine>
       <AdditionalDependencies>orbiter.lib;orbitersdk.lib;DlgCtrl.lib;gcAPI.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>false</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>MSVCRT.lib</IgnoreSpecificDefaultLibraries>
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -162,6 +164,7 @@
     <ClInclude Include="VesselBuilder1.h" />
     <ClInclude Include="ThrusterManager.h" />
     <ClInclude Include="TouchdownPointsManager.h" />
+    <ClInclude Include="VesselBuilderMFD.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AirfoilsDlgProc.cpp" />
@@ -219,6 +222,7 @@
     <ClCompile Include="ThrusterManager.cpp" />
     <ClCompile Include="ThrustersDlgProc.cpp" />
     <ClCompile Include="TouchdownPointsManager.cpp" />
+    <ClCompile Include="VesselBuilderMFD.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\lib\DlgCtrl.lib" />

@@ -88,6 +88,9 @@
     <ClInclude Include="VBVector.h">
       <Filter>Vessel</Filter>
     </ClInclude>
+    <ClInclude Include="VesselBuilderMFD.h">
+      <Filter>MFD</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\Orbitersdk\lib\orbiter.lib">
@@ -121,6 +124,9 @@
     </Filter>
     <Filter Include="Dialog\TextReader">
       <UniqueIdentifier>{3937152b-0a17-4baf-8e66-ade245acd0eb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MFD">
+      <UniqueIdentifier>{cccb736e-90aa-46bc-a9eb-c337ef597349}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -273,6 +279,9 @@
     </ClCompile>
     <ClCompile Include="SoftDock.cpp">
       <Filter>Vessel</Filter>
+    </ClCompile>
+    <ClCompile Include="VesselBuilderMFD.cpp">
+      <Filter>MFD</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

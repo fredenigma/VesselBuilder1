@@ -18,7 +18,7 @@ void DialogControl::UpdateCtrlSurfDialog(HWND hWnd) {
 	int axis;
 	AIRCTRL_TYPE type;
 	VECTOR3 ref;
-	UINT anim;
+	int anim;
 	CtrSurfMng->GetCtrlSurfDefParams(idx, type, area, dcl, ref, axis, delay,anim);
 	SetDlgItemDouble(hWnd, IDC_EDIT_CSAREA, area, 1);
 	SetDlgItemDouble(hWnd, IDC_EDIT_CSDCL, dcl, 2);
@@ -30,7 +30,7 @@ void DialogControl::UpdateCtrlSurfDialog(HWND hWnd) {
 	
 	SendDlgItemMessage(hWnd, IDC_COMBO_CSANIM, CB_RESETCONTENT, 0, 0);
 	SendDlgItemMessage(hWnd, IDC_COMBO_CSANIM, CB_INSERTSTRING, 0, (LPARAM)"NONE");
-	SendDlgItemMessage(hWnd, IDC_COMBO_CSANIM, CB_SETITEMDATA, 0, (UINT)-1);
+	SendDlgItemMessage(hWnd, IDC_COMBO_CSANIM, CB_SETITEMDATA, 0, (LPARAM)-1);
 	for (UINT i = 0; i < AnimMng->GetAnimDefsCount(); i++) {
 		if (!AnimMng->IsAnimValid(i)) { continue; }
 		char cbuf[256] = { '\0' };
@@ -38,7 +38,7 @@ void DialogControl::UpdateCtrlSurfDialog(HWND hWnd) {
 		int index = SendDlgItemMessage(hWnd, IDC_COMBO_CSANIM, CB_ADDSTRING, 0, (LPARAM)cbuf);
 		SendDlgItemMessage(hWnd, IDC_COMBO_CSANIM, CB_SETITEMDATA, index, i);
 	}
-	if (anim != (UINT)-1) {
+	if (anim != -1) {
 		int index = ComboFindItemData(GetDlgItem(hWnd, IDC_COMBO_CSANIM), (void*)anim);
 		SendDlgItemMessage(hWnd, IDC_COMBO_CSANIM, CB_SETCURSEL, index, 0);
 		//SendDlgItemMessage(hWnd, IDC_COMBO_CSANIM, CB_SETCURSEL, anim+1, 0);

@@ -229,7 +229,14 @@ public:
  bool JettisonNextDock();
  bool JettisonDock(UINT idx);
 
+ bool ParkingBrakes;
+ bool GetParkingBrakes() { return ParkingBrakes; }
+ void SetParkingBrakes(bool set);
+
  
+ void RegisterMFD();
+ int MFDmode;
+ void UnregisterMFD();
 
  //EXPERIMENTAL!!!
  SoftDock *SD;

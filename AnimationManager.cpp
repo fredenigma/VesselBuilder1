@@ -147,6 +147,7 @@ UINT AnimationManager::AddAnimCompDef(def_idx d_idx, string name, double state0,
 	acd.name = name;
 	acd.ref = ref;
 	acd.axis = axis;
+	acd.shift = shift;
 	MGROUP_TRANSFORM *mgt;
 	bool wgrps = false;
 	UINT *grp = NULL;
@@ -245,11 +246,13 @@ VECTOR3 AnimationManager::GetAnimCompDefScale(def_idx d_idx) {
 	return ((MGROUP_SCALE*)((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans)->scale;
 }
 void AnimationManager::SetAnimCompDefShift(def_idx d_idx, VECTOR3 newShift) {
+	animcomp_defs[d_idx].shift = newShift;
 	((MGROUP_TRANSLATE*)((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans)->shift = newShift;
 	return;
 }
 VECTOR3 AnimationManager::GetAnimCompDefShift(def_idx d_idx) {
-	return ((MGROUP_TRANSLATE*)((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans)->shift;
+	return animcomp_defs[d_idx].shift;
+	//return ((MGROUP_TRANSLATE*)((ANIMATIONCOMP*)animcomp_defs[d_idx].ach)->trans)->shift;
 }
 void AnimationManager::SetAnimCompDefAxis(def_idx d_idx, VECTOR3 newAxis) {
 	animcomp_defs[d_idx].axis = newAxis;

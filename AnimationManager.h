@@ -38,6 +38,7 @@ struct ANIMCOMP_DEF {
 	bool Valid;
 	VECTOR3 ref;
 	VECTOR3 axis;
+	VECTOR3 shift;
 	ANIMCOMP_DEF() {
 		name.clear();
 		ach = NULL;
@@ -50,6 +51,7 @@ struct ANIMCOMP_DEF {
 		oldTip[2] = _V(0,1,0);
 		ref = _V(0, 0, 0);
 		axis = _V(0, 0, 1);
+		shift = _V(0, 0, 0);
 		Valid = true;
 	}
 };

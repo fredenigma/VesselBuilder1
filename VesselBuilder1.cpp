@@ -35,7 +35,7 @@
 #include "EventManager.h"
 #include "ConfigurationManager.h"
 #include "SoftDock.h"
-
+#include "VesselBuilderMFD.h"
 
 
 #define LogV(x,...) Log->Log(x,##__VA_ARGS__)
@@ -135,12 +135,13 @@ VesselBuilder1::VesselBuilder1(OBJHANDLE hObj,int fmodel):VESSEL4(hObj,fmodel){
 	redL = oapiRegisterExhaustTexture("red_L");
 	greenL = oapiRegisterExhaustTexture("green_L");
 	blueL = oapiRegisterExhaustTexture("blue_L");
-
-
+	ParkingBrakes = false;
+	
 	SD = new SoftDock(this);
 
 //	soft_dock_distance = 3;
-
+	MFDmode = -1;
+	RegisterMFD();
 	LogV("Class Initialized");
 //	SBLog("Class Initialize");
 	return;
@@ -200,6 +201,7 @@ VesselBuilder1::~VesselBuilder1(){
 
 	delete SD;
 	SD = NULL;
+	UnregisterMFD();
 	LogV("Destructor Completed");
 	Log->CloseLog();
 	delete Log;
@@ -419,6 +421,13 @@ void VesselBuilder1::clbkLoadStateEx(FILEHANDLE scn,void *vs)
 				EvMng->ConsumeEvent(i);
 			}
 		}
+		else if (!_strnicmp(line, "PARKING_BRAKES", 14)) {
+			int pb;
+			sscanf(line + 14, "%i", &pb);
+			if (pb > 0) {
+				SetParkingBrakes(true);
+			}
+		}
 		else{ 
 			ParseScenarioLineEx(line, vs); 
 		}	
@@ -513,6 +522,10 @@ void VesselBuilder1::clbkSaveState(FILEHANDLE scn)
 	}
 	if (Met->Enabled()) {
 		oapiWriteScenario_float(scn, "METMJD0", Met->GetMJD0());
+	}
+
+	if (GetParkingBrakes()) {
+		oapiWriteScenario_int(scn, "PARKING_BRAKES", 1);
 	}
 
 	if (follow_me) {
@@ -764,14 +777,7 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 	}
 	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && KEYMOD_CONTROL(kstate) && key == OAPI_KEY_K) {
 		
-		VBVector<OBJHANDLE> v;
-		v.clear();
-		for (UINT i = 0; i < 10; i++) {
-			OBJHANDLE h;
-			v.push_back(h);
-		}
-		sprintf(oapiDebugString(), "VBV[15]:%i", v[15]);
-
+		
 		//Trig.KeyMods.Alt = true;
 		//Trig.repeat_mode = Event::TRIGGER::REPEAT_MODE::ALWAYS;
 		//EvMng->CreateChildSpawnEvent("TestSpawn", Trig, "SLS\\core", "stage");
@@ -840,7 +846,9 @@ int VesselBuilder1::clbkConsumeBufferedKey(DWORD key, bool down, char *kstate)
 		}
 
 	}
-
+	if (!KEYMOD_ALT(kstate) && !KEYMOD_SHIFT(kstate) && KEYMOD_CONTROL(kstate) && key == OAPI_KEY_PERIOD) {
+		SetParkingBrakes(!GetParkingBrakes());
+	}
 	return 0;
 }
 
@@ -888,6 +896,7 @@ void VesselBuilder1::clbkPreStep(double simt, double simdt, double mjd) {
 	return;
 }
 void VesselBuilder1::clbkPostStep(double simt, double simdt, double mjd) {
+	
 	/*VECTOR3 CS;
 	GetCrossSections(CS);
 	double cw_zp, cw_zm, cw_x, cw_y;
@@ -955,8 +964,12 @@ bool VesselBuilder1::clbkDrawHUD(int mode, const HUDPAINTSPEC *hps, oapi::Sketch
 		//DWORD csize = skp->GetCharSize();
 		//sprintf(oapiDebugString(), "height: %i width:%i", LOWORD(csize), HIWORD(csize));
 		skp->Text(5, hps->H*0.25, METbuff, strlen(METbuff));
-	}
 
+		
+	}
+	if (GetParkingBrakes()) {
+		skp->Text(5, hps->H * 0.3, "PARKING BRAKES", 15);
+	}
 	
 	
 	return true;
@@ -1432,6 +1445,31 @@ void VesselBuilder1::AddDefaultRCS() {
 
 double VesselBuilder1::GetMET() {
 	return Met->GetDeltaSeconds();
+}
+void VesselBuilder1::SetParkingBrakes(bool set) {
+	ParkingBrakes = set;
+	SetWheelbrakeLevel(set ? 1 : 0);
+	return;
+}
+
+void VesselBuilder1::RegisterMFD() {
+	static char* name = "Vessel Builder MFD";   // MFD mode name
+	MFDMODESPECEX spec;
+	spec.name = name;
+	spec.key = OAPI_KEY_V;                // MFD mode selection key
+	spec.context = NULL;
+	spec.msgproc = VesselBuilderMFD::MsgProc;  // MFD mode callback function
+
+										  // Register the new MFD mode with Orbiter
+	MFDmode = RegisterMFDMode(spec);
+	return;
+}
+void VesselBuilder1::UnregisterMFD() {
+	if (MFDmode != -1) {
+		UnregisterMFDMode(MFDmode);
+	}
+	
+	return;
 }
 
 

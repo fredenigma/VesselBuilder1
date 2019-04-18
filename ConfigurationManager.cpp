@@ -367,6 +367,7 @@ void DockSection::ParseSection(FILEHANDLE fh) {
 		oapiReadItem_vec(fh, cbuf, rot);
 		sprintf(cbuf, "DOCK_%i_JETT", dock_counter);
 		ConfigCheck(cbuf, config);
+		if (!oapiReadItem_bool(fh, cbuf, jett)) { jett = false; }
 		sprintf(cbuf, "DOCK_%i_SOFTDOCK", dock_counter);
 		ConfigCheck(cbuf, config);
 		if (!oapiReadItem_bool(fh, cbuf, sd)) { sd = false; }
@@ -379,7 +380,7 @@ void DockSection::ParseSection(FILEHANDLE fh) {
 			oapiReadItem_int(fh, cbuf, sd_anim);
 		}
 		
-		if (!oapiReadItem_bool(fh, cbuf, jett)) { jett = false; }
+		
 		Definitions d = Definitions();
 		d.name = name;
 		d.pos = pos;
@@ -2174,7 +2175,7 @@ void TouchDownPointSection::ApplySection() {
 		TdpMng->SetCurrentSet(1);
 	}
 	TdpMng->EnableSecondSet(SecondSetEnabled);
-	if (changeoveranim > 0) {
+	if (changeoveranim >= 0) {
 		TdpMng->SetChangeOverAnimation(changeoveranim);
 	}
 	return;
@@ -2433,7 +2434,7 @@ void CtrlSurfaceSection::ParseSection(FILEHANDLE fh) {
 		sprintf(cbuf, "CTRL_SURFACES_%i_ANIM", ctr_counter);
 		ConfigCheck(cbuf, Config_idx);
 		int anim;
-		oapiReadItem_int(fh, cbuf, anim);
+		if (!oapiReadItem_int(fh, cbuf, anim)) { anim = -1; }
 		//anim = (UINT)an;
 		Definitions d = Definitions();
 		d.name = name;
@@ -2487,9 +2488,12 @@ void CtrlSurfaceSection::WriteSection(FILEHANDLE fh) {
 		sprintf(cbuf, "CTRL_SURFACES_%i_DELAY", i);
 		ConfigCheck(cbuf, Config_idx);
 		oapiWriteItem_float(fh, cbuf, Defs[i].delay);
-		sprintf(cbuf, "CTRL_SURFACES_%i_ANIM", i);
-		ConfigCheck(cbuf, Config_idx);
-		oapiWriteItem_int(fh, cbuf, Defs[i].anim);
+		if (Defs[i].anim >= 0)
+		{
+			sprintf(cbuf, "CTRL_SURFACES_%i_ANIM", i);
+			ConfigCheck(cbuf, Config_idx);
+			oapiWriteItem_int(fh, cbuf, Defs[i].anim);
+		}
 		oapiWriteLine(fh, " ");
 	}
 
@@ -2510,7 +2514,7 @@ void CtrlSurfaceSection::UpdateSection() {
 		AIRCTRL_TYPE type;
 		double area, dcl, delay;
 		int axis;
-		UINT anim;
+		int anim;
 		VECTOR3 ref;
 		string name;
 		name = CtrSurfMng->GetCtrlSurfDefName(i);
@@ -4062,6 +4066,11 @@ void EventSection::ApplySection() {
 		{
 			Event* ev_to_enable = EvMng->GetEventH(Defs[i].other_event_to_enable);
 			ev = EvMng->CreateEnableEvent(Defs[i].name, trig, ev_to_enable, Defs[i].other_event_enable);
+			break;
+		}
+		case Event::TYPE::NULL_EVENT:
+		{
+			ev = EvMng->CreateNullEvent(Defs[i].name, trig);
 			break;
 		}
 		
